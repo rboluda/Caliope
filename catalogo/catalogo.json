@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "componentes": [
+    {
+      "id": "nucleo",
+      "nombre": "Núcleo",
+      "grupo": "Básico",
+      "necesidad": "imprescindible",
+      "resumen": "Las herramientas básicas sobre las que funciona todo lo demás.",
+      "detalle": "Instala uv (un gestor que descarga Python y sus paquetes de forma rápida y aislada), Python 3.11 y ffmpeg (convierte audio a MP3, ajusta el volumen y cambia velocidad y tono). No toca ningún Python que ya tengas en el equipo.",
+      "habilita": ["Todo lo demás"],
+      "dependeDe": [],
+      "tamano": { "conGpuGb": 0.3, "sinGpuGb": 0.3 },
+      "requisitos": { "funcionaEnCpu": true },
+      "licencias": [
+        { "nombre": "uv: MIT / Apache 2.0", "url": "https://github.com/astral-sh/uv/blob/main/LICENSE-MIT" },
+        { "nombre": "Python: PSF", "url": "https://docs.python.org/3/license.html" },
+        { "nombre": "ffmpeg: GPL", "url": "https://ffmpeg.org/legal.html" }
+      ]
+    },
+    {
+      "id": "motor-qwen",
+      "nombre": "Motor de voz Qwen3-TTS",
+      "grupo": "Motor de voz",
+      "necesidad": "imprescindible",
+      "resumen": "El programa que convierte texto en voz. Sin él, Constantino no puede hablar.",
+      "detalle": "Crea un entorno de Python propio con PyTorch (con CUDA si tienes una tarjeta NVIDIA compatible, o para procesador si no) y la librería qwen-tts. Por sí solo no trae ninguna voz: necesita al menos uno de los modelos Base.",
+      "habilita": ["Narrar", "Clonar voces", "Diseñar voces (con el modelo VoiceDesign)"],
+      "dependeDe": ["nucleo"],
+      "tamano": { "conGpuGb": 5.0, "sinGpuGb": 1.2 },
+      "requisitos": { "funcionaEnCpu": true },
+      "licencias": [
+        { "nombre": "Qwen3-TTS: Apache 2.0", "url": "https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE" },
+        { "nombre": "PyTorch: BSD-3", "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE" }
+      ]
+    },
+    {
+      "id": "modelo-qwen-base-1.7b",
+      "nombre": "Modelo Base 1.7B (alta calidad)",
+      "grupo": "Modelos de voz",
+      "necesidad": "imprescindible",
+      "grupoExclusivo": "modelo-base",
+      "resumen": "Clona voces y narra con ellas. La mejor calidad.",
+      "detalle": "Es el modelo que imita una voz a partir de una grabación de 10–20 segundos y lee tus guiones con ella. Hace falta uno de los dos modelos Base; este es el recomendado si tu tarjeta tiene 6 GB de memoria o más.",
+      "habilita": ["Narrar", "Clonar voces"],
+      "dependeDe": ["motor-qwen"],
+      "tamano": { "conGpuGb": 4.3, "sinGpuGb": 4.3 },
+      "requisitos": { "vramMinimaGb": 5.5, "vramRecomendadaGb": 6.0, "funcionaEnCpu": true },
+      "licencias": [
+        { "nombre": "Apache 2.0", "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base" }
+      ]
+    },
+    {
+      "id": "modelo-qwen-base-0.6b",
+      "nombre": "Modelo Base 0.6B (ligero)",
+      "grupo": "Modelos de voz",
+      "necesidad": "imprescindible",
+      "grupoExclusivo": "modelo-base",
+      "resumen": "Lo mismo que el Base 1.7B, con algo menos de calidad, para equipos modestos.",
+      "detalle": "Pensado para tarjetas de 4 GB o para equipos sin tarjeta NVIDIA, donde funciona en el procesador (bastante más despacio). Hace falta uno de los dos modelos Base.",
+      "habilita": ["Narrar", "Clonar voces"],
+      "dependeDe": ["motor-qwen"],
+      "tamano": { "conGpuGb": 2.5, "sinGpuGb": 2.5 },
+      "requisitos": { "vramMinimaGb": 3.0, "vramRecomendadaGb": 4.0, "funcionaEnCpu": true },
+      "licencias": [
+        { "nombre": "Apache 2.0", "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-0.6B-Base" }
+      ]
+    },
+    {
+      "id": "modelo-qwen-voicedesign",
+      "nombre": "Modelo VoiceDesign (diseñar voces)",
+      "grupo": "Modelos de voz",
+      "necesidad": "recomendado",
+      "resumen": "Crea voces nuevas a partir de una descripción escrita.",
+      "detalle": "Le describes la voz con palabras («hombre de unos 40 años, voz grave y cálida, ritmo pausado…») y la inventa. Después Constantino la guarda en tu biblioteca para narrar con ella. Solo existe en tamaño 1.7B. No hace falta si solo vas a clonar voces grabadas.",
+      "habilita": ["Diseñar voces"],
+      "dependeDe": ["motor-qwen"],
+      "tamano": { "conGpuGb": 4.3, "sinGpuGb": 4.3 },
+      "requisitos": { "vramMinimaGb": 5.5, "vramRecomendadaGb": 6.0, "funcionaEnCpu": true },
+      "licencias": [
+        { "nombre": "Apache 2.0", "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign" }
+      ]
+    },
+    {
+      "id": "whisper",
+      "nombre": "Whisper (transcripción automática)",
+      "grupo": "Extras",
+      "necesidad": "opcional",
+      "resumen": "Escribe solo lo que se dice en una grabación.",
+      "detalle": "Al clonar una voz hace falta la transcripción exacta de la grabación. Con Whisper se genera sola; sin él, la escribes tú a mano. Instala faster-whisper en su propio entorno y el modelo large-v3-turbo.",
+      "habilita": ["Transcripción automática al clonar"],
+      "dependeDe": ["nucleo"],
+      "tamano": { "conGpuGb": 2.5, "sinGpuGb": 2.0 },
+      "requisitos": { "vramMinimaGb": 2.0, "vramRecomendadaGb": 3.0, "funcionaEnCpu": true },
+      "licencias": [
+        { "nombre": "Whisper: MIT", "url": "https://github.com/openai/whisper/blob/main/LICENSE" },
+        { "nombre": "faster-whisper: MIT", "url": "https://github.com/SYSTRAN/faster-whisper/blob/master/LICENSE" }
+      ]
+    },
+    {
+      "id": "chatterbox",
+      "nombre": "Chatterbox (motor alternativo)",
+      "grupo": "Extras",
+      "necesidad": "opcional",
+      "resumen": "Otro motor de voz: más rápido y con control de intensidad emocional.",
+      "detalle": "Clona voces y narra como Qwen, unas tres veces más rápido, con un control de «intensidad emocional». Tiende a leer más seguido y con menos pausas. Todo lo que genera lleva una marca de agua inaudible de Resemble AI.",
+      "habilita": ["Narrar con un motor alternativo"],
+      "dependeDe": ["nucleo"],
+      "tamano": { "conGpuGb": 8.3, "sinGpuGb": 4.5 },
+      "requisitos": { "vramMinimaGb": 5.0, "vramRecomendadaGb": 6.0, "funcionaEnCpu": true },
+      "licencias": [
+        { "nombre": "MIT", "url": "https://github.com/resemble-ai/chatterbox/blob/master/LICENSE" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+<Page
+    x:Class="Constantino.App.Paginas.PaginaAjustes"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Ajustes">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,32,32" MaxWidth="1040">
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="Ajustes" />
+
+            <ui:CardControl Margin="0,16,0,0">
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Color24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Tema" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Colores claros u oscuros de la ventana." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ComboBox
+                    MinWidth="180"
+                    DisplayMemberPath="Nombre"
+                    ItemsSource="{Binding ViewModel.Temas}"
+                    SelectedValue="{Binding ViewModel.Tema}"
+                    SelectedValuePath="Valor" />
+            </ui:CardControl>
+
+            <ui:CardControl Margin="0,8,0,0">
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Folder24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Carpeta de datos" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.CarpetaDatos}" TextWrapping="Wrap" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Podrás elegir otra en el asistente de instalación." />
+                    </StackPanel>
+                </ui:CardControl.Header>
+            </ui:CardControl>
+
+            <ui:CardControl Margin="0,8,0,0">
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Info24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Acerca de Constantino" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                            <Run Text="Versión " /><Run Text="{Binding ViewModel.Version, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </ui:CardControl.Header>
+            </ui:CardControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
