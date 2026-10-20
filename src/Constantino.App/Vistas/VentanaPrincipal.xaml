@@ -67,6 +67,11 @@
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
+                <ui:NavigationViewItem Content="Ayuda" TargetPageType="{x:Type paginas:PaginaAyuda}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="QuestionCircle24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
                 <ui:NavigationViewItem Content="Ajustes" TargetPageType="{x:Type paginas:PaginaAjustes}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Settings24" />

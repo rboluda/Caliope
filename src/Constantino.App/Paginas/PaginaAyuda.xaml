@@ -1,0 +1,235 @@
+<Page
+    x:Class="Constantino.App.Paginas.PaginaAyuda"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    ScrollViewer.CanContentScroll="False"
+    Title="Ayuda">
+    <Page.Resources>
+        <Style x:Key="Parrafo" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="LineHeight" Value="21" />
+        </Style>
+        <Style x:Key="Subtitulo" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,6,0,6" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="Codigo" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+            <Setter Property="Margin" Value="0,2,16,2" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style x:Key="Celda" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,2,0,2" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,32,32" MaxWidth="1040">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Image Width="72" Height="72" Source="pack://application:,,,/Recursos/caliope.png" />
+                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <TextBlock FontSize="28" FontWeight="SemiBold" Text="Ayuda" />
+                    <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                               Text="Calíope convierte textos en voz en tu propio ordenador: crea voces, clónalas y narra guiones completos sin conexión, sin cuentas y sin pagar por minuto." />
+                </StackPanel>
+            </Grid>
+
+            <!--  Primeros pasos  -->
+            <ui:CardExpander Margin="0,20,0,0" IsExpanded="True">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="Rocket24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="Primeros pasos" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Parrafo}" Text="1. Instala lo necesario. El asistente del primer arranque analiza tu equipo y propone qué instalar. Siempre puedes añadir o quitar piezas desde «Componentes». Lo imprescindible es el Núcleo, el motor Qwen3-TTS y un modelo Base." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="2. Consigue una voz. Puedes diseñarla describiéndola con palabras («Diseñar voz»), clonarla a partir de una grabación tuya o de alguien que te haya dado permiso («Clonar voz»), o importar un audio que ya tengas («Voces → Importar una voz»)." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="3. Narra. En «Narrar» crea un proyecto, escribe o pega el guion, elige la voz y pulsa «Generar narración». Cada párrafo se convierte en un bloque de audio; si cambias algo, solo se rehace lo que ha cambiado." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="4. Saca el audio. En la zona «Narración completa» puedes escucharla, guardarla donde quieras, copiarla o arrastrarla directamente a tu editor de vídeo. «Exportar todo…» copia también cada bloque por separado." />
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Click="AlIrAComponentes" Content="Ir a Componentes">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="PuzzlePiece24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button Margin="8,0,0,0" Click="AlIrANarrar" Content="Ir a Narrar">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="BookOpen24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardExpander>
+
+            <!--  Voces  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="PersonVoice24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="Voces: diseñar, clonar y variantes" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Diseñar una voz" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Elige sexo, edad, timbre, ritmo, tono y acento (o escribe la descripción tú mismo). Calíope genera varias versiones con semillas distintas: escúchalas y guarda la que más te guste. Necesita el modelo VoiceDesign." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Clonar una voz" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Graba entre 10 y 20 segundos leyendo el texto propuesto (o importa un audio), recorta el tramo bueno y comprueba el análisis: sin saturar, sin ruido de fondo y con volumen suficiente. La transcripción tiene que ser exacta: con Whisper instalado se escribe sola." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="La transcripción importa" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Si la transcripción no coincide con lo que se oye, la voz sale cortada (medio segundo de audio). Calíope avisa cuando no encaja. Si no la tienes, marca «No tengo la transcripción»: se imitará solo el timbre, algo menos parecido pero sin riesgo." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Variantes" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Una variante es la misma voz hablando de otra forma: susurrando, tensa, asustada, triste, alegre o gritando. Se añaden en «Voces → Añadir variante» desde una grabación o, si la voz es diseñada, generándola con VoiceDesign. En el guion se usan con su etiqueta." />
+                </StackPanel>
+            </ui:CardExpander>
+
+            <!--  Guion  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="DocumentText24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="Cómo se escribe un guion" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Escribe el texto tal cual. Cada párrafo (separado por una línea en blanco) es un bloque con su propio archivo de audio. Puedes usar estas marcas:" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Style="{StaticResource Codigo}" Text="[pause]" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource Celda}" Text="Pausa corta (0,6 s por defecto)." />
+                        <TextBlock Grid.Row="1" Style="{StaticResource Codigo}" Text="[long pause]" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Celda}" Text="Pausa larga (1,5 s por defecto)." />
+                        <TextBlock Grid.Row="2" Style="{StaticResource Codigo}" Text="[whispers]" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource Celda}" Text="Susurra hasta el final de la línea. Usa la variante «susurro» si la voz la tiene; si no, baja el volumen." />
+                        <TextBlock Grid.Row="3" Style="{StaticResource Codigo}" Text="[asustado], [tenso]…" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Style="{StaticResource Celda}" Text="Lee con esa variante de la voz hasta el final de la línea. En Narrar aparecen botones con las variantes de la voz elegida." />
+                        <TextBlock Grid.Row="4" Style="{StaticResource Codigo}" Text="[normal]" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Style="{StaticResource Celda}" Text="Vuelve a la voz normal antes de que acabe la línea." />
+                        <TextBlock Grid.Row="5" Style="{StaticResource Codigo}" Text="# nombre" />
+                        <TextBlock Grid.Row="5" Grid.Column="1" Style="{StaticResource Celda}" Text="En la primera línea de un párrafo, da nombre al bloque (y a su archivo)." />
+                        <TextBlock Grid.Row="6" Style="{StaticResource Codigo}" Text="// nota" />
+                        <TextBlock Grid.Row="6" Grid.Column="1" Style="{StaticResource Celda}" Text="Comentario: no se lee." />
+                        <TextBlock Grid.Row="7" Style="{StaticResource Codigo}" Text="(línea en blanco)" />
+                        <TextBlock Grid.Row="7" Grid.Column="1" Style="{StaticResource Celda}" Text="Separa bloques. Entre bloques hay una pausa que ajustas en «Más ajustes»." />
+                    </Grid>
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Ejemplo" />
+                    <Border Padding="12" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                        <TextBlock FontFamily="Cascadia Mono, Consolas" TextWrapping="Wrap"><Run Text="# inicio" /><LineBreak /><Run Text="Era sábado por la noche. [pause] Diluviaba." /><LineBreak /><LineBreak /><Run Text="# susto" /><LineBreak /><Run Text="Alguien llamó a la puerta. [long pause]" /><LineBreak /><Run Text="[whispers] No abras. [normal] Pero ella abrió." /></TextBlock>
+                    </Border>
+                </StackPanel>
+            </ui:CardExpander>
+
+            <!--  Ajustes de narración  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="Options24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="Ajustes de la narración" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Expresividad: cuánta libertad tiene el motor al entonar. Baja, más estable y monótona; alta, más viva pero con más riesgo de errores (palabras raras o repetidas). Si un bloque sale mal, pulsa su botón de regenerar o cambia la semilla." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Velocidad y tono: se aplican al final, sin que uno afecte al otro. Más allá de un 15 % de velocidad o de 2 semitonos empieza a notarse artificial." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Intensidad emocional (solo Chatterbox): cuánto se exagera la emoción. 0,5 es natural; por encima de 0,7 puede sonar teatral." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Semilla: el mismo texto con la misma semilla sale siempre igual. Cámbiala para obtener otra interpretación." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Volumen (LUFS): todas las narraciones se igualan a este volumen. −16 es lo habitual en vídeos y pódcast; −14 suena más fuerte." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Formato: MP3 para usar directamente; WAV si vas a seguir editando el audio." />
+                </StackPanel>
+            </ui:CardExpander>
+
+            <!--  Motores  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="Server24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="Motores y componentes" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Qwen3-TTS (Alibaba, licencia Apache 2.0) es el motor principal: clona voces con mucha fidelidad, respeta bien las pausas y es el único que diseña voces (VoiceDesign). El modelo Base 1.7B da la mejor calidad; el 0.6B es para tarjetas de 4 GB o equipos sin tarjeta NVIDIA." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Chatterbox (Resemble AI, licencia MIT) es un motor alternativo opcional: lee más seguido, deja ajustar la intensidad emocional y marca todo lo que genera con una marca de agua inaudible. En «Voces → Probar» puedes escuchar la misma voz con los dos y quedarte con el que prefieras." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Whisper (OpenAI, MIT) transcribe las grabaciones al clonar. Es opcional: sin él, escribes la transcripción a mano." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Solo un motor ocupa la tarjeta gráfica a la vez: al cambiar de motor, Calíope cierra el otro. El motor se enciende solo cuando hace falta y puedes apagarlo para liberar memoria." />
+                </StackPanel>
+            </ui:CardExpander>
+
+            <!--  Problemas  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="Wrench24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="Si algo no va bien" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="La voz sale cortada o muy corta" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Casi siempre es la transcripción de la voz: corrígela en «Voces → Editar transcripción» o déjala vacía para imitar solo el timbre." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="«No hay memoria suficiente en la tarjeta gráfica»" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Cierra navegadores, juegos y otros programas que usen la tarjeta y vuelve a intentarlo. En equipos de 4 GB usa el modelo Base 0.6B." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="La primera vez tarda" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Arrancar el motor y cargar el modelo lleva entre 20 y 60 segundos. Después queda en memoria y cada bloque va mucho más rápido." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Un componente da errores" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="En «Componentes», pulsa «Reparar»: vuelve a instalarlo aprovechando lo ya descargado. El registro de instalación está en la carpeta de datos, dentro de «registros»." />
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Click="AlAbrirDatos" Content="Abrir la carpeta de datos">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="FolderOpen24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button Margin="8,0,0,0" Click="AlAbrirRegistros" Content="Abrir los registros">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="DocumentSearch24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardExpander>
+
+            <!--  Uso responsable  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="Shield24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="Uso responsable" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Clona solo tu voz o la de personas que te hayan dado permiso expreso. Por eso Calíope pide confirmar el consentimiento al clonar o importar una voz." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="No uses voces clonadas para suplantar a nadie, engañar ni difamar. Si publicas contenido con voces sintéticas, indícalo cuando pueda confundir a quien lo escucha." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Todo se genera en tu equipo: ni los textos ni las voces salen de él. Internet solo se usa para descargar los componentes." />
+                </StackPanel>
+            </ui:CardExpander>
+
+            <!--  Acerca de  -->
+            <ui:CardControl Margin="0,8,0,0">
+                <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="Info24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Código, novedades y avisos de errores" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="github.com/rboluda/Caliope" />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:Button Click="AlAbrirGitHub" Content="Abrir en el navegador">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Open24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+            </ui:CardControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

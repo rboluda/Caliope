@@ -40,6 +40,7 @@ public partial class App : Application
         s.AddSingleton<ComponentesViewModel>();
         s.AddSingleton<PaginaAsistente>();
         s.AddSingleton<AsistenteViewModel>();
+        s.AddSingleton<PaginaAyuda>();
         s.AddSingleton<PaginaAjustes>();
         s.AddSingleton<AjustesViewModel>();
         s.AddSingleton<PaginaVoces>();
