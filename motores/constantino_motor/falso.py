@@ -35,6 +35,16 @@ class MotorFalso:
             raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
         if not os.path.isfile(params["referencia_wav"]):
             raise ErrorMotor("archivo_no_encontrado", "No existe la grabación de referencia.")
+        return self._tono(params, progreso)
+
+    def op_disenar(self, params, progreso):
+        if self._cargado is None:
+            raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
+        if not (params.get("instruccion") or "").strip():
+            raise ErrorMotor("sin_descripcion", "Describe la voz que quieres crear.")
+        return self._tono(params, progreso)
+
+    def _tono(self, params, progreso):
         texto = params.get("texto", "")
         if texto == "falla":
             raise RuntimeError("fallo provocado")

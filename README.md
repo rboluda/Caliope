@@ -13,6 +13,8 @@ El diseño completo está en [docs/DISENO.md](docs/DISENO.md).
 
 - **H3**: pantalla Narrar. Proyectos con guion (bloques por párrafos, `# nombre`, comentarios `//`, etiquetas `[pause]`, `[long pause]` y `[whispers]`), ajustes de voz, expresividad, pausas, susurro, volumen (LUFS), semilla y formato. Genera bloque a bloque, solo rehace los que cambian (huella por bloque), normaliza con ffmpeg (ganancia + limitador), monta el audio completo y escribe `manifiesto.json` con la duración y el inicio de cada bloque.
 
+- **H4**: pantalla Diseñar voz con VoiceDesign. Descripción guiada (sexo, edad, timbre, textura, ritmo, tono, idioma y acento) que se compone en inglés, ejemplos de partida y variantes con semillas distintas. La variante elegida se guarda tal cual como grabación de referencia, con el texto de muestra como transcripción exacta. El motor cambia solo entre los modelos Base y VoiceDesign según la tarea.
+
 Whisper y Chatterbox aparecen en el catálogo pero aún no se pueden instalar (H5 y H7).
 
 ### Proyectos de narración

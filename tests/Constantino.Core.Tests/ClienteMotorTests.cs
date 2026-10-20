@@ -172,6 +172,13 @@ public sealed class MotorPythonTests
         Assert.Equal("desconocido", fallo.Codigo);
         Assert.Contains("fallo provocado", fallo.Message);
 
+        var disenada = await motor.DisenarAsync(new ParametrosDiseno("Hola, ¿qué tal?", "Spanish", "A deep warm voice.",
+            Path.Combine(temporal, "disenada.wav"), Semilla: 42));
+        Assert.True(File.Exists(disenada.Salida));
+        var sinDescripcion = await Assert.ThrowsAsync<MotorException>(() =>
+            motor.DisenarAsync(new ParametrosDiseno("Hola", "Spanish", " ", Path.Combine(temporal, "c.wav"))));
+        Assert.Equal("sin_descripcion", sinDescripcion.Codigo);
+
         Assert.Equal("cpu", (await motor.InfoAsync()).Dispositivo);
         Assert.Contains("no debe romper el protocolo", cliente.UltimoDiagnostico);
         Directory.Delete(temporal, recursive: true);

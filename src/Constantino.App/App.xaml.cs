@@ -44,6 +44,7 @@ public partial class App : Application
         s.AddSingleton<PaginaVoces>();
         s.AddSingleton<VocesViewModel>();
         s.AddSingleton<PaginaDisenar>();
+        s.AddSingleton<DisenarViewModel>();
         s.AddSingleton<PaginaClonar>();
         s.AddSingleton<PaginaNarrar>();
         s.AddSingleton<NarrarViewModel>();

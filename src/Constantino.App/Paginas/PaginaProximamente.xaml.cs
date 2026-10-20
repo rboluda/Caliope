@@ -22,18 +22,6 @@ public partial class PaginaProximamente : Page
     }
 }
 
-public sealed class PaginaDisenar() : PaginaProximamente(new(
-    SymbolRegular.Sparkle24,
-    "Diseñar voz",
-    "Crea una voz nueva describiéndola con palabras: edad, timbre, ritmo, tono y acento.",
-    [
-        "Escribir la descripción con plantillas y ejemplos",
-        "Generar varias versiones y escucharlas",
-        "Guardar la que más te guste en tu biblioteca",
-    ],
-    "el modelo VoiceDesign (además del motor Qwen3-TTS y un modelo Base para narrar con ella).",
-    "Llegará en el hito H4."));
-
 public sealed class PaginaClonar() : PaginaProximamente(new(
     SymbolRegular.Mic24,
     "Clonar voz",

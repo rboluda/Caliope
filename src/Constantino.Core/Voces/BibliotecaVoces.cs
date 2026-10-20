@@ -158,7 +158,8 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
     /// </summary>
     public static void ComprobarTranscripcion(string transcripcion, double duracion)
     {
-        var letras = transcripcion.Count(char.IsLetterOrDigit);
+        // Un carácter chino, japonés o coreano equivale a una sílaba: cuenta como varias letras latinas.
+        var letras = transcripcion.Sum(c => !char.IsLetterOrDigit(c) ? 0 : EsCjk(c) ? 3 : 1);
         if (letras < LongitudMinimaTranscripcion || letras < duracion * LetrasPorSegundoMinimas)
         {
             throw new VozInvalidaException(
@@ -172,6 +173,11 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
                 $"La transcripción es demasiado larga para una grabación de {Segundos(duracion)} ({letras} letras): ¿seguro que es la de este audio?");
         }
     }
+
+    private static bool EsCjk(char c) =>
+        c is >= '぀' and <= 'ヿ' // hiragana y katakana
+            or >= '㐀' and <= '鿿' // ideogramas
+            or >= '가' and <= '힯'; // hangul
 
     /// <summary>Duración de un WAV PCM leyendo sus cabeceras (fmt y data).</summary>
     public static double DuracionWav(string ruta)

@@ -67,22 +67,45 @@ class MotorQwen:
 
     def op_sintetizar(self, params, progreso):
         """Clona la voz de la referencia y lee el texto. Escribe un WAV en params['salida']."""
-        if self._modelo is None:
-            raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
+        self._exigir_modelo("base", "clonar voces")
         referencia = params["referencia_wav"]
         if not os.path.isfile(referencia):
             raise ErrorMotor("archivo_no_encontrado", f"No existe la grabación de referencia: {referencia}")
-        texto = (params.get("texto") or "").strip()
-        if not texto:
-            raise ErrorMotor("texto_vacio", "No hay texto que leer.")
-
-        import soundfile as sf
-
-        torch = self._torch
+        texto = self._texto(params)
         progreso(None, "Preparando la voz")
         # Sin transcripción se imita solo el timbre (x-vector): algo menos parecido, pero no necesita el texto.
         prompt = self._prompt(referencia, (params.get("referencia_texto") or "").strip() or None)
+        return self._generar(params, progreso, lambda ajustes: self._modelo.generate_voice_clone(
+            text=texto, language=params.get("idioma", "Spanish"), voice_clone_prompt=prompt, **ajustes))
 
+    def op_disenar(self, params, progreso):
+        """Inventa una voz a partir de una descripción (VoiceDesign) y lee el texto con ella."""
+        self._exigir_modelo("voice_design", "diseñar voces")
+        texto = self._texto(params)
+        instruccion = (params.get("instruccion") or "").strip()
+        if not instruccion:
+            raise ErrorMotor("sin_descripcion", "Describe la voz que quieres crear.")
+        return self._generar(params, progreso, lambda ajustes: self._modelo.generate_voice_design(
+            text=texto, language=params.get("idioma", "Spanish"), instruct=instruccion, **ajustes))
+
+    def _exigir_modelo(self, tipo, para):
+        if self._modelo is None:
+            raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
+        if self._modelo.model.tts_model_type != tipo:
+            raise ErrorMotor("modelo_incorrecto", f"El modelo cargado no sirve para {para}.")
+
+    @staticmethod
+    def _texto(params):
+        texto = (params.get("texto") or "").strip()
+        if not texto:
+            raise ErrorMotor("texto_vacio", "No hay texto que leer.")
+        return texto
+
+    def _generar(self, params, progreso, generar):
+        """Fija la semilla, aplica los ajustes de muestreo, genera y escribe el WAV."""
+        import soundfile as sf
+
+        torch = self._torch
         semilla = int(params.get("semilla", 1234))
         random.seed(semilla)
         torch.manual_seed(semilla)
@@ -98,8 +121,7 @@ class MotorQwen:
 
         progreso(None, "Generando la voz")
         inicio = time.perf_counter()
-        wavs, sr = self._modelo.generate_voice_clone(
-            text=texto, language=params.get("idioma", "Spanish"), voice_clone_prompt=prompt, **ajustes)
+        wavs, sr = generar(ajustes)
         segundos = time.perf_counter() - inicio
 
         salida = params["salida"]

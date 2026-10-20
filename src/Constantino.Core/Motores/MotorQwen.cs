@@ -21,6 +21,15 @@ public sealed record ParametrosSintesis(
     double? Repeticion = null,
     int? MaxTokens = null);
 
+/// <summary>Inventar una voz a partir de <paramref name="Instruccion"/> (VoiceDesign) y leer <paramref name="Texto"/> con ella.</summary>
+public sealed record ParametrosDiseno(
+    string Texto,
+    string Idioma,
+    string Instruccion,
+    string Salida,
+    int Semilla = 1234,
+    double? Temperatura = null);
+
 public sealed record ResultadoSintesis(string Salida, double Duracion, double Segundos, int Frecuencia, double? VramPicoGib = null);
 
 /// <summary>Operaciones del motor Qwen3-TTS con tipos, sobre el protocolo de <see cref="ClienteMotor"/>.</summary>
@@ -38,4 +47,8 @@ public sealed class MotorQwen(ClienteMotor cliente)
 
     public Task<ResultadoSintesis> SintetizarAsync(ParametrosSintesis parametros, IProgress<EventoMotor>? progreso = null, CancellationToken ct = default) =>
         cliente.PedirAsync<ResultadoSintesis>("sintetizar", parametros, progreso, ct);
+
+    /// <summary>Necesita el modelo VoiceDesign cargado.</summary>
+    public Task<ResultadoSintesis> DisenarAsync(ParametrosDiseno parametros, IProgress<EventoMotor>? progreso = null, CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoSintesis>("disenar", parametros, progreso, ct);
 }

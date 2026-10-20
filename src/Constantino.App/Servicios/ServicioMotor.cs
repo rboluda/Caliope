@@ -39,20 +39,41 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
 
     public bool Encendido => Estado is not (EstadoMotor.Apagado or EstadoMotor.Error);
 
+    public const string ModeloVoiceDesign = "modelo-qwen-voicedesign";
+    private static readonly string[] ModelosBase = ["modelo-qwen-base-1.7b", "modelo-qwen-base-0.6b"];
+
     /// <summary>Lee <paramref name="texto"/> con la voz indicada y deja el WAV en <paramref name="salida"/>.</summary>
     public async Task<ResultadoSintesis> SintetizarAsync(Voz voz, string referenciaWav, string texto, string salida,
         int semilla = 1234, double? temperatura = null, CancellationToken ct = default)
     {
+        var modelo = (await ModeloBaseAsync())?.Componente
+                     ?? throw new MotorNoDisponibleException("Falta un modelo Base: instala uno desde Componentes.");
+        return await EjecutarAsync(modelo, (motor, progreso) => motor.SintetizarAsync(
+            new ParametrosSintesis(texto, voz.Idioma, referenciaWav, voz.Transcripcion, salida, semilla, Temperatura: temperatura),
+            progreso, ct), ct);
+    }
+
+    /// <summary>Inventa una voz a partir de una descripción y lee <paramref name="texto"/> con ella (modelo VoiceDesign).</summary>
+    public async Task<ResultadoSintesis> DisenarAsync(string instruccion, string idioma, string texto, string salida,
+        int semilla, double? temperatura = null, CancellationToken ct = default)
+    {
+        if (!(await instalacion.InstaladorAsync()).EstaInstalado(ModeloVoiceDesign))
+            throw new MotorNoDisponibleException("Falta el modelo VoiceDesign: instálalo desde Componentes.");
+        return await EjecutarAsync(ModeloVoiceDesign, (motor, progreso) => motor.DisenarAsync(
+            new ParametrosDiseno(texto, idioma, instruccion, salida, semilla, temperatura), progreso, ct), ct);
+    }
+
+    /// <summary>Una operación a la vez, con el modelo que necesite ya cargado.</summary>
+    private async Task<T> EjecutarAsync<T>(string modelo, Func<MotorQwen, IProgress<EventoMotor>, Task<T>> trabajo, CancellationToken ct)
+    {
         await _turno.WaitAsync(ct);
         try
         {
-            var motor = await PrepararAsync(ct);
+            var motor = await PrepararAsync(modelo, ct);
             Estado = EstadoMotor.Trabajando;
             Descripcion = "Generando la voz…";
             var progreso = new Progress<EventoMotor>(e => Descripcion = e.Mensaje + "…");
-            var r = await motor.SintetizarAsync(
-                new ParametrosSintesis(texto, voz.Idioma, referenciaWav, voz.Transcripcion, salida, semilla, Temperatura: temperatura),
-                progreso, ct);
+            var r = await trabajo(motor, progreso);
             await MarcarListoAsync(motor);
             return r;
         }
@@ -79,7 +100,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     public async Task<(string Componente, string Revision)?> ModeloBaseAsync()
     {
         var instalador = await instalacion.InstaladorAsync();
-        var id = new[] { "modelo-qwen-base-1.7b", "modelo-qwen-base-0.6b" }.FirstOrDefault(instalador.EstaInstalado);
+        var id = ModelosBase.FirstOrDefault(instalador.EstaInstalado);
         if (id is null)
             return null;
         return (id, instalacion.Catalogo[id].Instalacion!.Pasos.OfType<PasoModelo>().First().Revision);
@@ -101,14 +122,15 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         }
     }
 
-    private async Task<MotorQwen> PrepararAsync(CancellationToken ct)
+    /// <summary>
+    /// Arranca el motor si hace falta y deja cargado <paramref name="modelo"/>. Solo cabe un modelo a la vez en la
+    /// tarjeta: cambiar de Base a VoiceDesign (o al revés) descarga el anterior.
+    /// </summary>
+    private async Task<MotorQwen> PrepararAsync(string modelo, CancellationToken ct)
     {
         var instalador = await instalacion.InstaladorAsync();
         if (!instalador.EstaInstalado("motor-qwen"))
             throw new MotorNoDisponibleException("Falta el motor de voz Qwen3-TTS: instálalo desde Componentes.");
-        // Se usa el mejor modelo Base instalado.
-        var modelo = new[] { "modelo-qwen-base-1.7b", "modelo-qwen-base-0.6b" }.FirstOrDefault(instalador.EstaInstalado)
-                     ?? throw new MotorNoDisponibleException("Falta un modelo Base: instala uno desde Componentes.");
 
         if (_motor is null || !_motor.Cliente.Vivo)
         {
@@ -128,7 +150,9 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         if (_modeloCargado != modelo)
         {
             Estado = EstadoMotor.CargandoModelo;
-            Descripcion = "Cargando el modelo de voz (unos segundos la primera vez)…";
+            Descripcion = modelo == ModeloVoiceDesign
+                ? "Cargando el modelo de diseño de voces (unos segundos)…"
+                : "Cargando el modelo de voz (unos segundos la primera vez)…";
             var paso = instalacion.Catalogo[modelo].Instalacion!.Pasos.OfType<PasoModelo>().First();
             await _motor.CargarAsync(paso.Repositorio, paso.Revision, null, ct);
             _modeloCargado = modelo;
@@ -168,6 +192,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         MotorException { Codigo: "sin_memoria" } =>
             "No hay memoria suficiente en la tarjeta gráfica. Cierra navegadores y otros programas que la usen y vuelve a intentarlo.",
         MotorException { Codigo: "modelo_no_encontrado" } => "El modelo no está bien instalado: repáralo desde Componentes.",
+        MotorException { Codigo: "sin_descripcion" } => "Describe la voz que quieres crear.",
         MotorException { Codigo: "archivo_no_encontrado" } => "No se encuentra la grabación de referencia de la voz.",
         MotorException m => $"El motor ha fallado: {m.Message}",
         MotorCaidoException c => "El motor de voz se ha cerrado inesperadamente." +

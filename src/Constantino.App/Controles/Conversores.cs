@@ -31,11 +31,11 @@ public sealed class NegarBool : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value is not true;
 }
 
-/// <summary>Visible si el valor no es null ni un texto vacío.</summary>
+/// <summary>Visible si el valor no es null ni un texto vacío (con el parámetro «inverso», al revés).</summary>
 public sealed class NoNuloAVisibilidad : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is null or "" ? Visibility.Collapsed : Visibility.Visible;
+        (value is null or "") ^ (parameter as string == "inverso") ? Visibility.Collapsed : Visibility.Visible;
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
