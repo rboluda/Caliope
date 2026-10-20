@@ -25,6 +25,9 @@ public partial class App : Application
         s.AddSingleton<ServicioAjustes>();
         s.AddSingleton<ServicioEquipo>();
         s.AddSingleton<ServicioInstalacion>();
+        s.AddSingleton<ServicioMotor>();
+        s.AddSingleton<ServicioVoces>();
+        s.AddSingleton<ServicioReproductor>();
         s.AddSingleton<INavigationViewPageProvider, ProveedorPaginas>();
         s.AddSingleton<INavigationService, NavigationService>();
 
@@ -38,6 +41,7 @@ public partial class App : Application
         s.AddSingleton<PaginaAjustes>();
         s.AddSingleton<AjustesViewModel>();
         s.AddSingleton<PaginaVoces>();
+        s.AddSingleton<VocesViewModel>();
         s.AddSingleton<PaginaDisenar>();
         s.AddSingleton<PaginaClonar>();
         s.AddSingleton<PaginaNarrar>();
@@ -59,6 +63,8 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        // El motor de voz se cierra con la app para liberar la memoria de la tarjeta.
+        await _host.Services.GetRequiredService<ServicioMotor>().DisposeAsync();
         await _host.StopAsync();
         _host.Dispose();
         base.OnExit(e);

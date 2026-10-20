@@ -22,19 +22,6 @@ public partial class PaginaProximamente : Page
     }
 }
 
-public sealed class PaginaVoces() : PaginaProximamente(new(
-    SymbolRegular.Library24,
-    "Voces",
-    "Tu biblioteca de voces: las que diseñes, las que clones y las que importes.",
-    [
-        "Escuchar la muestra de cada voz",
-        "Renombrar, duplicar, borrar y elegir la voz predeterminada",
-        "Exportar e importar voces para compartirlas",
-        "Crear variantes de una voz (susurrando, tensa, alegre…)",
-    ],
-    "el motor Qwen3-TTS y un modelo Base.",
-    "Llegará en el hito H2."));
-
 public sealed class PaginaDisenar() : PaginaProximamente(new(
     SymbolRegular.Sparkle24,
     "Diseñar voz",

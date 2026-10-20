@@ -167,6 +167,7 @@
             "argumentos": [
               "pip",
               "install",
+              "--compile-bytecode",
               "--python",
               "{entornos}/qwen3tts/Scripts/python.exe",
               "torch==2.11.0",
@@ -190,6 +191,7 @@
             "argumentos": [
               "pip",
               "install",
+              "--compile-bytecode",
               "--python",
               "{entornos}/qwen3tts/Scripts/python.exe",
               "qwen-tts==0.1.1"

@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <Content Include="..\..\catalogo\catalogo.json" Link="catalogo.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- El motor Python viaja con la app: cada versión de Constantino lleva su motor emparejado. -->
+    <Content Include="..\..\motores\**\*.py" LinkBase="motores" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

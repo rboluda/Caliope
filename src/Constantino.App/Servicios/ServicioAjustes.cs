@@ -13,7 +13,11 @@ public enum TemaApp
     Oscuro,
 }
 
-public sealed record AjustesApp(TemaApp Tema = TemaApp.Sistema, string? CarpetaDatos = null, bool AsistenteCompletado = false);
+public sealed record AjustesApp(
+    TemaApp Tema = TemaApp.Sistema,
+    string? CarpetaDatos = null,
+    bool AsistenteCompletado = false,
+    string? VozPredeterminada = null);
 
 /// <summary>Preferencias del usuario, en %LOCALAPPDATA%\Constantino\ajustes.json (fuera de la carpeta de datos, que puede cambiar).</summary>
 public sealed class ServicioAjustes
