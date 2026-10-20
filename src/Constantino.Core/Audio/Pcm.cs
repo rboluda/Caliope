@@ -146,6 +146,14 @@ public sealed class Pcm(float[] muestras, int frecuencia)
         return new Pcm(recorte, Frecuencia);
     }
 
+    /// <summary>El trozo entre <paramref name="inicio"/> y <paramref name="fin"/> segundos (recortado a lo que haya).</summary>
+    public Pcm Subrango(double inicio, double fin)
+    {
+        var a = Math.Clamp((int)Math.Round(inicio * Frecuencia), 0, Muestras.Length);
+        var b = Math.Clamp((int)Math.Round(fin * Frecuencia), a, Muestras.Length);
+        return new Pcm(Muestras[a..b], Frecuencia);
+    }
+
     public Pcm ConGanancia(double db)
     {
         var factor = (float)Math.Pow(10, db / 20);

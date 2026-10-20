@@ -15,7 +15,9 @@ El diseño completo está en [docs/DISENO.md](docs/DISENO.md).
 
 - **H4**: pantalla Diseñar voz con VoiceDesign. Descripción guiada (sexo, edad, timbre, textura, ritmo, tono, idioma y acento) que se compone en inglés, ejemplos de partida y variantes con semillas distintas. La variante elegida se guarda tal cual como grabación de referencia, con el texto de muestra como transcripción exacta. El motor cambia solo entre los modelos Base y VoiceDesign según la tarea.
 
-Whisper y Chatterbox aparecen en el catálogo pero aún no se pueden instalar (H5 y H7).
+- **H5**: pantalla Clonar voz. Grabar con el micrófono (NAudio) leyendo un texto propuesto, o importar un audio; forma de onda con selección del tramo; análisis de la grabación (voz, saturación, volumen bajo, ruido de fondo, duración); transcripción con Whisper large-v3-turbo (instalable desde Componentes, usa el entorno del motor Qwen), con el texto leído o a mano; consentimiento obligatorio; probar y guardar.
+
+Chatterbox aparece en el catálogo pero aún no se puede instalar (H7).
 
 ### Proyectos de narración
 

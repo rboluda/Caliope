@@ -2,7 +2,12 @@ namespace Constantino.Core.Motores;
 
 public sealed record InfoMotor(string? Torch, string Dispositivo, string? Gpu = null, double? VramTotalGib = null, double? VramLibreGib = null);
 
-public sealed record ParametrosCarga(string Repositorio, string Revision);
+/// <param name="Tipo">«tts» para los modelos de voz, «asr» para Whisper.</param>
+public sealed record ParametrosCarga(string Repositorio, string Revision, string Tipo = "tts");
+
+public sealed record ParametrosTranscripcion(string Audio, string Idioma);
+
+public sealed record ResultadoTranscripcion(string Texto, double Segundos);
 
 public sealed record ResultadoCarga(double Segundos, bool YaCargado, double? VramUsadaGib = null);
 
@@ -40,13 +45,19 @@ public sealed class MotorQwen(ClienteMotor cliente)
     public Task<InfoMotor> InfoAsync(CancellationToken ct = default) =>
         cliente.PedirAsync<InfoMotor>("info", null, null, ct);
 
-    public Task<ResultadoCarga> CargarAsync(string repositorio, string revision, IProgress<EventoMotor>? progreso = null, CancellationToken ct = default) =>
-        cliente.PedirAsync<ResultadoCarga>("cargar", new ParametrosCarga(repositorio, revision), progreso, ct);
+    public Task<ResultadoCarga> CargarAsync(string repositorio, string revision, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default, string tipo = "tts") =>
+        cliente.PedirAsync<ResultadoCarga>("cargar", new ParametrosCarga(repositorio, revision, tipo), progreso, ct);
 
     public Task DescargarAsync(CancellationToken ct = default) => cliente.PedirAsync("descargar", null, null, ct);
 
     public Task<ResultadoSintesis> SintetizarAsync(ParametrosSintesis parametros, IProgress<EventoMotor>? progreso = null, CancellationToken ct = default) =>
         cliente.PedirAsync<ResultadoSintesis>("sintetizar", parametros, progreso, ct);
+
+    /// <summary>Necesita Whisper cargado (tipo «asr»).</summary>
+    public Task<ResultadoTranscripcion> TranscribirAsync(ParametrosTranscripcion parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoTranscripcion>("transcribir", parametros, progreso, ct);
 
     /// <summary>Necesita el modelo VoiceDesign cargado.</summary>
     public Task<ResultadoSintesis> DisenarAsync(ParametrosDiseno parametros, IProgress<EventoMotor>? progreso = null, CancellationToken ct = default) =>

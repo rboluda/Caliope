@@ -1,0 +1,274 @@
+<Page
+    x:Class="Constantino.App.Paginas.PaginaClonar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:controles="clr-namespace:Constantino.App.Controles"
+    x:Name="Raiz"
+    ScrollViewer.CanContentScroll="False"
+    Title="Clonar voz">
+    <Page.Resources>
+        <Style x:Key="Etiqueta" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+        <Style x:Key="TituloCard" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </Page.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,32,32" MaxWidth="1180">
+            <Grid>
+                <TextBlock FontSize="28" FontWeight="SemiBold" Text="Clonar voz" />
+                <ui:Button HorizontalAlignment="Right" Command="{Binding ViewModel.EmpezarCommand}" Content="Empezar de nuevo" Visibility="{Binding ViewModel.HayAudio, Converter={StaticResource BoolAVisibilidad}}" />
+            </Grid>
+            <TextBlock
+                Margin="0,4,0,12"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="Crea una voz a partir de una grabación de 10–20 segundos: la tuya o la de alguien que te haya dado permiso."
+                TextWrapping="Wrap" />
+
+            <!--  1. Grabación  -->
+            <ui:Card>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource TituloCard}" Text="1. La grabación" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*" />
+                            <ColumnDefinition Width="24" />
+                            <ColumnDefinition Width="2*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Text="Grabar con el micrófono" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="Busca un sitio silencioso, ponte a un palmo del micrófono y lee este texto con calma, con el tono que quieras para tu narrador:"
+                                TextWrapping="Wrap" />
+                            <Border Margin="0,8,0,0" Padding="12" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                                <TextBlock FontSize="15" Text="{Binding ViewModel.TextoParaLeer}" TextWrapping="Wrap" />
+                            </Border>
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox ItemsSource="{Binding ViewModel.Dispositivos}" SelectedIndex="{Binding ViewModel.Dispositivo}" ToolTip="Micrófono" />
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0" Orientation="Horizontal">
+                                    <ui:Button
+                                        Appearance="Primary"
+                                        Command="{Binding ViewModel.EmpezarGrabacionCommand}"
+                                        Content="Grabar"
+                                        Visibility="{Binding ViewModel.Grabacion.Grabando, Converter={StaticResource BoolInversoAVisibilidad}}">
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Mic24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                    <ui:Button
+                                        Appearance="Danger"
+                                        Command="{Binding ViewModel.DetenerGrabacionCommand}"
+                                        Content="Detener"
+                                        Visibility="{Binding ViewModel.Grabacion.Grabando, Converter={StaticResource BoolAVisibilidad}}">
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Stop24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,8,0,0" Visibility="{Binding ViewModel.Grabacion.Grabando, Converter={StaticResource BoolAVisibilidad}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="70" />
+                                </Grid.ColumnDefinitions>
+                                <ProgressBar Height="8" Maximum="1" ToolTip="Nivel del micrófono: que no llegue al final" Value="{Binding ViewModel.Grabacion.Nivel, Mode=OneWay}" />
+                                <TextBlock Grid.Column="1" HorizontalAlignment="Right" Text="{Binding ViewModel.Grabacion.Segundos, StringFormat={}{0:0.0} s}" />
+                            </Grid>
+                            <TextBlock
+                                Margin="0,6,0,0"
+                                Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                Text="No se ha encontrado ningún micrófono."
+                                Visibility="{Binding ViewModel.SinMicrofono, Converter={StaticResource BoolAVisibilidad}}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock FontWeight="SemiBold" Text="O usar una grabación que ya tengas" />
+                            <TextBlock
+                                Margin="0,4,0,10"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="WAV, MP3, FLAC, OGG o M4A. Una sola persona hablando, sin música ni ruido."
+                                TextWrapping="Wrap" />
+                            <ui:Button Command="{Binding ViewModel.ImportarArchivoCommand}" Content="Elegir un archivo…" IsEnabled="{Binding ViewModel.Libre}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="FolderOpen24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+
+            <!--  2. Tramo  -->
+            <ui:Card Margin="0,12,0,0" Visibility="{Binding ViewModel.HayAudio, Converter={StaticResource BoolAVisibilidad}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource TituloCard}" Text="2. Elige el tramo" />
+                    <TextBlock
+                        Margin="0,4,0,8"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="Arrastra sobre la onda para marcar el tramo que se usará (10–20 s, sin toses ni ruidos). Arrastra los bordes para ajustarlo."
+                        TextWrapping="Wrap" />
+                    <TextBlock Margin="0,0,0,4" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="{Binding ViewModel.Origen}" />
+                    <controles:VistaOnda
+                        Height="140"
+                        Audio="{Binding ViewModel.Audio}"
+                        Fin="{Binding ViewModel.Fin}"
+                        Inicio="{Binding ViewModel.Inicio}" />
+                    <Grid Margin="0,8,0,0">
+                        <TextBlock VerticalAlignment="Center" Text="{Binding ViewModel.Seleccion}" />
+                        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                            <ui:Button Command="{Binding ViewModel.EscucharSeleccionCommand}" Content="Escuchar el tramo">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Play24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.SeleccionarVozCommand}" Content="Seleccionar la voz sola" ToolTip="Quita los silencios del principio y del final" />
+                        </StackPanel>
+                    </Grid>
+                    <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding ViewModel.Avisos}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ui:InfoBar Margin="0,4,0,0" IsClosable="False" IsOpen="True" Message="{Binding}" Severity="Warning" Title="Ojo" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ui:Card>
+
+            <!--  3. Transcripción  -->
+            <ui:Card Margin="0,12,0,0" Visibility="{Binding ViewModel.HayAudio, Converter={StaticResource BoolAVisibilidad}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource TituloCard}" Text="3. ¿Qué se dice en el tramo?" />
+                    <TextBlock
+                        Margin="0,4,0,8"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="El modelo necesita la transcripción exacta del tramo, palabra por palabra. Si no encaja, la voz saldrá cortada."
+                        TextWrapping="Wrap" />
+                    <WrapPanel>
+                        <ui:Button Command="{Binding ViewModel.UsarTextoLeidoCommand}" Content="He leído el texto propuesto" />
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Command="{Binding ViewModel.TranscribirCommand}"
+                            Content="Transcribir con Whisper"
+                            IsEnabled="{Binding ViewModel.WhisperInstalado}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Sparkle24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:HyperlinkButton
+                            Margin="8,0,0,0"
+                            Command="{Binding ViewModel.IrAComponentesCommand}"
+                            Content="Instala Whisper para transcribir solo"
+                            Visibility="{Binding ViewModel.WhisperInstalado, Converter={StaticResource BoolInversoAVisibilidad}}" />
+                        <ui:ProgressRing
+                            Width="18"
+                            Height="18"
+                            Margin="12,0,0,0"
+                            IsIndeterminate="True"
+                            Visibility="{Binding ViewModel.Transcribiendo, Converter={StaticResource BoolAVisibilidad}}" />
+                    </WrapPanel>
+                    <ui:TextBox
+                        Margin="0,10,0,0"
+                        MinHeight="80"
+                        AcceptsReturn="True"
+                        IsEnabled="{Binding ViewModel.SinTranscripcion, Converter={StaticResource NegarBool}}"
+                        PlaceholderText="Escribe aquí exactamente lo que se dice en el tramo"
+                        Text="{Binding ViewModel.Transcripcion, UpdateSourceTrigger=PropertyChanged}"
+                        TextWrapping="Wrap" />
+                    <CheckBox Margin="0,8,0,0" IsChecked="{Binding ViewModel.SinTranscripcion}">
+                        <TextBlock Text="No tengo la transcripción: imitar solo el timbre (se parece algo menos, pero funciona)." TextWrapping="Wrap" />
+                    </CheckBox>
+                    <ui:InfoBar
+                        Margin="0,8,0,0"
+                        IsClosable="False"
+                        IsOpen="{Binding ViewModel.AvisoTranscripcion, Converter={StaticResource TextoNoVacio}}"
+                        Message="{Binding ViewModel.AvisoTranscripcion}"
+                        Severity="Warning"
+                        Title="La transcripción no encaja con el tramo" />
+                </StackPanel>
+            </ui:Card>
+
+            <!--  4. Nombre, permiso, probar y guardar  -->
+            <ui:Card Margin="0,12,0,0" Visibility="{Binding ViewModel.HayAudio, Converter={StaticResource BoolAVisibilidad}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource TituloCard}" Text="4. Pruébala y guárdala" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="220" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Nombre de la voz" />
+                            <ui:TextBox PlaceholderText="Por ejemplo: Mi voz de narrador" Text="{Binding ViewModel.Nombre, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Idioma" />
+                            <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.IdiomasDisponibles}" SelectedValue="{Binding ViewModel.Idioma}" SelectedValuePath="Clave" />
+                        </StackPanel>
+                    </Grid>
+                    <CheckBox Margin="0,12,0,0" IsChecked="{Binding ViewModel.Consentimiento}">
+                        <TextBlock FontWeight="SemiBold" Text="Esta voz es mía o tengo permiso expreso de su dueño para clonarla." TextWrapping="Wrap" />
+                    </CheckBox>
+                    <TextBlock
+                        Margin="28,2,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="Clonar la voz de otra persona sin su permiso puede ser ilegal y va contra las normas de YouTube y de otras plataformas."
+                        TextWrapping="Wrap" />
+
+                    <TextBlock Style="{StaticResource Etiqueta}" Text="Frase de prueba" />
+                    <ui:TextBox AcceptsReturn="True" Text="{Binding ViewModel.TextoPrueba, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" />
+                    <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                        <ui:Button Command="{Binding ViewModel.ProbarCommand}" Content="Probar" IsEnabled="{Binding ViewModel.Libre}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="PersonVoice24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Appearance="Primary"
+                            Command="{Binding ViewModel.GuardarCommand}"
+                            Content="Guardar en mi biblioteca"
+                            IsEnabled="{Binding ViewModel.Libre}" />
+                        <ui:ProgressRing
+                            Width="18"
+                            Height="18"
+                            Margin="12,0,0,0"
+                            IsIndeterminate="True"
+                            Visibility="{Binding ViewModel.Ocupado, Converter={StaticResource BoolAVisibilidad}}" />
+                    </StackPanel>
+                    <TextBlock Margin="0,8,0,0" Text="{Binding ViewModel.Mensaje}" TextWrapping="Wrap" Visibility="{Binding ViewModel.Mensaje, Converter={StaticResource NoNuloAVisibilidad}}" />
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        Text="{Binding ViewModel.Motor.Descripcion}"
+                        TextWrapping="Wrap" />
+                    <StackPanel Margin="0,8,0,0" Visibility="{Binding ViewModel.Guardada, Converter={StaticResource NoNuloAVisibilidad}}">
+                        <TextBlock Foreground="{DynamicResource SystemFillColorSuccessBrush}" Text="{Binding ViewModel.Guardada}" TextWrapping="Wrap" />
+                        <ui:Button Margin="0,6,0,0" Command="{Binding ViewModel.IrAVocesCommand}" Content="Ir a Voces" />
+                    </StackPanel>
+                </StackPanel>
+            </ui:Card>
+
+            <ui:InfoBar
+                Margin="0,12,0,0"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.Error, Converter={StaticResource TextoNoVacio}}"
+                Message="{Binding ViewModel.Error}"
+                Severity="Error"
+                Title="No se ha podido" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

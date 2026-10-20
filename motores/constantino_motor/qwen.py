@@ -1,4 +1,4 @@
-"""Adaptador de Qwen3-TTS: carga un modelo una vez y lo reutiliza entre peticiones."""
+"""Adaptador de Qwen3-TTS (y Whisper para transcribir): carga un modelo a la vez y lo reutiliza entre peticiones."""
 import gc
 import os
 import random
@@ -18,6 +18,7 @@ class MotorQwen:
 
         self._torch = torch
         self._modelo = None
+        self._tipo = None  # "base", "voice_design" o "asr"
         self._cargado = None  # (repositorio, revision)
         self._prompts = {}  # caché de prompts de clonado por referencia
         self.dispositivo = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -38,28 +39,66 @@ class MotorQwen:
         return info
 
     def op_cargar(self, params, progreso):
+        """Carga un modelo de voz (tipo «tts») o de transcripción (tipo «asr»). Solo hay uno en memoria a la vez."""
         repositorio, revision = params["repositorio"], params["revision"]
+        tipo = params.get("tipo") or "tts"
         if self._cargado == (repositorio, revision):
             return {"segundos": 0.0, "ya_cargado": True, **self._memoria()}
         self._liberar()
 
         # Importar qwen-tts (y transformers) lleva unos segundos: se avisa antes para que no parezca colgado.
-        progreso(None, "Cargando el modelo de voz")
+        progreso(None, "Cargando el modelo de transcripción" if tipo == "asr" else "Cargando el modelo de voz")
         from huggingface_hub import snapshot_download
-        from qwen_tts import Qwen3TTSModel
 
         ruta = snapshot_download(repo_id=repositorio, revision=revision, local_files_only=True)
-        torch = self._torch
-        en_gpu = self.dispositivo.startswith("cuda")
         inicio = time.perf_counter()
-        self._modelo = Qwen3TTSModel.from_pretrained(
-            ruta,
-            device_map=self.dispositivo,
-            dtype=torch.bfloat16 if en_gpu else torch.float32,
-            attn_implementation="sdpa",
-        )
+        if tipo == "asr":
+            self._modelo = self._cargar_whisper(ruta)
+            self._tipo = "asr"
+        else:
+            from qwen_tts import Qwen3TTSModel
+
+            torch = self._torch
+            en_gpu = self.dispositivo.startswith("cuda")
+            self._modelo = Qwen3TTSModel.from_pretrained(
+                ruta,
+                device_map=self.dispositivo,
+                dtype=torch.bfloat16 if en_gpu else torch.float32,
+                attn_implementation="sdpa",
+            )
+            self._tipo = self._modelo.model.tts_model_type
         self._cargado = (repositorio, revision)
         return {"segundos": round(time.perf_counter() - inicio, 1), "ya_cargado": False, **self._memoria()}
+
+    def _cargar_whisper(self, ruta):
+        from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+
+        torch = self._torch
+        dtype = torch.float16 if self.dispositivo.startswith("cuda") else torch.float32
+        modelo = AutoModelForSpeechSeq2Seq.from_pretrained(ruta, dtype=dtype, low_cpu_mem_usage=True).to(self.dispositivo)
+        procesador = AutoProcessor.from_pretrained(ruta)
+        return pipeline("automatic-speech-recognition", model=modelo, tokenizer=procesador.tokenizer,
+                        feature_extractor=procesador.feature_extractor, dtype=dtype, device=self.dispositivo)
+
+    def op_transcribir(self, params, progreso):
+        """Transcribe un audio (hasta unos minutos) en el idioma indicado."""
+        self._exigir_modelo("asr", "transcribir")
+        audio = params["audio"]
+        if not os.path.isfile(audio):
+            raise ErrorMotor("archivo_no_encontrado", f"No existe el audio: {audio}")
+        import librosa
+        import soundfile as sf
+
+        datos, sr = sf.read(audio, dtype="float32", always_2d=True)
+        datos = datos.mean(axis=1)
+        if sr != 16000:
+            datos = librosa.resample(datos, orig_sr=sr, target_sr=16000)
+        progreso(None, "Transcribiendo")
+        inicio = time.perf_counter()
+        idioma = (params.get("idioma") or "Spanish").lower()
+        resultado = self._modelo({"array": datos, "sampling_rate": 16000}, chunk_length_s=30,
+                                 generate_kwargs={"language": idioma, "task": "transcribe"})
+        return {"texto": resultado["text"].strip(), "segundos": round(time.perf_counter() - inicio, 1)}
 
     def op_descargar(self, params, progreso):
         self._liberar()
@@ -91,7 +130,7 @@ class MotorQwen:
     def _exigir_modelo(self, tipo, para):
         if self._modelo is None:
             raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
-        if self._modelo.model.tts_model_type != tipo:
+        if self._tipo != tipo:
             raise ErrorMotor("modelo_incorrecto", f"El modelo cargado no sirve para {para}.")
 
     @staticmethod
@@ -143,6 +182,7 @@ class MotorQwen:
 
     def _liberar(self):
         self._modelo = None
+        self._tipo = None
         self._cargado = None
         self._prompts.clear()
         gc.collect()

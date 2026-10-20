@@ -381,16 +381,16 @@
       "grupo": "Extras",
       "necesidad": "opcional",
       "resumen": "Escribe solo lo que se dice en una grabación.",
-      "detalle": "Al clonar una voz hace falta la transcripción exacta de la grabación. Con Whisper se genera sola; sin él, la escribes tú a mano. Instala faster-whisper en su propio entorno y el modelo large-v3-turbo.",
+      "detalle": "Al clonar una voz hace falta la transcripción exacta de la grabación. Con Whisper (modelo large-v3-turbo de OpenAI) se genera sola; sin él, la escribes tú a mano. Usa el mismo motor que Qwen3-TTS, así que solo descarga el modelo.",
       "habilita": [
         "Transcripción automática al clonar"
       ],
       "dependeDe": [
-        "nucleo"
+        "motor-qwen"
       ],
       "tamano": {
-        "conGpuGb": 2.5,
-        "sinGpuGb": 2.0
+        "conGpuGb": 1.6,
+        "sinGpuGb": 1.6
       },
       "requisitos": {
         "vramMinimaGb": 2.0,
@@ -400,14 +400,29 @@
       "licencias": [
         {
           "nombre": "Whisper: MIT",
-          "url": "https://github.com/openai/whisper/blob/main/LICENSE"
-        },
-        {
-          "nombre": "faster-whisper: MIT",
-          "url": "https://github.com/SYSTRAN/faster-whisper/blob/master/LICENSE"
+          "url": "https://huggingface.co/openai/whisper-large-v3-turbo"
         }
       ],
-      "disponibleEn": "Llegará en el hito H5, junto con la pantalla de clonar voces."
+      "instalacion": {
+        "version": "41f01f3fe87f",
+        "pasos": [
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modelo Whisper",
+            "python": "{entornos}/qwen3tts/Scripts/python.exe",
+            "repositorio": "openai/whisper-large-v3-turbo",
+            "revision": "41f01f3fe87f28c78e2fbf8b568835947dd65ed9",
+            "tamanoBytes": 1622466054
+          }
+        ],
+        "rutas": [
+          "{modelos}/hub/models--openai--whisper-large-v3-turbo"
+        ],
+        "comprobar": [
+          "{modelos}/hub/models--openai--whisper-large-v3-turbo/snapshots/41f01f3fe87f28c78e2fbf8b568835947dd65ed9/model.safetensors",
+          "{modelos}/hub/models--openai--whisper-large-v3-turbo/snapshots/41f01f3fe87f28c78e2fbf8b568835947dd65ed9/tokenizer.json"
+        ]
+      }
     },
     {
       "id": "chatterbox",

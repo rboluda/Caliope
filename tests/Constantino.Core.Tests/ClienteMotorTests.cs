@@ -179,6 +179,9 @@ public sealed class MotorPythonTests
             motor.DisenarAsync(new ParametrosDiseno("Hola", "Spanish", " ", Path.Combine(temporal, "c.wav"))));
         Assert.Equal("sin_descripcion", sinDescripcion.Codigo);
 
+        var transcripcion = await motor.TranscribirAsync(new ParametrosTranscripcion(referencia, "Spanish"));
+        Assert.Equal("Texto transcrito en Spanish.", transcripcion.Texto);
+
         Assert.Equal("cpu", (await motor.InfoAsync()).Dispositivo);
         Assert.Contains("no debe romper el protocolo", cliente.UltimoDiagnostico);
         Directory.Delete(temporal, recursive: true);

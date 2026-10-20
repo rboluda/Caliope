@@ -40,6 +40,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     public bool Encendido => Estado is not (EstadoMotor.Apagado or EstadoMotor.Error);
 
     public const string ModeloVoiceDesign = "modelo-qwen-voicedesign";
+    public const string ModeloWhisper = "whisper";
     private static readonly string[] ModelosBase = ["modelo-qwen-base-1.7b", "modelo-qwen-base-0.6b"];
 
     /// <summary>Lee <paramref name="texto"/> con la voz indicada y deja el WAV en <paramref name="salida"/>.</summary>
@@ -61,6 +62,15 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             throw new MotorNoDisponibleException("Falta el modelo VoiceDesign: instálalo desde Componentes.");
         return await EjecutarAsync(ModeloVoiceDesign, (motor, progreso) => motor.DisenarAsync(
             new ParametrosDiseno(texto, idioma, instruccion, salida, semilla, temperatura), progreso, ct), ct);
+    }
+
+    /// <summary>Escribe lo que se dice en <paramref name="audio"/> (modelo Whisper).</summary>
+    public async Task<ResultadoTranscripcion> TranscribirAsync(string audio, string idioma, CancellationToken ct = default)
+    {
+        if (!(await instalacion.InstaladorAsync()).EstaInstalado(ModeloWhisper))
+            throw new MotorNoDisponibleException("Falta Whisper: instálalo desde Componentes para transcribir automáticamente.");
+        return await EjecutarAsync(ModeloWhisper, (motor, progreso) =>
+            motor.TranscribirAsync(new ParametrosTranscripcion(audio, idioma), progreso, ct), ct);
     }
 
     /// <summary>Una operación a la vez, con el modelo que necesite ya cargado.</summary>
@@ -150,11 +160,14 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         if (_modeloCargado != modelo)
         {
             Estado = EstadoMotor.CargandoModelo;
-            Descripcion = modelo == ModeloVoiceDesign
-                ? "Cargando el modelo de diseño de voces (unos segundos)…"
-                : "Cargando el modelo de voz (unos segundos la primera vez)…";
+            Descripcion = modelo switch
+            {
+                ModeloVoiceDesign => "Cargando el modelo de diseño de voces (unos segundos)…",
+                ModeloWhisper => "Cargando Whisper (unos segundos)…",
+                _ => "Cargando el modelo de voz (unos segundos la primera vez)…",
+            };
             var paso = instalacion.Catalogo[modelo].Instalacion!.Pasos.OfType<PasoModelo>().First();
-            await _motor.CargarAsync(paso.Repositorio, paso.Revision, null, ct);
+            await _motor.CargarAsync(paso.Repositorio, paso.Revision, null, ct, modelo == ModeloWhisper ? "asr" : "tts");
             _modeloCargado = modelo;
         }
         return _motor;

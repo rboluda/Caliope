@@ -44,6 +44,14 @@ class MotorFalso:
             raise ErrorMotor("sin_descripcion", "Describe la voz que quieres crear.")
         return self._tono(params, progreso)
 
+    def op_transcribir(self, params, progreso):
+        if self._cargado is None:
+            raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
+        if not os.path.isfile(params["audio"]):
+            raise ErrorMotor("archivo_no_encontrado", "No existe el audio.")
+        progreso(None, "Transcribiendo")
+        return {"texto": f"Texto transcrito en {params.get('idioma', 'Spanish')}.", "segundos": 0.0}
+
     def _tono(self, params, progreso):
         texto = params.get("texto", "")
         if texto == "falla":

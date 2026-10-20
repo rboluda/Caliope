@@ -33,7 +33,7 @@ Estado: **borrador v0.1** (20/10/2026). Nace de las pruebas de `voz-narrador` (Q
            │ JSON por líneas (stdin/stdout)    │ procesos
            ▼                                   ▼
   Motor Qwen3-TTS  (python, entorno propio)   ffmpeg (velocidad, tono,
-  Motor Whisper    (python, entorno propio)          volumen, MP3)
+  Whisper          (en el mismo proceso que Qwen)    volumen, MP3)
   Motor Chatterbox (python, entorno propio)
 ```
 
@@ -77,7 +77,7 @@ Un **catálogo** (`catalogo.json`, incluido en la app) describe cada componente:
 | Modelo **Base 1.7B** | Uno de los dos Base | Clonar voces y narrar. Mejor calidad. Recomendado con 6 GB de VRAM o más | ~4,5 GB | Motor Qwen |
 | Modelo **Base 0.6B** | Uno de los dos Base | Lo mismo con menos calidad, para GPU de 4 GB o para CPU | ~2,5 GB | Motor Qwen |
 | Modelo **VoiceDesign 1.7B** | No | Crear voces nuevas describiéndolas con palabras. Solo existe en 1.7B | ~4,5 GB | Motor Qwen |
-| **Whisper** (entorno + modelo) | No | Transcribe solo tus grabaciones al clonar una voz. Sin él, la transcripción se escribe a mano | ~1,5 GB | Núcleo |
+| **Whisper** (modelo large-v3-turbo) | No | Transcribe solo tus grabaciones al clonar una voz. Sin él, la transcripción se escribe a mano. Usa el entorno del motor Qwen (transformers), sin instalar otro | ~1,6 GB | Motor Qwen3-TTS |
 | **Chatterbox** (entorno + modelo) | No | Motor alternativo, más rápido y con control de intensidad emocional; hace menos pausas | ~8 GB | Núcleo |
 
 Comportamiento del instalador:
