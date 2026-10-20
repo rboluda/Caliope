@@ -21,7 +21,7 @@ public static class Presentacion
     {
         NivelRecomendacion.Imprescindible => ControlAppearance.Primary,
         NivelRecomendacion.Recomendado => ControlAppearance.Success,
-        NivelRecomendacion.Opcional => ControlAppearance.Secondary,
+        NivelRecomendacion.Opcional => ControlAppearance.Info,
         _ => ControlAppearance.Caution,
     };
 

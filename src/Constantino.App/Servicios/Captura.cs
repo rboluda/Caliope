@@ -10,15 +10,19 @@ namespace Constantino.App.Servicios;
 /// abre la página indicada, la dibuja en un PNG y cierra la aplicación. Sirve para revisar la interfaz
 /// y documentarla sin depender de capturas de pantalla del sistema.
 /// </summary>
-public sealed record OpcionesCaptura(string Ruta, string? Pagina)
+/// <param name="Paso">Solo para el asistente: el paso que se muestra (0–5).</param>
+public sealed record OpcionesCaptura(string Ruta, string? Pagina, int? Paso)
 {
     public static OpcionesCaptura? Leer(string[] args)
     {
         var i = Array.IndexOf(args, "--captura");
         if (i < 0 || i + 1 >= args.Length)
             return null;
-        var p = Array.IndexOf(args, "--pagina");
-        return new OpcionesCaptura(Path.GetFullPath(args[i + 1]), p >= 0 && p + 1 < args.Length ? args[p + 1] : null);
+        return new OpcionesCaptura(Path.GetFullPath(args[i + 1]), Valor("--pagina"),
+            int.TryParse(Valor("--paso"), out var paso) ? paso : null);
+
+        string? Valor(string nombre) =>
+            Array.IndexOf(args, nombre) is var j and >= 0 && j + 1 < args.Length ? args[j + 1] : null;
     }
 
     public static void Guardar(Window ventana, string ruta)

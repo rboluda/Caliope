@@ -1,0 +1,102 @@
+<UserControl
+    x:Class="Constantino.App.Controles.PanelInstalacion"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:servicios="clr-namespace:Constantino.App.Servicios">
+    <!--  DataContext: ServicioInstalacion  -->
+    <ui:Card>
+        <StackPanel>
+            <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding Titulo}" />
+
+            <ItemsControl Margin="0,12,0,0" ItemsSource="{Binding Filas}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type servicios:FilaInstalacion}">
+                        <Grid Margin="0,3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28" />
+                                <ColumnDefinition Width="260" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ui:SymbolIcon x:Name="Icono" Symbol="Circle24" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Nombre}" />
+                            <TextBlock
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{Binding Detalle}"
+                                TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Estado}" Value="Instalando">
+                                <Setter TargetName="Icono" Property="Symbol" Value="ArrowSync24" />
+                                <Setter TargetName="Icono" Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Estado}" Value="Instalado">
+                                <Setter TargetName="Icono" Property="Symbol" Value="CheckmarkCircle24" />
+                                <Setter TargetName="Icono" Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Estado}" Value="Error">
+                                <Setter TargetName="Icono" Property="Symbol" Value="ErrorCircle24" />
+                                <Setter TargetName="Icono" Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+                <ui:ProgressRing
+                    Width="16"
+                    Height="16"
+                    Margin="0,0,10,0"
+                    IsIndeterminate="True"
+                    Visibility="{Binding MostrarRueda, Converter={StaticResource BoolAVisibilidad}}" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding Mensaje}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <Grid Margin="0,8,0,0" Visibility="{Binding MostrarBarra, Converter={StaticResource BoolAVisibilidad}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="48" />
+                </Grid.ColumnDefinitions>
+                <ProgressBar
+                    Height="6"
+                    VerticalAlignment="Center"
+                    Maximum="1"
+                    Value="{Binding Fraccion, Mode=OneWay}" />
+                <TextBlock
+                    Grid.Column="1"
+                    HorizontalAlignment="Right"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="{Binding Fraccion, StringFormat={}{0:P0}}" />
+            </Grid>
+
+            <ui:InfoBar
+                Margin="0,12,0,0"
+                IsClosable="False"
+                IsOpen="{Binding Error, Converter={StaticResource TextoNoVacio}}"
+                Message="{Binding Error}"
+                Severity="Error"
+                Title="Algo ha fallado" />
+
+            <Expander Margin="0,12,0,0" Header="Detalles técnicos">
+                <ListBox
+                    x:Name="ListaLineas"
+                    MaxHeight="220"
+                    Margin="0,8,0,0"
+                    FontFamily="Cascadia Mono, Consolas"
+                    FontSize="12"
+                    ItemsSource="{Binding Lineas}"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+            </Expander>
+
+            <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+                <ui:Button
+                    Click="AlCancelar"
+                    Content="Cancelar"
+                    Visibility="{Binding Ocupado, Converter={StaticResource BoolAVisibilidad}}" />
+                <ui:Button Margin="8,0,0,0" Click="AlAbrirRegistro" Content="Abrir el registro" />
+            </StackPanel>
+        </StackPanel>
+    </ui:Card>
+</UserControl>

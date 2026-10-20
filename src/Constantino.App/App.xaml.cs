@@ -24,6 +24,7 @@ public partial class App : Application
 
         s.AddSingleton<ServicioAjustes>();
         s.AddSingleton<ServicioEquipo>();
+        s.AddSingleton<ServicioInstalacion>();
         s.AddSingleton<INavigationViewPageProvider, ProveedorPaginas>();
         s.AddSingleton<INavigationService, NavigationService>();
 
@@ -32,6 +33,8 @@ public partial class App : Application
         s.AddSingleton<InicioViewModel>();
         s.AddSingleton<PaginaComponentes>();
         s.AddSingleton<ComponentesViewModel>();
+        s.AddSingleton<PaginaAsistente>();
+        s.AddSingleton<AsistenteViewModel>();
         s.AddSingleton<PaginaAjustes>();
         s.AddSingleton<AjustesViewModel>();
         s.AddSingleton<PaginaVoces>();

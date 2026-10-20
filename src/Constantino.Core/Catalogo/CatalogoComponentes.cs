@@ -13,6 +13,8 @@ public sealed class CatalogoComponentes
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false) },
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+        // «tipo» de cada paso puede ir en cualquier posición del objeto.
+        AllowOutOfOrderMetadataProperties = true,
     };
 
     private readonly Dictionary<string, Componente> _porId;
@@ -93,6 +95,13 @@ public sealed class CatalogoComponentes
                 errores.Add($"{c.Id}: falta el nombre o el resumen.");
             if (c.Tamano is null || c.Requisitos is null)
                 errores.Add($"{c.Id}: falta el tamaño o los requisitos.");
+            if (c.Instalacion is { } inst)
+            {
+                if (inst.Pasos is not { Count: > 0 })
+                    errores.Add($"{c.Id}: la instalación no tiene pasos.");
+                if (inst.Comprobar is not { Count: > 0 } || inst.Rutas is not { Count: > 0 })
+                    errores.Add($"{c.Id}: la instalación debe indicar qué comprobar y qué rutas ocupa.");
+            }
         }
         foreach (var c in Componentes)
         {

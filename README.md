@@ -6,7 +6,14 @@ El diseño completo está en [docs/DISENO.md](docs/DISENO.md).
 
 ## Estado
 
-**Hito H0**: ventana principal con navegación, catálogo de componentes y análisis del equipo con recomendaciones. Todavía no instala nada.
+- **H0**: ventana principal con navegación, catálogo de componentes y análisis del equipo con recomendaciones.
+- **H1**: asistente de primer arranque (6 pasos) e instalador real del núcleo (uv, Python 3.11, ffmpeg), el motor Qwen3-TTS y sus modelos. Descargas verificadas por SHA-256 o revisión exacta, reanudables y con reintentos; progreso con GB, velocidad y tiempo restante; reparar y desinstalar desde Componentes.
+
+Whisper y Chatterbox aparecen en el catálogo pero aún no se pueden instalar (H5 y H7).
+
+### Dónde instala
+
+En la carpeta de datos elegida en el asistente (por defecto `%LOCALAPPDATA%\Constantino`): `herramientas`, `python`, `entornos`, `modelos`, `cache`, `registros` y `estado.json`. Las preferencias van aparte, en `%LOCALAPPDATA%\Constantino\ajustes.json`. Los pasos de cada componente están en `catalogo/catalogo.json`.
 
 ## Compilar y ejecutar
 
@@ -24,6 +31,7 @@ La aplicación puede dibujarse a sí misma en un PNG y cerrarse, útil para revi
 
 ```
 Constantino.exe --captura salida.png --pagina PaginaComponentes
+Constantino.exe --captura salida.png --pagina PaginaAsistente --paso 3
 ```
 
 ## Estructura
@@ -31,7 +39,7 @@ Constantino.exe --captura salida.png --pagina PaginaComponentes
 | Carpeta | Contenido |
 |---|---|
 | `src/Constantino.App` | Interfaz WPF (WPF-UI, MVVM con CommunityToolkit) |
-| `src/Constantino.Core` | Catálogo, análisis del equipo y recomendaciones, sin dependencias de la interfaz |
-| `catalogo/catalogo.json` | Componentes instalables: qué son, para qué sirven, tamaño, requisitos y licencias |
+| `src/Constantino.Core` | Catálogo, análisis del equipo, recomendaciones e instalador, sin dependencias de la interfaz |
+| `catalogo/catalogo.json` | Componentes instalables: qué son, para qué sirven, tamaño, requisitos, licencias y pasos de instalación |
 | `tests/Constantino.Core.Tests` | Pruebas de xUnit |
 | `docs/` | Diseño y capturas |

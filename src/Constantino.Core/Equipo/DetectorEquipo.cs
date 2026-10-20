@@ -124,7 +124,7 @@ public static class DetectorEquipo
         return GlobalMemoryStatusEx(ref estado) ? estado.ullTotalPhys / (1024.0 * 1024 * 1024) : 0;
     }
 
-    internal static InfoDisco? Disco(string carpeta)
+    public static InfoDisco? Disco(string carpeta)
     {
         try
         {

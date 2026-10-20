@@ -8,15 +8,110 @@
       "necesidad": "imprescindible",
       "resumen": "Las herramientas básicas sobre las que funciona todo lo demás.",
       "detalle": "Instala uv (un gestor que descarga Python y sus paquetes de forma rápida y aislada), Python 3.11 y ffmpeg (convierte audio a MP3, ajusta el volumen y cambia velocidad y tono). No toca ningún Python que ya tengas en el equipo.",
-      "habilita": ["Todo lo demás"],
+      "habilita": [
+        "Todo lo demás"
+      ],
       "dependeDe": [],
-      "tamano": { "conGpuGb": 0.3, "sinGpuGb": 0.3 },
-      "requisitos": { "funcionaEnCpu": true },
+      "tamano": {
+        "conGpuGb": 0.3,
+        "sinGpuGb": 0.3
+      },
+      "requisitos": {
+        "funcionaEnCpu": true
+      },
       "licencias": [
-        { "nombre": "uv: MIT / Apache 2.0", "url": "https://github.com/astral-sh/uv/blob/main/LICENSE-MIT" },
-        { "nombre": "Python: PSF", "url": "https://docs.python.org/3/license.html" },
-        { "nombre": "ffmpeg: GPL", "url": "https://ffmpeg.org/legal.html" }
-      ]
+        {
+          "nombre": "uv: MIT / Apache 2.0",
+          "url": "https://github.com/astral-sh/uv/blob/main/LICENSE-MIT"
+        },
+        {
+          "nombre": "Python: PSF",
+          "url": "https://docs.python.org/3/license.html"
+        },
+        {
+          "nombre": "ffmpeg: GPL",
+          "url": "https://ffmpeg.org/legal.html"
+        }
+      ],
+      "instalacion": {
+        "version": "uv 0.12.24 · Python 3.11 · ffmpeg 9.0.2",
+        "pasos": [
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando uv",
+            "url": "https://github.com/astral-sh/uv/releases/download/0.12.24/uv-x86_64-pc-windows-msvc.zip",
+            "sha256": "7c38608c8a18ee137d748a1773053b07ec8f3a30fab49aebaa6f4e4efeceb019",
+            "destino": "{descargas}/uv-0.12.24.zip",
+            "tamanoBytes": 15685515
+          },
+          {
+            "tipo": "extraer",
+            "descripcion": "Descomprimiendo uv",
+            "archivo": "{descargas}/uv-0.12.24.zip",
+            "destino": "{herramientas}/uv"
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando Python 3.11",
+            "programa": "{uv}",
+            "argumentos": [
+              "python",
+              "install",
+              "3.11"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando Python",
+            "programa": "{uv}",
+            "argumentos": [
+              "python",
+              "find",
+              "3.11"
+            ],
+            "debeContener": "python.exe"
+          },
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando ffmpeg",
+            "url": "https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-essentials_build.zip",
+            "sha256": "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
+            "destino": "{descargas}/ffmpeg-9.0.2-essentials.zip",
+            "tamanoBytes": 114768076
+          },
+          {
+            "tipo": "extraer",
+            "descripcion": "Descomprimiendo ffmpeg",
+            "archivo": "{descargas}/ffmpeg-9.0.2-essentials.zip",
+            "destino": "{herramientas}/ffmpeg",
+            "quitarCarpetaRaiz": true,
+            "incluir": [
+              "bin/ffmpeg.exe",
+              "bin/ffprobe.exe",
+              "LICENSE"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando ffmpeg",
+            "programa": "{ffmpeg}",
+            "argumentos": [
+              "-hide_banner",
+              "-filters"
+            ],
+            "debeContener": "rubberband"
+          }
+        ],
+        "rutas": [
+          "{herramientas}/uv",
+          "{herramientas}/ffmpeg",
+          "{python}"
+        ],
+        "comprobar": [
+          "{uv}",
+          "{ffmpeg}"
+        ]
+      }
     },
     {
       "id": "motor-qwen",
@@ -25,14 +120,107 @@
       "necesidad": "imprescindible",
       "resumen": "El programa que convierte texto en voz. Sin él, Constantino no puede hablar.",
       "detalle": "Crea un entorno de Python propio con PyTorch (con CUDA si tienes una tarjeta NVIDIA compatible, o para procesador si no) y la librería qwen-tts. Por sí solo no trae ninguna voz: necesita al menos uno de los modelos Base.",
-      "habilita": ["Narrar", "Clonar voces", "Diseñar voces (con el modelo VoiceDesign)"],
-      "dependeDe": ["nucleo"],
-      "tamano": { "conGpuGb": 5.0, "sinGpuGb": 1.2 },
-      "requisitos": { "funcionaEnCpu": true },
+      "habilita": [
+        "Narrar",
+        "Clonar voces",
+        "Diseñar voces (con el modelo VoiceDesign)"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 5.0,
+        "sinGpuGb": 1.2
+      },
+      "requisitos": {
+        "funcionaEnCpu": true
+      },
       "licencias": [
-        { "nombre": "Qwen3-TTS: Apache 2.0", "url": "https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE" },
-        { "nombre": "PyTorch: BSD-3", "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE" }
-      ]
+        {
+          "nombre": "Qwen3-TTS: Apache 2.0",
+          "url": "https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE"
+        },
+        {
+          "nombre": "PyTorch: BSD-3",
+          "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
+        }
+      ],
+      "instalacion": {
+        "version": "qwen-tts 0.1.1 · torch 2.11.0",
+        "pasos": [
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Creando el entorno de Python",
+            "programa": "{uv}",
+            "argumentos": [
+              "venv",
+              "{entornos}/qwen3tts",
+              "--python",
+              "3.11",
+              "--clear"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando PyTorch (la parte más pesada)",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--python",
+              "{entornos}/qwen3tts/Scripts/python.exe",
+              "torch==2.11.0",
+              "torchaudio==2.11.0",
+              "--index-url",
+              "{indiceTorch}"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/qwen3tts"
+              ],
+              "bytesConGpu": 4530000000,
+              "bytesSinGpu": 1000000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando qwen-tts",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--python",
+              "{entornos}/qwen3tts/Scripts/python.exe",
+              "qwen-tts==0.1.1"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/qwen3tts"
+              ],
+              "bytesConGpu": 600000000,
+              "bytesSinGpu": 600000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando que el motor arranca",
+            "programa": "{entornos}/qwen3tts/Scripts/python.exe",
+            "argumentos": [
+              "-c",
+              "import torch, qwen_tts; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
+            ],
+            "debeContener": "dispositivo={dispositivo}"
+          }
+        ],
+        "rutas": [
+          "{entornos}/qwen3tts"
+        ],
+        "comprobar": [
+          "{entornos}/qwen3tts/Scripts/python.exe"
+        ]
+      }
     },
     {
       "id": "modelo-qwen-base-1.7b",
@@ -42,13 +230,48 @@
       "grupoExclusivo": "modelo-base",
       "resumen": "Clona voces y narra con ellas. La mejor calidad.",
       "detalle": "Es el modelo que imita una voz a partir de una grabación de 10–20 segundos y lee tus guiones con ella. Hace falta uno de los dos modelos Base; este es el recomendado si tu tarjeta tiene 6 GB de memoria o más.",
-      "habilita": ["Narrar", "Clonar voces"],
-      "dependeDe": ["motor-qwen"],
-      "tamano": { "conGpuGb": 4.3, "sinGpuGb": 4.3 },
-      "requisitos": { "vramMinimaGb": 5.5, "vramRecomendadaGb": 6.0, "funcionaEnCpu": true },
+      "habilita": [
+        "Narrar",
+        "Clonar voces"
+      ],
+      "dependeDe": [
+        "motor-qwen"
+      ],
+      "tamano": {
+        "conGpuGb": 4.3,
+        "sinGpuGb": 4.3
+      },
+      "requisitos": {
+        "vramMinimaGb": 5.5,
+        "vramRecomendadaGb": 6.0,
+        "funcionaEnCpu": true
+      },
       "licencias": [
-        { "nombre": "Apache 2.0", "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base" }
-      ]
+        {
+          "nombre": "Apache 2.0",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+        }
+      ],
+      "instalacion": {
+        "version": "fd4b25438912",
+        "pasos": [
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modelo Base 1.7B",
+            "python": "{entornos}/qwen3tts/Scripts/python.exe",
+            "repositorio": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+            "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+            "tamanoBytes": 4544229700
+          }
+        ],
+        "rutas": [
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-1.7B-Base"
+        ],
+        "comprobar": [
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-1.7B-Base/snapshots/fd4b254389122332181a7c3db7f27e918eec64e3/model.safetensors",
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-1.7B-Base/snapshots/fd4b254389122332181a7c3db7f27e918eec64e3/speech_tokenizer/model.safetensors"
+        ]
+      }
     },
     {
       "id": "modelo-qwen-base-0.6b",
@@ -58,13 +281,48 @@
       "grupoExclusivo": "modelo-base",
       "resumen": "Lo mismo que el Base 1.7B, con algo menos de calidad, para equipos modestos.",
       "detalle": "Pensado para tarjetas de 4 GB o para equipos sin tarjeta NVIDIA, donde funciona en el procesador (bastante más despacio). Hace falta uno de los dos modelos Base.",
-      "habilita": ["Narrar", "Clonar voces"],
-      "dependeDe": ["motor-qwen"],
-      "tamano": { "conGpuGb": 2.5, "sinGpuGb": 2.5 },
-      "requisitos": { "vramMinimaGb": 3.0, "vramRecomendadaGb": 4.0, "funcionaEnCpu": true },
+      "habilita": [
+        "Narrar",
+        "Clonar voces"
+      ],
+      "dependeDe": [
+        "motor-qwen"
+      ],
+      "tamano": {
+        "conGpuGb": 2.4,
+        "sinGpuGb": 2.4
+      },
+      "requisitos": {
+        "vramMinimaGb": 3.0,
+        "vramRecomendadaGb": 4.0,
+        "funcionaEnCpu": true
+      },
       "licencias": [
-        { "nombre": "Apache 2.0", "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-0.6B-Base" }
-      ]
+        {
+          "nombre": "Apache 2.0",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-0.6B-Base"
+        }
+      ],
+      "instalacion": {
+        "version": "5d83992436ea",
+        "pasos": [
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modelo Base 0.6B",
+            "python": "{entornos}/qwen3tts/Scripts/python.exe",
+            "repositorio": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+            "revision": "5d83992436eae1d760afd27aff78a71d676296fc",
+            "tamanoBytes": 2516106051
+          }
+        ],
+        "rutas": [
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-0.6B-Base"
+        ],
+        "comprobar": [
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-0.6B-Base/snapshots/5d83992436eae1d760afd27aff78a71d676296fc/model.safetensors",
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-0.6B-Base/snapshots/5d83992436eae1d760afd27aff78a71d676296fc/speech_tokenizer/model.safetensors"
+        ]
+      }
     },
     {
       "id": "modelo-qwen-voicedesign",
@@ -73,13 +331,47 @@
       "necesidad": "recomendado",
       "resumen": "Crea voces nuevas a partir de una descripción escrita.",
       "detalle": "Le describes la voz con palabras («hombre de unos 40 años, voz grave y cálida, ritmo pausado…») y la inventa. Después Constantino la guarda en tu biblioteca para narrar con ella. Solo existe en tamaño 1.7B. No hace falta si solo vas a clonar voces grabadas.",
-      "habilita": ["Diseñar voces"],
-      "dependeDe": ["motor-qwen"],
-      "tamano": { "conGpuGb": 4.3, "sinGpuGb": 4.3 },
-      "requisitos": { "vramMinimaGb": 5.5, "vramRecomendadaGb": 6.0, "funcionaEnCpu": true },
+      "habilita": [
+        "Diseñar voces"
+      ],
+      "dependeDe": [
+        "motor-qwen"
+      ],
+      "tamano": {
+        "conGpuGb": 4.3,
+        "sinGpuGb": 4.3
+      },
+      "requisitos": {
+        "vramMinimaGb": 5.5,
+        "vramRecomendadaGb": 6.0,
+        "funcionaEnCpu": true
+      },
       "licencias": [
-        { "nombre": "Apache 2.0", "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign" }
-      ]
+        {
+          "nombre": "Apache 2.0",
+          "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+        }
+      ],
+      "instalacion": {
+        "version": "5ecdb67327fd",
+        "pasos": [
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modelo VoiceDesign",
+            "python": "{entornos}/qwen3tts/Scripts/python.exe",
+            "repositorio": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+            "revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+            "tamanoBytes": 4520163832
+          }
+        ],
+        "rutas": [
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+        ],
+        "comprobar": [
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-1.7B-VoiceDesign/snapshots/5ecdb67327fd37bb2e042aab12ff7391903235d3/model.safetensors",
+          "{modelos}/hub/models--Qwen--Qwen3-TTS-12Hz-1.7B-VoiceDesign/snapshots/5ecdb67327fd37bb2e042aab12ff7391903235d3/speech_tokenizer/model.safetensors"
+        ]
+      }
     },
     {
       "id": "whisper",
@@ -88,14 +380,32 @@
       "necesidad": "opcional",
       "resumen": "Escribe solo lo que se dice en una grabación.",
       "detalle": "Al clonar una voz hace falta la transcripción exacta de la grabación. Con Whisper se genera sola; sin él, la escribes tú a mano. Instala faster-whisper en su propio entorno y el modelo large-v3-turbo.",
-      "habilita": ["Transcripción automática al clonar"],
-      "dependeDe": ["nucleo"],
-      "tamano": { "conGpuGb": 2.5, "sinGpuGb": 2.0 },
-      "requisitos": { "vramMinimaGb": 2.0, "vramRecomendadaGb": 3.0, "funcionaEnCpu": true },
+      "habilita": [
+        "Transcripción automática al clonar"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 2.5,
+        "sinGpuGb": 2.0
+      },
+      "requisitos": {
+        "vramMinimaGb": 2.0,
+        "vramRecomendadaGb": 3.0,
+        "funcionaEnCpu": true
+      },
       "licencias": [
-        { "nombre": "Whisper: MIT", "url": "https://github.com/openai/whisper/blob/main/LICENSE" },
-        { "nombre": "faster-whisper: MIT", "url": "https://github.com/SYSTRAN/faster-whisper/blob/master/LICENSE" }
-      ]
+        {
+          "nombre": "Whisper: MIT",
+          "url": "https://github.com/openai/whisper/blob/main/LICENSE"
+        },
+        {
+          "nombre": "faster-whisper: MIT",
+          "url": "https://github.com/SYSTRAN/faster-whisper/blob/master/LICENSE"
+        }
+      ],
+      "disponibleEn": "Llegará en el hito H5, junto con la pantalla de clonar voces."
     },
     {
       "id": "chatterbox",
@@ -104,13 +414,28 @@
       "necesidad": "opcional",
       "resumen": "Otro motor de voz: más rápido y con control de intensidad emocional.",
       "detalle": "Clona voces y narra como Qwen, unas tres veces más rápido, con un control de «intensidad emocional». Tiende a leer más seguido y con menos pausas. Todo lo que genera lleva una marca de agua inaudible de Resemble AI.",
-      "habilita": ["Narrar con un motor alternativo"],
-      "dependeDe": ["nucleo"],
-      "tamano": { "conGpuGb": 8.3, "sinGpuGb": 4.5 },
-      "requisitos": { "vramMinimaGb": 5.0, "vramRecomendadaGb": 6.0, "funcionaEnCpu": true },
+      "habilita": [
+        "Narrar con un motor alternativo"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 8.3,
+        "sinGpuGb": 4.5
+      },
+      "requisitos": {
+        "vramMinimaGb": 5.0,
+        "vramRecomendadaGb": 6.0,
+        "funcionaEnCpu": true
+      },
       "licencias": [
-        { "nombre": "MIT", "url": "https://github.com/resemble-ai/chatterbox/blob/master/LICENSE" }
-      ]
+        {
+          "nombre": "MIT",
+          "url": "https://github.com/resemble-ai/chatterbox/blob/master/LICENSE"
+        }
+      ],
+      "disponibleEn": "Llegará en el hito H7."
     }
   ]
-}
+}

@@ -1,6 +1,8 @@
 using System.Windows;
 using Constantino.App.Paginas;
 using Constantino.App.Servicios;
+using Constantino.App.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Wpf.Ui;
 using Wpf.Ui.Abstractions;
 using Wpf.Ui.Appearance;
@@ -10,7 +12,8 @@ namespace Constantino.App.Vistas;
 
 public partial class VentanaPrincipal : FluentWindow
 {
-    public VentanaPrincipal(INavigationService navegacion, INavigationViewPageProvider paginas, ServicioAjustes ajustes)
+    public VentanaPrincipal(INavigationService navegacion, INavigationViewPageProvider paginas, ServicioAjustes ajustes,
+        IServiceProvider servicios)
     {
         InitializeComponent();
         Navegacion.SetPageProviderService(paginas);
@@ -22,7 +25,8 @@ public partial class VentanaPrincipal : FluentWindow
                 SystemThemeWatcher.Watch(this);
 
             var captura = OpcionesCaptura.Leer(Environment.GetCommandLineArgs());
-            var inicial = typeof(PaginaInicio);
+            // Hasta completar la configuración inicial, se arranca en el asistente.
+            var inicial = ajustes.Actual.AsistenteCompletado ? typeof(PaginaInicio) : typeof(PaginaAsistente);
             if (captura?.Pagina is { } nombre)
                 inicial = typeof(PaginaInicio).Assembly.GetType($"{typeof(PaginaInicio).Namespace}.{nombre}") ?? inicial;
             navegacion.Navigate(inicial);
@@ -31,6 +35,11 @@ public partial class VentanaPrincipal : FluentWindow
             {
                 // Margen para que termine el análisis del equipo y se asiente la maquetación.
                 await Task.Delay(TimeSpan.FromSeconds(4));
+                if (captura.Paso is { } paso && inicial == typeof(PaginaAsistente))
+                {
+                    servicios.GetRequiredService<AsistenteViewModel>().Paso = paso;
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                }
                 OpcionesCaptura.Guardar(this, captura.Ruta);
                 Application.Current.Shutdown();
             }

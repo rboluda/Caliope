@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:controles="clr-namespace:Constantino.App.Controles"
     DispatcherUnhandledException="AlFallarSinControl">
     <Application.Resources>
         <ResourceDictionary>
@@ -11,6 +12,10 @@
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BoolAVisibilidad" />
+            <controles:TextoNoVacio x:Key="TextoNoVacio" />
+            <controles:BoolInversoAVisibilidad x:Key="BoolInversoAVisibilidad" />
+            <controles:NoNuloAVisibilidad x:Key="NoNuloAVisibilidad" />
+            <controles:NegarBool x:Key="NegarBool" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

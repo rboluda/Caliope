@@ -19,6 +19,8 @@ public sealed record Licencia(string Nombre, string Url);
 
 /// <summary>Un componente instalable: núcleo, motor, modelo o extra.</summary>
 /// <param name="GrupoExclusivo">Componentes del mismo grupo son alternativas: basta con instalar uno.</param>
+/// <param name="Instalacion">Null si esta versión de Constantino todavía no sabe instalarlo.</param>
+/// <param name="DisponibleEn">Si aún no se puede instalar, cuándo llegará (para mostrarlo).</param>
 public sealed record Componente(
     string Id,
     string Nombre,
@@ -31,4 +33,9 @@ public sealed record Componente(
     TamanoDescarga Tamano,
     Requisitos Requisitos,
     IReadOnlyList<Licencia> Licencias,
-    string? GrupoExclusivo = null);
+    string? GrupoExclusivo = null,
+    Instalacion? Instalacion = null,
+    string? DisponibleEn = null)
+{
+    public bool SePuedeInstalar => Instalacion is not null;
+}
