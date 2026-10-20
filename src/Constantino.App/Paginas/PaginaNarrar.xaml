@@ -1,0 +1,269 @@
+<Page
+    x:Class="Constantino.App.Paginas.PaginaNarrar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Constantino.App.ViewModels"
+    x:Name="Raiz"
+    ScrollViewer.CanContentScroll="False"
+    Title="Narrar">
+    <Page.Resources>
+        <Style x:Key="Etiqueta" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+    </Page.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,32,32" MaxWidth="1180">
+
+            <!--  Cabecera y proyecto  -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock VerticalAlignment="Center" FontSize="28" FontWeight="SemiBold" Text="Narrar" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <ComboBox
+                        MinWidth="260"
+                        DisplayMemberPath="Nombre"
+                        ItemsSource="{Binding ViewModel.Proyectos}"
+                        SelectedItem="{Binding ViewModel.ProyectoSeleccionado}"
+                        ToolTip="Proyecto de narración" />
+                    <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.NuevoCommand}" Content="Nuevo proyecto">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Add24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AbrirCarpetaCommand}" ToolTip="Abrir la carpeta con los audios">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="FolderOpen24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.BorrarProyectoCommand}" ToolTip="Borrar el proyecto">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Delete24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
+            </Grid>
+            <TextBlock
+                Margin="0,4,0,12"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="Escribe el guion, elige la voz y genera. Cada párrafo es un bloque con su propio audio; al cambiar algo solo se regenera lo que ha cambiado."
+                TextWrapping="Wrap" />
+
+            <ui:Card Margin="0,0,0,12" Visibility="{Binding ViewModel.MostrarNuevo, Converter={StaticResource BoolAVisibilidad}}">
+                <StackPanel Orientation="Horizontal">
+                    <ui:TextBox MinWidth="320" PlaceholderText="Nombre del proyecto (p. ej. La cazadora)" Text="{Binding ViewModel.NombreNuevo, UpdateSourceTrigger=PropertyChanged}" />
+                    <ui:Button Margin="8,0,0,0" Appearance="Primary" Command="{Binding ViewModel.CrearProyectoCommand}" Content="Crear" />
+                    <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.CancelarNuevoCommand}" Content="Cancelar" />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Visibility="{Binding ViewModel.HayProyecto, Converter={StaticResource BoolInversoAVisibilidad}}">
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Todavía no tienes proyectos" />
+                    <TextBlock Margin="0,6,0,0" Text="Crea uno con «Nuevo proyecto»: empezará con un guion de ejemplo que te enseña las etiquetas." TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.SinVoces}"
+                Message="Para narrar hace falta al menos una voz. Añádela en «Voces»."
+                Severity="Warning"
+                Title="No hay voces" />
+
+            <Grid Visibility="{Binding ViewModel.HayProyecto, Converter={StaticResource BoolAVisibilidad}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="340" />
+                </Grid.ColumnDefinitions>
+
+                <!--  Editor  -->
+                <ui:Card VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                    <DockPanel>
+                        <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                            <ui:Button Click="AlInsertar" Content="Pausa" Tag="[pause] " ToolTip="Pausa corta [pause]" />
+                            <ui:Button Margin="6,0,0,0" Click="AlInsertar" Content="Pausa larga" Tag="[long pause] " ToolTip="Pausa larga [long pause]" />
+                            <ui:Button Margin="6,0,0,0" Click="AlInsertar" Content="Susurro" Tag="[whispers] " ToolTip="Susurra hasta el final de la línea [whispers]" />
+                            <ui:Button Margin="6,0,0,0" Click="AlInsertarBloque" Content="Nuevo bloque" ToolTip="Empieza un párrafo nuevo con nombre" />
+                        </WrapPanel>
+                        <TextBox
+                            x:Name="Editor"
+                            MinHeight="380"
+                            MaxHeight="520"
+                            AcceptsReturn="True"
+                            AcceptsTab="True"
+                            FontFamily="Cascadia Mono, Consolas"
+                            FontSize="14"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Text="{Binding ViewModel.TextoGuion, UpdateSourceTrigger=PropertyChanged}"
+                            TextWrapping="Wrap"
+                            VerticalScrollBarVisibility="Auto" />
+                    </DockPanel>
+                </ui:Card>
+
+                <!--  Ajustes y generar  -->
+                <StackPanel Grid.Column="2">
+                    <ui:Card>
+                        <StackPanel>
+                            <TextBlock FontSize="16" FontWeight="SemiBold" Text="Voz y ajustes" />
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Voz" />
+                            <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Voces}" SelectedValue="{Binding ViewModel.VozId}" SelectedValuePath="Id" />
+
+                            <TextBlock Style="{StaticResource Etiqueta}">
+                                <Run Text="Expresividad: " /><Run FontWeight="SemiBold" Text="{Binding ViewModel.TextoExpresividad, Mode=OneWay}" />
+                            </TextBlock>
+                            <Slider
+                                IsSnapToTickEnabled="True"
+                                Maximum="1.2"
+                                Minimum="0.5"
+                                TickFrequency="0.05"
+                                Value="{Binding ViewModel.Temperatura}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Pausa corta (s)" />
+                                    <ui:NumberBox Maximum="5" Minimum="0" SmallChange="0.1" Value="{Binding ViewModel.Pausa}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Pausa larga (s)" />
+                                    <ui:NumberBox Maximum="10" Minimum="0" SmallChange="0.1" Value="{Binding ViewModel.PausaLarga}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Expander Margin="0,10,0,0" Header="Más ajustes">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Silencio entre bloques en el audio completo (s)" />
+                                    <ui:NumberBox Maximum="10" Minimum="0" SmallChange="0.1" Value="{Binding ViewModel.PausaEntreBloques}" />
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Volumen del susurro (dB respecto a la voz normal)" />
+                                    <ui:NumberBox Maximum="0" Minimum="-30" SmallChange="1" Value="{Binding ViewModel.SusurroDb}" />
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Volumen final (LUFS; −16 es lo habitual en YouTube)" />
+                                    <ui:NumberBox Maximum="-8" Minimum="-30" SmallChange="1" Value="{Binding ViewModel.Lufs}" />
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Semilla (otra semilla, otra forma de decirlo)" />
+                                    <ui:NumberBox Maximum="999999" Minimum="0" SmallChange="1" Value="{Binding ViewModel.Semilla}" />
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Formato" />
+                                    <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Formatos}" SelectedValue="{Binding ViewModel.Formato}" SelectedValuePath="Valor" />
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ui:Card>
+
+                    <ui:Card Margin="0,12,0,0">
+                        <StackPanel>
+                            <ui:Button
+                                HorizontalAlignment="Stretch"
+                                Appearance="Primary"
+                                Command="{Binding ViewModel.GenerarCommand}"
+                                Content="Generar narración"
+                                IsEnabled="{Binding ViewModel.Libre}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="PlayCircle24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <StackPanel Margin="0,10,0,0" Visibility="{Binding ViewModel.Generando, Converter={StaticResource BoolAVisibilidad}}">
+                                <ProgressBar Height="6" Maximum="1" Value="{Binding ViewModel.Fraccion, Mode=OneWay}" />
+                                <ui:Button Margin="0,8,0,0" Command="{Binding ViewModel.CancelarCommand}" Content="Cancelar" />
+                            </StackPanel>
+                            <TextBlock Margin="0,8,0,0" Text="{Binding ViewModel.Mensaje}" TextWrapping="Wrap" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                Text="{Binding ViewModel.Motor.Descripcion}"
+                                TextWrapping="Wrap" />
+                            <ui:InfoBar
+                                Margin="0,8,0,0"
+                                IsClosable="False"
+                                IsOpen="{Binding ViewModel.Error, Converter={StaticResource TextoNoVacio}}"
+                                Message="{Binding ViewModel.Error}"
+                                Severity="Error"
+                                Title="No se ha podido narrar" />
+                        </StackPanel>
+                    </ui:Card>
+                </StackPanel>
+            </Grid>
+
+            <!--  Bloques  -->
+            <ui:Card Margin="0,12,0,0" Visibility="{Binding ViewModel.HayProyecto, Converter={StaticResource BoolAVisibilidad}}">
+                <StackPanel>
+                    <Grid>
+                        <StackPanel>
+                            <TextBlock FontSize="16" FontWeight="SemiBold" Text="Bloques" />
+                            <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.Resumen}" />
+                        </StackPanel>
+                        <ui:Button
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Command="{Binding ViewModel.EscucharCompletoCommand}"
+                            Content="Escuchar todo"
+                            Visibility="{Binding ViewModel.Completo, Converter={StaticResource NoNuloAVisibilidad}}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Play24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </Grid>
+                    <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding ViewModel.Bloques}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:FilaBloque}">
+                                <Border Margin="0,4" Padding="12,8" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock FontWeight="SemiBold" Text="{Binding Titulo}" />
+                                                <ui:Badge Margin="10,0,0,0" Appearance="{Binding Apariencia}" Content="{Binding Etiqueta}" />
+                                                <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Duracion}" />
+                                            </StackPanel>
+                                            <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Resumen}" TextWrapping="Wrap" />
+                                            <TextBlock
+                                                Margin="0,4,0,0"
+                                                Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                                Text="{Binding Avisos}"
+                                                TextWrapping="Wrap"
+                                                Visibility="{Binding Avisos, Converter={StaticResource NoNuloAVisibilidad}}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
+                                            <ui:Button
+                                                Command="{Binding DataContext.ViewModel.EscucharCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding Escuchable}"
+                                                ToolTip="Escuchar este bloque">
+                                                <ui:Button.Icon>
+                                                    <ui:SymbolIcon Symbol="Play24" />
+                                                </ui:Button.Icon>
+                                            </ui:Button>
+                                            <ui:Button
+                                                Margin="6,0,0,0"
+                                                Command="{Binding DataContext.ViewModel.RegenerarCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}"
+                                                ToolTip="Volver a generar solo este bloque">
+                                                <ui:Button.Icon>
+                                                    <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                                                </ui:Button.Icon>
+                                            </ui:Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

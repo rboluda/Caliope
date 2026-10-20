@@ -235,24 +235,11 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
 
     private string IdLibre(string nombre)
     {
-        var baseId = Slug(nombre);
+        var baseId = Textos.Slug(nombre, "voz");
         var id = baseId;
         for (var n = 2; Directory.Exists(CarpetaDe(id)); n++)
             id = $"{baseId}-{n}";
         return id;
-    }
-
-    internal static string Slug(string texto)
-    {
-        var sb = new StringBuilder();
-        foreach (var c in texto.Normalize(NormalizationForm.FormD))
-        {
-            if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark)
-                continue;
-            sb.Append(char.IsLetterOrDigit(c) && c < 128 ? char.ToLowerInvariant(c) : '-');
-        }
-        var slug = string.Join('-', sb.ToString().Split('-', StringSplitOptions.RemoveEmptyEntries));
-        return slug.Length == 0 ? "voz" : slug[..Math.Min(slug.Length, 40)].TrimEnd('-');
     }
 
     private static string NormalizarTexto(string texto) => string.Join(' ', texto.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));

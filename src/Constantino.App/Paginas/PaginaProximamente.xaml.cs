@@ -46,16 +46,3 @@ public sealed class PaginaClonar() : PaginaProximamente(new(
     ],
     "el motor Qwen3-TTS y un modelo Base. Whisper es opcional.",
     "Llegará en el hito H5."));
-
-public sealed class PaginaNarrar() : PaginaProximamente(new(
-    SymbolRegular.BookOpen24,
-    "Narrar",
-    "Convierte tus guiones en audio con cualquiera de tus voces.",
-    [
-        "Editor con botones para pausas, pausas largas y susurros",
-        "Ajustar velocidad, tono, expresividad y volumen",
-        "Escuchar y regenerar cada bloque por separado",
-        "Exportar el MP3 completo, los bloques sueltos y un manifiesto para el montaje",
-    ],
-    "el motor Qwen3-TTS y un modelo Base.",
-    "Llegará en el hito H3."));

@@ -41,7 +41,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
 
     /// <summary>Lee <paramref name="texto"/> con la voz indicada y deja el WAV en <paramref name="salida"/>.</summary>
     public async Task<ResultadoSintesis> SintetizarAsync(Voz voz, string referenciaWav, string texto, string salida,
-        int semilla = 1234, CancellationToken ct = default)
+        int semilla = 1234, double? temperatura = null, CancellationToken ct = default)
     {
         await _turno.WaitAsync(ct);
         try
@@ -51,11 +51,20 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             Descripcion = "Generando la voz…";
             var progreso = new Progress<EventoMotor>(e => Descripcion = e.Mensaje + "…");
             var r = await motor.SintetizarAsync(
-                new ParametrosSintesis(texto, voz.Idioma, referenciaWav, voz.Transcripcion, salida, semilla), progreso, ct);
+                new ParametrosSintesis(texto, voz.Idioma, referenciaWav, voz.Transcripcion, salida, semilla, Temperatura: temperatura),
+                progreso, ct);
             await MarcarListoAsync(motor);
             return r;
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (OperationCanceledException)
+        {
+            // Cancelar a mitad detiene el proceso del motor: se deja apagado y la próxima petición lo arranca.
+            await CerrarAsync();
+            Estado = EstadoMotor.Apagado;
+            Descripcion = "Detenido. Se encenderá solo cuando haga falta.";
+            throw;
+        }
+        catch (Exception e)
         {
             await GestionarFalloAsync(e);
             throw;
@@ -64,6 +73,16 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         {
             _turno.Release();
         }
+    }
+
+    /// <summary>El mejor modelo Base instalado (componente y revisión), o null si no hay ninguno.</summary>
+    public async Task<(string Componente, string Revision)?> ModeloBaseAsync()
+    {
+        var instalador = await instalacion.InstaladorAsync();
+        var id = new[] { "modelo-qwen-base-1.7b", "modelo-qwen-base-0.6b" }.FirstOrDefault(instalador.EstaInstalado);
+        if (id is null)
+            return null;
+        return (id, instalacion.Catalogo[id].Instalacion!.Pasos.OfType<PasoModelo>().First().Revision);
     }
 
     /// <summary>Libera la memoria de la tarjeta cerrando el motor.</summary>

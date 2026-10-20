@@ -28,6 +28,7 @@ public partial class App : Application
         s.AddSingleton<ServicioMotor>();
         s.AddSingleton<ServicioVoces>();
         s.AddSingleton<ServicioReproductor>();
+        s.AddSingleton<ServicioNarracion>();
         s.AddSingleton<INavigationViewPageProvider, ProveedorPaginas>();
         s.AddSingleton<INavigationService, NavigationService>();
 
@@ -45,6 +46,7 @@ public partial class App : Application
         s.AddSingleton<PaginaDisenar>();
         s.AddSingleton<PaginaClonar>();
         s.AddSingleton<PaginaNarrar>();
+        s.AddSingleton<NarrarViewModel>();
 
         return builder.Build();
     }
