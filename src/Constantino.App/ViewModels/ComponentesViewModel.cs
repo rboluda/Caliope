@@ -20,15 +20,17 @@ public sealed partial class TarjetaComponente(Componente c, Recomendacion r, str
     public string Nombre { get; } = c.Nombre;
     public string Resumen { get; } = c.Resumen;
     public string Detalle { get; } = c.Detalle;
-    public string Etiqueta { get; } = Presentacion.Etiqueta(r.Nivel);
-    public ControlAppearance Apariencia { get; } = Presentacion.Apariencia(r.Nivel);
-    public string Motivo { get; } = r.Motivo;
     public string Tamano { get; } = tamano;
     public string Habilita { get; } = string.Join(" · ", c.Habilita);
     public string Necesita { get; } = necesita;
     public IReadOnlyList<Licencia> Licencias { get; } = c.Licencias;
     public string? DisponibleEn { get; } = c.SePuedeInstalar ? null : c.DisponibleEn ?? "Llegará en una próxima versión.";
 
+    // Antes de instalarlo, la etiqueta y el motivo son la recomendación; una vez instalado, dicen su estado
+    // (si no, «Recomendado» parece pedir que se instale algo que ya está).
+    [ObservableProperty] public partial string Etiqueta { get; set; } = Presentacion.Etiqueta(r.Nivel);
+    [ObservableProperty] public partial ControlAppearance Apariencia { get; set; } = Presentacion.Apariencia(r.Nivel);
+    [ObservableProperty] public partial string Motivo { get; set; } = r.Motivo;
     [ObservableProperty] public partial string Estado { get; set; } = "";
     [ObservableProperty] public partial bool PuedeInstalar { get; set; }
     [ObservableProperty] public partial string TextoInstalar { get; set; } = "Instalar";
@@ -37,6 +39,13 @@ public sealed partial class TarjetaComponente(Componente c, Recomendacion r, str
 
     public void Aplicar(EstadoComponente estado)
     {
+        (Etiqueta, Apariencia, Motivo) = estado switch
+        {
+            EstadoComponente.Instalado => ("Instalado", ControlAppearance.Success, "Instalado y listo para usar."),
+            EstadoComponente.Actualizable => ("Actualizable", ControlAppearance.Info, "Instalado. Hay una versión nueva: pulsa «Actualizar»."),
+            EstadoComponente.Danado => ("Dañado", ControlAppearance.Danger, "Faltan archivos: pulsa «Reparar» para volver a instalarlo."),
+            _ => (Presentacion.Etiqueta(r.Nivel), Presentacion.Apariencia(r.Nivel), r.Motivo),
+        };
         Estado = estado switch
         {
             EstadoComponente.NoDisponible => "Próximamente",
