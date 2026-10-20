@@ -16,11 +16,14 @@ public interface ISintetizador
     /// <summary>Modelo con el que se genera: también entra en la huella.</summary>
     string Modelo { get; }
 
-    /// <summary>Si hay una variante susurrada de la voz, el susurro no se simula bajando el volumen.</summary>
-    bool TieneVarianteSusurro { get; }
+    /// <summary>
+    /// Ids de las variantes de la voz (susurro, tenso…). Sus etiquetas se reconocen en el guion; si existe «susurro»,
+    /// el susurro no se simula bajando el volumen.
+    /// </summary>
+    IReadOnlyCollection<string> Variantes { get; }
 
-    /// <summary>Lee <paramref name="texto"/> y devuelve la ruta de un WAV.</summary>
-    Task<string> SintetizarAsync(string texto, bool susurro, AjustesNarracion ajustes, string salida, CancellationToken ct);
+    /// <summary>Lee <paramref name="texto"/> con la voz (o su <paramref name="variante"/>) y devuelve la ruta de un WAV.</summary>
+    Task<string> SintetizarAsync(string texto, string? variante, AjustesNarracion ajustes, string salida, CancellationToken ct);
 }
 
 /// <summary>Volumen y formato final (en la app, ffmpeg).</summary>
@@ -72,7 +75,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         IProgress<EventoNarracion> progreso, CancellationToken ct)
     {
         var a = proyecto.Ajustes;
-        var bloques = Guion.Leer(guion, a.Pausa, a.PausaLarga);
+        var bloques = Guion.Leer(guion, a.Pausa, a.PausaLarga, sintetizador.Variantes);
         var salida = almacen.CarpetaSalida(proyecto.Id);
         var normalizados = Path.Combine(salida, CarpetaNormalizados);
         var temporal = Path.Combine(salida, CarpetaTemporal);
@@ -136,12 +139,14 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 if (previo is not null && previo.Archivo != Path.GetFileName(final))
                     BorrarArchivosDe(salida, Path.GetFileNameWithoutExtension(previo.Archivo));
 
+                // La duración se mide sobre el audio final: la velocidad la cambia.
+                var duracion = Voces.BibliotecaVoces.DuracionWav(normalizado);
                 estados[b.Indice] = new EstadoBloque(b.Indice, b.Nombre, huella, Path.GetFileName(final),
-                    Math.Round(montaje.Segundos, 2), [.. b.Avisos, .. avisos], DateTimeOffset.Now);
+                    Math.Round(duracion, 2), [.. b.Avisos, .. avisos], DateTimeOffset.Now);
                 generados++;
                 hecho += pesos[i];
                 progreso.Report(new EventoNarracion(TipoEventoNarracion.BloqueListo, b.Indice, bloques.Count,
-                    $"Bloque {b.Indice} listo ({montaje.Segundos:0.0} s)", hecho / pesoTotal));
+                    $"Bloque {b.Indice} listo ({duracion:0.0} s)", hecho / pesoTotal));
             }
         }
         finally
@@ -180,7 +185,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         var partes = new List<(Pcm Audio, double Ganancia)>();
         int? frecuencia = null;
         var anteriorVoz = false;
-        var gananciaSusurro = sintetizador.TieneVarianteSusurro ? 0 : a.SusurroDb;
+        var gananciaSusurro = sintetizador.Variantes.Contains(Voces.CatalogoVariantes.Susurro) ? 0 : a.SusurroDb;
 
         foreach (var evento in trozos)
         {
@@ -192,7 +197,8 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             }
             var v = (EventoVoz)evento;
             avance((double)letrasHechas / totalLetras, $"Bloque {b.Indice}: «{Resumen(v.Texto)}»");
-            var ruta = await sintetizador.SintetizarAsync(v.Texto, v.Susurro, a,
+            var variante = v.Variante is { } id && sintetizador.Variantes.Contains(id) ? id : null;
+            var ruta = await sintetizador.SintetizarAsync(v.Texto, variante, a,
                 Path.Combine(temporal, $"{b.Archivo}_{partes.Count:000}.wav"), ct).ConfigureAwait(false);
             var audio = Pcm.LeerWav(ruta);
             if (a.RecortarSilencios)
@@ -267,7 +273,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 ["texto"] = b.Texto,
                 ["eventos"] = new JsonArray(b.Eventos.Select(ev => (JsonNode)(ev switch
                 {
-                    EventoVoz v => new JsonObject { ["tipo"] = "voz", ["texto"] = v.Texto, ["susurro"] = v.Susurro },
+                    EventoVoz v => new JsonObject { ["tipo"] = "voz", ["texto"] = v.Texto, ["susurro"] = v.Susurro, ["variante"] = v.Variante },
                     EventoSilencio s => new JsonObject { ["tipo"] = "silencio", ["segundos"] = s.Segundos },
                     _ => new JsonObject(),
                 })).ToArray()),
@@ -343,8 +349,21 @@ public sealed partial class ProcesadorFfmpeg(string ffmpeg, IEjecutorProcesos ej
         var limite = Math.Pow(10, a.PicoDb / 20);
         Directory.CreateDirectory(Path.GetDirectoryName(salidaWav)!);
         await Ejecutar(["-y", "-i", entrada,
-            "-af", FormattableString.Invariant($"volume={ganancia:0.00}dB,alimiter=limit={limite:0.0000}:attack=5:release=50:level=0"),
+            "-af", FiltroVelocidadYTono(a) + FormattableString.Invariant($"volume={ganancia:0.00}dB,alimiter=limit={limite:0.0000}:attack=5:release=50:level=0"),
             "-ar", a.Frecuencia.ToString(CultureInfo.InvariantCulture), "-ac", "1", "-c:a", "pcm_f32le", salidaWav], ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// rubberband cambia la velocidad sin tocar el tono y el tono sin tocar la velocidad. Conservar los formantes evita
+    /// el efecto «ardilla» o «robot» al subir o bajar el tono de una voz.
+    /// </summary>
+    internal static string FiltroVelocidadYTono(AjustesNarracion a)
+    {
+        if (!a.CambiaVelocidadOTono)
+            return "";
+        var velocidad = Math.Clamp(a.Velocidad, AjustesNarracion.VelocidadMinima, AjustesNarracion.VelocidadMaxima);
+        var tono = Math.Pow(2, Math.Clamp(a.TonoSemitonos, -AjustesNarracion.TonoMaximo, AjustesNarracion.TonoMaximo) / 12);
+        return FormattableString.Invariant($"rubberband=tempo={velocidad:0.###}:pitch={tono:0.#####}:formant=preserved:pitchq=quality:transients=mixed,");
     }
 
     public Task CodificarAsync(string wav, string destino, AjustesNarracion a, CancellationToken ct)

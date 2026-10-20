@@ -19,7 +19,7 @@
             <TextBlock
                 Margin="0,4,0,12"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="Describe la voz que quieres y Constantino la inventa. Genera varias versiones, escúchalas y guarda la que más te guste en tu biblioteca."
+                Text="Describe la voz que quieres y Calíope la inventa. Genera varias versiones, escúchalas y guarda la que más te guste en tu biblioteca."
                 TextWrapping="Wrap" />
 
             <ui:InfoBar

@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Markup;
 using System.Windows.Threading;
@@ -63,6 +63,7 @@ public partial class App : Application
 
         await _host.StartAsync();
         _host.Services.GetRequiredService<ServicioAjustes>().AplicarTema();
+        Marca.Activar();
         _host.Services.GetRequiredService<VentanaPrincipal>().Show();
     }
 
@@ -77,7 +78,7 @@ public partial class App : Application
 
     private void AlFallarSinControl(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        MessageBox.Show($"Ha ocurrido un error inesperado:\n\n{e.Exception.Message}", "Constantino",
+        MessageBox.Show($"Ha ocurrido un error inesperado:\n\n{e.Exception.Message}", Marca.Nombre,
             MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }

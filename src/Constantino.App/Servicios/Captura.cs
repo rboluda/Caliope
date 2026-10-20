@@ -6,12 +6,13 @@ using System.Windows.Media.Imaging;
 namespace Constantino.App.Servicios;
 
 /// <summary>
-/// Opción de desarrollo: <c>Constantino.exe --captura salida.png [--pagina PaginaComponentes]</c>
+/// Opción de desarrollo: <c>Caliope.exe --captura salida.png [--pagina PaginaComponentes] [--alto 1800]</c>
 /// abre la página indicada, la dibuja en un PNG y cierra la aplicación. Sirve para revisar la interfaz
 /// y documentarla sin depender de capturas de pantalla del sistema.
 /// </summary>
 /// <param name="Paso">Solo para el asistente: el paso que se muestra (0–5).</param>
-public sealed record OpcionesCaptura(string Ruta, string? Pagina, int? Paso)
+/// <param name="Alto">Alto de la ventana, para que quepa una página larga entera.</param>
+public sealed record OpcionesCaptura(string Ruta, string? Pagina, int? Paso, int? Alto = null)
 {
     public static OpcionesCaptura? Leer(string[] args)
     {
@@ -19,7 +20,8 @@ public sealed record OpcionesCaptura(string Ruta, string? Pagina, int? Paso)
         if (i < 0 || i + 1 >= args.Length)
             return null;
         return new OpcionesCaptura(Path.GetFullPath(args[i + 1]), Valor("--pagina"),
-            int.TryParse(Valor("--paso"), out var paso) ? paso : null);
+            int.TryParse(Valor("--paso"), out var paso) ? paso : null,
+            int.TryParse(Valor("--alto"), out var alto) ? alto : null);
 
         string? Valor(string nombre) =>
             Array.IndexOf(args, nombre) is var j and >= 0 && j + 1 < args.Length ? args[j + 1] : null;

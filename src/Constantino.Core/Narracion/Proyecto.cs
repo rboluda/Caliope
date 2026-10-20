@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Constantino.Core.Voces;
 
 namespace Constantino.Core.Narracion;
 
@@ -31,7 +32,16 @@ public sealed record AjustesNarracion(
     int Frecuencia = 48000,
     bool RecortarSilencios = true,
     double UmbralSilencioDb = -50,
-    double MargenRecorte = 0.05);
+    double MargenRecorte = 0.05,
+    double Velocidad = 1.0,
+    double TonoSemitonos = 0)
+{
+    /// <summary>Velocidad entre 0,8 y 1,2: más allá se nota artificial.</summary>
+    public const double VelocidadMinima = 0.8, VelocidadMaxima = 1.2, TonoMaximo = 3;
+
+    [JsonIgnore]
+    public bool CambiaVelocidadOTono => Math.Abs(Velocidad - 1) > 0.001 || Math.Abs(TonoSemitonos) > 0.001;
+}
 
 /// <summary>Un bloque ya generado: con qué huella y en qué archivo.</summary>
 public sealed record EstadoBloque(
@@ -61,13 +71,23 @@ public static class Huellas
     public static string DeBloque(Bloque bloque, AjustesNarracion ajustes, string firmaVoz, string modelo)
     {
         // La pausa entre bloques solo afecta al audio completo, no a cada bloque.
-        var relevantes = ajustes with { PausaEntreBloques = 0, VozId = null };
+        var relevantes = JsonSerializer.SerializeToNode(ajustes with { PausaEntreBloques = 0, VozId = null })!.AsObject();
+        // Ajustes añadidos en versiones posteriores: con su valor por defecto no cuentan, para que lo generado
+        // antes siga valiendo.
+        if (!ajustes.CambiaVelocidadOTono)
+        {
+            relevantes.Remove(nameof(AjustesNarracion.Velocidad));
+            relevantes.Remove(nameof(AjustesNarracion.TonoSemitonos));
+        }
         var datos = JsonSerializer.Serialize(new
         {
             bloque.Nombre,
             Eventos = bloque.Eventos.Select(e => e switch
             {
-                EventoVoz v => $"voz:{(v.Susurro ? "s" : "n")}:{v.Texto}",
+                // La variante solo entra cuando hay una distinta del susurro: así las huellas de los bloques
+                // generados antes de existir las variantes siguen valiendo.
+                EventoVoz v when v.Variante is null or CatalogoVariantes.Susurro => $"voz:{(v.Susurro ? "s" : "n")}:{v.Texto}",
+                EventoVoz v => $"voz:{v.Variante}:{v.Texto}",
                 EventoSilencio s => $"silencio:{s.Segundos:0.###}",
                 _ => "",
             }),

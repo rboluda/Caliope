@@ -3,11 +3,13 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Windows.Threading;
+using Constantino.Core;
 using Constantino.App.Paginas;
 using Constantino.App.Servicios;
 using Constantino.Core.Narracion;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
@@ -67,6 +69,9 @@ public sealed record OpcionVoz(string Id, string Nombre);
 
 public sealed record OpcionFormato(FormatoSalida Valor, string Nombre);
 
+/// <summary>Una etiqueta de variante de la voz, para insertarla en el guion.</summary>
+public sealed record EtiquetaVariante(string Nombre, string Etiqueta);
+
 public sealed partial class NarrarViewModel : ObservableObject
 {
     private static readonly CultureInfo Es = CultureInfo.GetCultureInfo("es-ES");
@@ -124,6 +129,25 @@ public sealed partial class NarrarViewModel : ObservableObject
     [ObservableProperty] public partial FormatoSalida Formato { get; set; } = FormatoSalida.Mp3;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoVelocidad))]
+    public partial double Velocidad { get; set; } = 1.0;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoTono))]
+    public partial double TonoSemitonos { get; set; }
+
+    public string TextoVelocidad => Math.Abs(Velocidad - 1) < 0.001 ? "normal" : $"{Velocidad.ToString("0.00", Es)}×";
+
+    public string TextoTono => Math.Abs(TonoSemitonos) < 0.001
+        ? "natural"
+        : $"{(TonoSemitonos > 0 ? "+" : "")}{TonoSemitonos.ToString("0.#", Es)} semitonos";
+
+    /// <summary>Etiquetas de las variantes de la voz elegida (además de [whispers]).</summary>
+    public ObservableCollection<EtiquetaVariante> EtiquetasVoz { get; } = [];
+
+    [ObservableProperty] public partial string? AyudaVariantes { get; set; }
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Libre))]
     public partial bool Generando { get; set; }
 
@@ -133,7 +157,16 @@ public sealed partial class NarrarViewModel : ObservableObject
     [ObservableProperty] public partial string Mensaje { get; set; } = "";
     [ObservableProperty] public partial string? Error { get; set; }
     [ObservableProperty] public partial string Resumen { get; set; } = "";
-    [ObservableProperty] public partial string? Completo { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NombreCompleto))]
+    public partial string? Completo { get; set; }
+
+    public string? NombreCompleto => Completo is null ? null : Path.GetFileName(Completo);
+
+    /// <summary>Carpeta donde se guardan los audios del proyecto.</summary>
+    [ObservableProperty] public partial string? Salida { get; set; }
+
+    [ObservableProperty] public partial string? AvisoSalida { get; set; }
     [ObservableProperty] public partial bool MostrarNuevo { get; set; }
     [ObservableProperty] public partial string NombreNuevo { get; set; } = "";
     [ObservableProperty] public partial bool SinVoces { get; set; }
@@ -181,6 +214,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         if (_proyecto is null)
             return;
         _cargando = true;
+        AvisoSalida = null;
         var a = _proyecto.Ajustes;
         TextoGuion = almacen.LeerGuion(opcion.Id);
         VozId = a.VozId ?? _voces.Predeterminada;
@@ -192,6 +226,8 @@ public sealed partial class NarrarViewModel : ObservableObject
         SusurroDb = a.SusurroDb;
         Lufs = a.Lufs;
         Formato = a.Formato;
+        Velocidad = a.Velocidad;
+        TonoSemitonos = a.TonoSemitonos;
         _cargando = false;
         Error = null;
         await RefrescarBloquesAsync();
@@ -213,6 +249,8 @@ public sealed partial class NarrarViewModel : ObservableObject
     partial void OnSusurroDbChanged(double value) => Programar();
     partial void OnLufsChanged(double value) => Programar();
     partial void OnFormatoChanged(FormatoSalida value) => Programar();
+    partial void OnVelocidadChanged(double value) => Programar();
+    partial void OnTonoSemitonosChanged(double value) => Programar();
 
     private void Programar()
     {
@@ -233,6 +271,8 @@ public sealed partial class NarrarViewModel : ObservableObject
         SusurroDb = SusurroDb,
         Lufs = Lufs,
         Formato = Formato,
+        Velocidad = Math.Round(Velocidad, 2),
+        TonoSemitonos = Math.Round(TonoSemitonos, 1),
     };
 
     private async Task GuardarYRefrescarAsync()
@@ -253,10 +293,12 @@ public sealed partial class NarrarViewModel : ObservableObject
         if (_proyecto is null)
             return;
         var ajustes = AjustesActuales();
-        var bloques = Guion.Leer(TextoGuion, ajustes.Pausa, ajustes.PausaLarga);
         var voz = await _narracion.VozAsync(VozId);
+        var bloques = Guion.Leer(TextoGuion, ajustes.Pausa, ajustes.PausaLarga, voz?.IdsVariantes);
+        ActualizarEtiquetas(voz);
         var modelo = await _narracion.ModeloAsync();
         var salida = (await _narracion.AlmacenAsync()).CarpetaSalida(_proyecto.Id);
+        Salida = salida;
         var estados = _proyecto.Bloques.ToDictionary(b => b.Indice);
 
         Bloques.Clear();
@@ -266,7 +308,7 @@ public sealed partial class NarrarViewModel : ObservableObject
             if (estados.TryGetValue(b.Indice, out var e) && File.Exists(Path.Combine(salida, e.Archivo)))
             {
                 var huella = voz is { } v && modelo is not null
-                    ? Huellas.DeBloque(b, ajustes, SintetizadorMotor.Firma(v.Voz, v.Referencia), modelo)
+                    ? Huellas.DeBloque(b, ajustes, v.Firma, modelo)
                     : null;
                 fila.Estado = huella == e.Huella ? EstadoBloqueVista.Generado : EstadoBloqueVista.Desactualizado;
                 fila.Archivo = Path.Combine(salida, e.Archivo);
@@ -290,6 +332,23 @@ public sealed partial class NarrarViewModel : ObservableObject
             : $"{Bloques.Count} bloques · {generados} generados" +
               (porActualizar > 0 ? $" · {porActualizar} por actualizar" : "") +
               (duracion > 0 ? $" · {Duracion(duracion)} de audio" : "");
+    }
+
+    private void ActualizarEtiquetas(VozParaNarrar? voz)
+    {
+        EtiquetasVoz.Clear();
+        if (voz is null)
+        {
+            AyudaVariantes = null;
+            return;
+        }
+        foreach (var (v, _) in voz.Variantes.Where(v => v.Variante.Id != Constantino.Core.Voces.CatalogoVariantes.Susurro))
+            EtiquetasVoz.Add(new EtiquetaVariante(v.Nombre, v.Etiqueta + " "));
+        var tieneSusurro = voz.IdsVariantes.Contains(Constantino.Core.Voces.CatalogoVariantes.Susurro);
+        AyudaVariantes = voz.Variantes.Count == 0
+            ? "Esta voz no tiene variantes: [whispers] se simula bajando el volumen. Puedes añadirle variantes en «Voces»."
+            : "Variantes de esta voz: " + string.Join(", ", voz.Variantes.Select(v => $"{v.Variante.Etiqueta} {v.Variante.Nombre.ToLowerInvariant()}")) +
+              (tieneSusurro ? "." : ". [whispers] se simula bajando el volumen.");
     }
 
     // --- Proyectos ---------------------------------------------------------------------------
@@ -347,6 +406,105 @@ public sealed partial class NarrarViewModel : ObservableObject
         Process.Start(new ProcessStartInfo(carpeta) { UseShellExecute = true });
     }
 
+    // --- Sacar los audios -----------------------------------------------------------------------
+
+    [RelayCommand]
+    private void GuardarCompletoComo()
+    {
+        if (Completo is { } ruta && _proyecto is { } p)
+            GuardarComo(ruta, Textos.NombreDeArchivo(p.Nombre) + Path.GetExtension(ruta));
+    }
+
+    [RelayCommand]
+    private void GuardarBloqueComo(FilaBloque fila)
+    {
+        if (fila.Archivo is { } ruta)
+            GuardarComo(ruta, Path.GetFileName(ruta));
+    }
+
+    private void GuardarComo(string origen, string nombre)
+    {
+        var extension = Path.GetExtension(origen);
+        var dialogo = new SaveFileDialog
+        {
+            Title = "Guardar el audio",
+            FileName = nombre,
+            DefaultExt = extension,
+            Filter = $"Audio {extension.TrimStart('.').ToUpperInvariant()}|*{extension}",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+        };
+        if (dialogo.ShowDialog() != true)
+            return;
+        try
+        {
+            File.Copy(origen, dialogo.FileName, overwrite: true);
+            AvisoSalida = $"Guardado en {dialogo.FileName}";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            AvisoSalida = $"No se ha podido guardar: {e.Message}";
+        }
+    }
+
+    /// <summary>Copia la narración completa y los bloques generados a la carpeta que se elija.</summary>
+    [RelayCommand]
+    private void ExportarTodo()
+    {
+        if (_proyecto is not { } p)
+            return;
+        var dialogo = new OpenFolderDialog
+        {
+            Title = "Carpeta donde copiar los audios",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+        };
+        if (dialogo.ShowDialog() != true)
+            return;
+        var destino = Path.Combine(dialogo.FolderName, Textos.NombreDeArchivo(p.Nombre));
+        var archivos = Bloques.Where(f => f.Archivo is not null).Select(f => f.Archivo!).ToList();
+        if (Completo is { } completo)
+            archivos.Insert(0, completo);
+        try
+        {
+            Directory.CreateDirectory(destino);
+            foreach (var a in archivos)
+                File.Copy(a, Path.Combine(destino, Path.GetFileName(a)), overwrite: true);
+            AvisoSalida = $"{archivos.Count} audios copiados a {destino}";
+            Process.Start(new ProcessStartInfo(destino) { UseShellExecute = true });
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            AvisoSalida = $"No se ha podido copiar: {e.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void CopiarCompleto()
+    {
+        if (Completo is { } ruta)
+            Copiar(ruta);
+    }
+
+    [RelayCommand]
+    private void CopiarBloque(FilaBloque fila)
+    {
+        if (fila.Archivo is { } ruta)
+            Copiar(ruta);
+    }
+
+    /// <summary>Al portapapeles como archivo: se pega en el Explorador o en un editor de vídeo.</summary>
+    private void Copiar(string ruta)
+    {
+        System.Windows.Clipboard.SetFileDropList(new System.Collections.Specialized.StringCollection { ruta });
+        AvisoSalida = $"«{Path.GetFileName(ruta)}» copiado: pégalo en una carpeta o en tu editor de vídeo.";
+    }
+
+    [RelayCommand]
+    private void MostrarBloque(FilaBloque fila)
+    {
+        if (fila.Archivo is { } ruta)
+            Process.Start("explorer.exe", $"/select,\"{ruta}\"");
+    }
+
     // --- Generación --------------------------------------------------------------------------
 
     [RelayCommand]
@@ -396,7 +554,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         });
         try
         {
-            var narrador = await _narracion.NarradorAsync(voz.Voz, voz.Referencia, modelo);
+            var narrador = await _narracion.NarradorAsync(voz, modelo);
             var r = await narrador.NarrarAsync(_proyecto, TextoGuion, solo, forzar, progreso, _cancelacion.Token);
             _proyecto = r.Proyecto;
             Mensaje = r.Generados == 0

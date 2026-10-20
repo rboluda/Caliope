@@ -308,6 +308,141 @@
                                     </StackPanel>
                                 </Border>
 
+                                <!--  Variantes: la misma voz susurrando, asustada…  -->
+                                <StackPanel Margin="0,12,0,0" Visibility="{Binding TieneVariantes, Converter={StaticResource BoolAVisibilidad}}">
+                                    <TextBlock FontWeight="SemiBold" Text="Variantes" />
+                                    <ItemsControl Margin="0,4,0,0" ItemsSource="{Binding Variantes}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:FilaVariante}">
+                                                <Grid Margin="0,2,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="160" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Nombre}" />
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                        Text="{Binding Detalle}" />
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                        <ui:Button
+                                                            Appearance="Transparent"
+                                                            Command="{Binding DataContext.ViewModel.EscucharVarianteCommand, ElementName=Raiz}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip="Escuchar la grabación de esta variante">
+                                                            <ui:Button.Icon>
+                                                                <ui:SymbolIcon Symbol="Play24" />
+                                                            </ui:Button.Icon>
+                                                        </ui:Button>
+                                                        <ui:Button
+                                                            Appearance="Transparent"
+                                                            Command="{Binding DataContext.ViewModel.BorrarVarianteCommand, ElementName=Raiz}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip="Borrar esta variante">
+                                                            <ui:Button.Icon>
+                                                                <ui:SymbolIcon Symbol="Delete24" />
+                                                            </ui:Button.Icon>
+                                                        </ui:Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <!--  Añadir una variante  -->
+                                <Border
+                                    Margin="0,12,0,0"
+                                    Padding="12"
+                                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                    CornerRadius="6"
+                                    Visibility="{Binding MostrarAnadirVariante, Converter={StaticResource BoolAVisibilidad}}">
+                                    <StackPanel>
+                                        <TextBlock
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="Una variante es la misma voz con otra forma de hablar. En el guion de Narrar se usa con su etiqueta, por ejemplo [whispers] o [asustado], y dura hasta el final de la línea o hasta [normal]."
+                                            TextWrapping="Wrap" />
+                                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                                            <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Text="Tipo:" />
+                                            <ComboBox
+                                                MinWidth="180"
+                                                DisplayMemberPath="Nombre"
+                                                ItemsSource="{Binding TiposVariante}"
+                                                SelectedItem="{Binding TipoVariante}" />
+                                        </StackPanel>
+
+                                        <!--  Generar (solo voces diseñadas)  -->
+                                        <StackPanel Margin="0,12,0,0" Visibility="{Binding PuedeGenerarVariante, Converter={StaticResource BoolAVisibilidad}}">
+                                            <TextBlock
+                                                Text="Esta voz es diseñada: Calíope puede generar la variante con su misma descripción y semilla (necesita el modelo VoiceDesign)."
+                                                TextWrapping="Wrap" />
+                                            <ui:Button
+                                                Margin="0,8,0,0"
+                                                Appearance="Primary"
+                                                Command="{Binding DataContext.ViewModel.GenerarVarianteCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                Content="Generar con VoiceDesign"
+                                                IsEnabled="{Binding TrabajandoVariante, Converter={StaticResource NegarBool}}">
+                                                <ui:Button.Icon>
+                                                    <ui:SymbolIcon Symbol="Sparkle24" />
+                                                </ui:Button.Icon>
+                                            </ui:Button>
+                                            <TextBlock Margin="0,12,0,0" Text="O añádela desde una grabación:" />
+                                        </StackPanel>
+
+                                        <!--  Desde una grabación  -->
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ui:TextBox PlaceholderText="Grabación de la misma persona hablando así (5–20 s)" Text="{Binding ArchivoVariante, UpdateSourceTrigger=PropertyChanged}" />
+                                            <ui:Button
+                                                Grid.Column="1"
+                                                Margin="8,0,0,0"
+                                                Command="{Binding DataContext.ViewModel.ExaminarVarianteCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                Content="Examinar…" />
+                                        </Grid>
+                                        <ui:TextBox
+                                            Margin="0,8,0,0"
+                                            AcceptsReturn="True"
+                                            IsEnabled="{Binding SinTranscripcionVariante, Converter={StaticResource NegarBool}}"
+                                            MinHeight="50"
+                                            PlaceholderText="Transcripción exacta de la grabación"
+                                            Text="{Binding TranscripcionVariante, UpdateSourceTrigger=PropertyChanged}"
+                                            TextWrapping="Wrap" />
+                                        <CheckBox Margin="0,6,0,0" Content="No tengo la transcripción (se imita solo el timbre)" IsChecked="{Binding SinTranscripcionVariante}" />
+                                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                                            <ui:Button
+                                                Command="{Binding DataContext.ViewModel.ImportarVarianteCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                Content="Añadir desde la grabación"
+                                                IsEnabled="{Binding TrabajandoVariante, Converter={StaticResource NegarBool}}" />
+                                            <ui:Button
+                                                Margin="8,0,0,0"
+                                                Command="{Binding DataContext.ViewModel.AlternarVarianteCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                Content="Cancelar" />
+                                            <ui:ProgressRing
+                                                Width="18"
+                                                Height="18"
+                                                Margin="12,0,0,0"
+                                                IsIndeterminate="True"
+                                                Visibility="{Binding TrabajandoVariante, Converter={StaticResource BoolAVisibilidad}}" />
+                                        </StackPanel>
+                                        <ui:InfoBar
+                                            Margin="0,8,0,0"
+                                            IsClosable="False"
+                                            IsOpen="{Binding ErrorVariante, Converter={StaticResource TextoNoVacio}}"
+                                            Message="{Binding ErrorVariante}"
+                                            Severity="Warning"
+                                            Title="No se ha podido añadir" />
+                                    </StackPanel>
+                                </Border>
+
                                 <!--  Acciones secundarias  -->
                                 <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
                                     <ui:Button
@@ -326,6 +461,11 @@
                                         Command="{Binding DataContext.ViewModel.EditarTranscripcionCommand, ElementName=Raiz}"
                                         CommandParameter="{Binding}"
                                         Content="Editar transcripción" />
+                                    <ui:Button
+                                        Appearance="Transparent"
+                                        Command="{Binding DataContext.ViewModel.AlternarVarianteCommand, ElementName=Raiz}"
+                                        CommandParameter="{Binding}"
+                                        Content="Añadir variante" />
                                     <ui:Button
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.BorrarCommand, ElementName=Raiz}"

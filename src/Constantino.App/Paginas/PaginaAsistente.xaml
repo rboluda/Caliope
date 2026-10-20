@@ -76,15 +76,15 @@
             <TabItem Style="{StaticResource Oculta}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Titulo}" Text="Te damos la bienvenida a Constantino" />
-                        <TextBlock Style="{StaticResource Parrafo}" Text="Constantino convierte textos en voz en tu propio ordenador: puedes crear voces nuevas describiéndolas, clonar una voz a partir de una grabación y narrar guiones completos. No necesita internet ni cuentas una vez instalado." />
+                        <TextBlock Style="{StaticResource Titulo}" Text="Te damos la bienvenida a Calíope" />
+                        <TextBlock Style="{StaticResource Parrafo}" Text="Calíope convierte textos en voz en tu propio ordenador: puedes crear voces nuevas describiéndolas, clonar una voz a partir de una grabación y narrar guiones completos. No necesita internet ni cuentas una vez instalado." />
                         <TextBlock Style="{StaticResource Parrafo}" Text="Para funcionar necesita descargar algunas herramientas y modelos de voz. En los siguientes pasos:" />
                         <ui:Card Margin="0,0,0,12">
                             <StackPanel>
                                 <TextBlock Margin="0,2" Text="1. Revisaremos tu equipo para recomendarte qué instalar." />
                                 <TextBlock Margin="0,2" Text="2. Elegirás dónde guardar todo (ocupa varios gigas)." />
                                 <TextBlock Margin="0,2" Text="3. Verás cada componente explicado y elegirás cuáles instalar." />
-                                <TextBlock Margin="0,2" Text="4. Constantino lo descargará e instalará por ti." />
+                                <TextBlock Margin="0,2" Text="4. Calíope lo descargará e instalará por ti." />
                             </StackPanel>
                         </ui:Card>
                         <ui:InfoBar
@@ -255,7 +255,7 @@
                 <StackPanel>
                     <ui:SymbolIcon HorizontalAlignment="Left" FontSize="48" Foreground="{DynamicResource SystemFillColorSuccessBrush}" Symbol="CheckmarkCircle24" />
                     <TextBlock Margin="0,12,0,8" Style="{StaticResource Titulo}" Text="¡Todo listo!" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Constantino ya tiene lo necesario. En las próximas versiones podrás crear tu primera voz y narrar con ella desde el menú de la izquierda." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Calíope ya tiene lo necesario. Crea tu primera voz en «Diseñar voz» o «Clonar voz» y narra con ella en «Narrar», desde el menú de la izquierda." />
                     <TextBlock Style="{StaticResource Parrafo}" Text="Puedes instalar o quitar componentes cuando quieras desde «Componentes»." />
                 </StackPanel>
             </TabItem>

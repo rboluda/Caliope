@@ -92,7 +92,33 @@
                             <ui:Button Margin="6,0,0,0" Click="AlInsertar" Content="Pausa larga" Tag="[long pause] " ToolTip="Pausa larga [long pause]" />
                             <ui:Button Margin="6,0,0,0" Click="AlInsertar" Content="Susurro" Tag="[whispers] " ToolTip="Susurra hasta el final de la línea [whispers]" />
                             <ui:Button Margin="6,0,0,0" Click="AlInsertarBloque" Content="Nuevo bloque" ToolTip="Empieza un párrafo nuevo con nombre" />
+                            <ItemsControl ItemsSource="{Binding ViewModel.EtiquetasVoz}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <ui:Button
+                                            Margin="6,0,0,0"
+                                            Appearance="Secondary"
+                                            Click="AlInsertar"
+                                            Content="{Binding Nombre}"
+                                            Tag="{Binding Etiqueta}"
+                                            ToolTip="{Binding Etiqueta}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </WrapPanel>
+                        <TextBlock
+                            DockPanel.Dock="Bottom"
+                            Margin="0,8,0,0"
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                            Text="{Binding ViewModel.AyudaVariantes}"
+                            TextWrapping="Wrap"
+                            Visibility="{Binding ViewModel.AyudaVariantes, Converter={StaticResource NoNuloAVisibilidad}}" />
                         <TextBox
                             x:Name="Editor"
                             MinHeight="380"
@@ -125,6 +151,28 @@
                                 Minimum="0.5"
                                 TickFrequency="0.05"
                                 Value="{Binding ViewModel.Temperatura}" />
+
+                            <TextBlock Style="{StaticResource Etiqueta}">
+                                <Run Text="Velocidad: " /><Run FontWeight="SemiBold" Text="{Binding ViewModel.TextoVelocidad, Mode=OneWay}" />
+                            </TextBlock>
+                            <Slider
+                                IsSnapToTickEnabled="True"
+                                Maximum="1.2"
+                                Minimum="0.8"
+                                TickFrequency="0.05"
+                                ToolTip="Más lenta o más rápida sin cambiar el tono. Más allá de ±15 % empieza a notarse."
+                                Value="{Binding ViewModel.Velocidad}" />
+
+                            <TextBlock Style="{StaticResource Etiqueta}">
+                                <Run Text="Tono: " /><Run FontWeight="SemiBold" Text="{Binding ViewModel.TextoTono, Mode=OneWay}" />
+                            </TextBlock>
+                            <Slider
+                                IsSnapToTickEnabled="True"
+                                Maximum="3"
+                                Minimum="-3"
+                                TickFrequency="0.5"
+                                ToolTip="Más grave o más aguda sin cambiar la velocidad."
+                                Value="{Binding ViewModel.TonoSemitonos}" />
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -202,21 +250,93 @@
                             <TextBlock FontSize="16" FontWeight="SemiBold" Text="Bloques" />
                             <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.Resumen}" />
                         </StackPanel>
-                        <ui:Button
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Command="{Binding ViewModel.EscucharCompletoCommand}"
-                            Content="Escuchar todo"
-                            Visibility="{Binding ViewModel.Completo, Converter={StaticResource NoNuloAVisibilidad}}">
-                            <ui:Button.Icon>
-                                <ui:SymbolIcon Symbol="Play24" />
-                            </ui:Button.Icon>
-                        </ui:Button>
+                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                            <ui:Button Command="{Binding ViewModel.ExportarTodoCommand}" Content="Exportar todo…" ToolTip="Copia la narración completa y cada bloque a la carpeta que elijas">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="ArrowExportLtr24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button Margin="6,0,0,0" Command="{Binding ViewModel.AbrirCarpetaCommand}" Content="Abrir carpeta" ToolTip="{Binding ViewModel.Salida}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="FolderOpen24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                        </StackPanel>
                     </Grid>
+
+                    <!--  Narración completa: el audio que normalmente se quiere sacar  -->
+                    <Border
+                        Margin="0,12,0,0"
+                        Padding="14,10"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource AccentFillColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Cursor="Hand"
+                        MouseMove="AlArrastrarAudio"
+                        PreviewMouseLeftButtonDown="AlPulsarAudio"
+                        Tag="{Binding ViewModel.Completo}"
+                        ToolTip="Arrástralo a tu editor de vídeo o a una carpeta"
+                        Visibility="{Binding ViewModel.Completo, Converter={StaticResource NoNuloAVisibilidad}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:SymbolIcon VerticalAlignment="Center" FontSize="28" Symbol="MusicNote224" />
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock FontWeight="SemiBold" Text="Narración completa" />
+                                <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                    <Run Text="{Binding ViewModel.NombreCompleto, Mode=OneWay}" /><Run Text=" · arrástralo a tu editor o a una carpeta" />
+                                </TextBlock>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
+                                <ui:Button Command="{Binding ViewModel.EscucharCompletoCommand}" Content="Escuchar">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Play24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                                <ui:Button Margin="6,0,0,0" Command="{Binding ViewModel.CopiarCompletoCommand}" ToolTip="Copiar el archivo para pegarlo en una carpeta o en el editor">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Copy24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                                <ui:Button Margin="6,0,0,0" Appearance="Primary" Command="{Binding ViewModel.GuardarCompletoComoCommand}" Content="Guardar como…">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Save24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{Binding ViewModel.AvisoSalida}"
+                        TextWrapping="Wrap"
+                        Visibility="{Binding ViewModel.AvisoSalida, Converter={StaticResource NoNuloAVisibilidad}}" />
+                    <TextBlock Margin="0,8,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap">
+                        <Run Text="Los audios se guardan en " /><Run Text="{Binding ViewModel.Salida, Mode=OneWay}" /><Run Text=". Cada bloque también se puede arrastrar, guardar o copiar por separado (clic derecho para más opciones)." />
+                    </TextBlock>
                     <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding ViewModel.Bloques}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:FilaBloque}">
-                                <Border Margin="0,4" Padding="12,8" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                                <Border
+                                    Margin="0,4"
+                                    Padding="12,8"
+                                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                    CornerRadius="6"
+                                    MouseMove="AlArrastrarAudio"
+                                    PreviewMouseLeftButtonDown="AlPulsarAudio"
+                                    Tag="{Binding Archivo}">
+                                    <Border.ContextMenu>
+                                        <ContextMenu IsEnabled="{Binding Escuchable}">
+                                            <MenuItem Click="AlGuardarBloque" Header="Guardar como…" />
+                                            <MenuItem Click="AlCopiarBloque" Header="Copiar" />
+                                            <MenuItem Click="AlMostrarBloque" Header="Mostrar en la carpeta" />
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -244,6 +364,16 @@
                                                 ToolTip="Escuchar este bloque">
                                                 <ui:Button.Icon>
                                                     <ui:SymbolIcon Symbol="Play24" />
+                                                </ui:Button.Icon>
+                                            </ui:Button>
+                                            <ui:Button
+                                                Margin="6,0,0,0"
+                                                Command="{Binding DataContext.ViewModel.GuardarBloqueComoCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding Escuchable}"
+                                                ToolTip="Guardar el audio de este bloque como…">
+                                                <ui:Button.Icon>
+                                                    <ui:SymbolIcon Symbol="Save24" />
                                                 </ui:Button.Icon>
                                             </ui:Button>
                                             <ui:Button

@@ -42,11 +42,11 @@
 
             <ui:CardControl Margin="0,8,0,0">
                 <ui:CardControl.Icon>
-                    <ui:SymbolIcon Symbol="Info24" />
+                    <ui:ImageIcon Width="32" Height="32" Source="pack://application:,,,/Recursos/caliope.png" />
                 </ui:CardControl.Icon>
                 <ui:CardControl.Header>
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="Acerca de Constantino" />
+                        <TextBlock FontWeight="SemiBold" Text="Acerca de Calíope" />
                         <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                             <Run Text="Versión " /><Run Text="{Binding ViewModel.Version, Mode=OneWay}" />
                         </TextBlock>

@@ -22,7 +22,7 @@ public partial class VentanaPrincipal : FluentWindow
         {
             // Con el tema «Sistema», sigue los cambios de claro/oscuro de Windows mientras la app está abierta.
             if (ajustes.Actual.Tema == TemaApp.Sistema)
-                SystemThemeWatcher.Watch(this);
+                SystemThemeWatcher.Watch(this, updateAccents: false);
 
             var captura = OpcionesCaptura.Leer(Environment.GetCommandLineArgs());
             // Hasta completar la configuración inicial, se arranca en el asistente.
@@ -33,6 +33,8 @@ public partial class VentanaPrincipal : FluentWindow
 
             if (captura is not null)
             {
+                if (captura.Alto is { } alto)
+                    Height = alto;
                 // Margen para que termine el análisis del equipo y se asiente la maquetación.
                 await Task.Delay(TimeSpan.FromSeconds(4));
                 if (captura.Paso is { } paso && inicial == typeof(PaginaAsistente))

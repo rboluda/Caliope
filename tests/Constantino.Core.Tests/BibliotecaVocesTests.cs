@@ -136,6 +136,40 @@ public sealed class BibliotecaVocesTests : IDisposable
     }
 
     [Fact]
+    public async Task Las_variantes_se_anaden_sustituyen_y_borran()
+    {
+        var bib = Biblioteca();
+        var voz = (await bib.ImportarAsync(Solicitud(_audio))).Voz;
+
+        var r = await bib.AnadirVarianteAsync(voz.Id, "Susurro", "Susurrando", _audio, Transcripcion(15), sinTranscripcion: false);
+        Assert.Equal("susurro", r.Variante.Id);
+        Assert.Equal("[whispers]", r.Variante.Etiqueta);
+        Assert.True(File.Exists(bib.ReferenciaDeVariante(voz.Id, "susurro")));
+
+        await bib.AnadirVarianteAsync(voz.Id, "tenso", "Tenso", _audio, "", sinTranscripcion: true);
+        var nueva = await bib.AnadirVarianteAsync(voz.Id, "tenso", "Muy tenso", _audio, "", sinTranscripcion: true);
+        Assert.Equal("[tenso]", nueva.Variante.Etiqueta);
+        Assert.Equal(["Muy tenso", "Susurrando"], bib.Variantes(voz.Id).Select(v => v.Nombre));
+        Assert.Single(bib.Listar()); // las variantes no aparecen como voces
+
+        bib.BorrarVariante(voz.Id, "tenso");
+        Assert.Equal(["susurro"], bib.Variantes(voz.Id).Select(v => v.Id));
+    }
+
+    [Fact]
+    public async Task Una_variante_con_transcripcion_que_no_encaja_no_sustituye_a_la_anterior()
+    {
+        var bib = Biblioteca();
+        var voz = (await bib.ImportarAsync(Solicitud(_audio))).Voz;
+        await bib.AnadirVarianteAsync(voz.Id, "susurro", "Susurrando", _audio, Transcripcion(15), false);
+
+        await Assert.ThrowsAsync<VozInvalidaException>(() =>
+            bib.AnadirVarianteAsync(voz.Id, "susurro", "Otro", _audio, "Muy corta pero larga", false));
+
+        Assert.Equal("Susurrando", Assert.Single(bib.Variantes(voz.Id)).Nombre);
+    }
+
+    [Fact]
     public async Task Si_ffmpeg_falla_explica_que_no_se_pudo_leer_el_audio()
     {
         _ejecutor.Codigo = 1;

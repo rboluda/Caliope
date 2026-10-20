@@ -15,6 +15,13 @@ namespace Constantino.App.ViewModels;
 
 public sealed record OpcionIdioma(string Clave, string Nombre);
 
+/// <summary>Una variante de la voz en su tarjeta.</summary>
+public sealed record FilaVariante(Variante Variante, string Referencia)
+{
+    public string Nombre => Variante.Nombre;
+    public string Detalle => $"{Variante.Etiqueta} · {Variante.DuracionSegundos.ToString("0.#", CultureInfo.GetCultureInfo("es-ES"))} s";
+}
+
 /// <summary>Una voz en la lista, con su zona de prueba y su edición de nombre.</summary>
 public sealed partial class TarjetaVoz : ObservableObject
 {
@@ -28,6 +35,7 @@ public sealed partial class TarjetaVoz : ObservableObject
         TextoPrueba = TextoDeEjemplo(voz.Idioma);
         NombreEditado = voz.Nombre;
         TranscripcionEditada = voz.Transcripcion;
+        Variantes.CollectionChanged += (_, _) => OnPropertyChanged(nameof(TieneVariantes));
     }
 
     [ObservableProperty]
@@ -59,6 +67,22 @@ public sealed partial class TarjetaVoz : ObservableObject
             }
         }
     }
+
+    // --- Variantes ---
+    public ObservableCollection<FilaVariante> Variantes { get; } = [];
+    public bool TieneVariantes => Variantes.Count > 0;
+    public IReadOnlyList<TipoVariante> TiposVariante => CatalogoVariantes.Tipos;
+
+    /// <summary>Las voces diseñadas pueden generar variantes con su misma descripción y semilla.</summary>
+    public bool PuedeGenerarVariante => Voz.Origen == OrigenVoz.Disenada && !string.IsNullOrWhiteSpace(Voz.Descripcion);
+
+    [ObservableProperty] public partial bool MostrarAnadirVariante { get; set; }
+    [ObservableProperty] public partial TipoVariante? TipoVariante { get; set; } = CatalogoVariantes.Tipos[0];
+    [ObservableProperty] public partial string ArchivoVariante { get; set; } = "";
+    [ObservableProperty] public partial string TranscripcionVariante { get; set; } = "";
+    [ObservableProperty] public partial bool SinTranscripcionVariante { get; set; }
+    [ObservableProperty] public partial bool TrabajandoVariante { get; set; }
+    [ObservableProperty] public partial string? ErrorVariante { get; set; }
 
     [ObservableProperty] public partial bool EditandoTranscripcion { get; set; }
     [ObservableProperty] public partial string TranscripcionEditada { get; set; }
@@ -131,8 +155,112 @@ public sealed partial class VocesViewModel : ObservableObject
         var predeterminada = _voces.Predeterminada;
         Voces.Clear();
         foreach (var v in biblioteca.Listar())
-            Voces.Add(new TarjetaVoz(v, biblioteca.ReferenciaDe(v.Id), v.Id == predeterminada));
+        {
+            var tarjeta = new TarjetaVoz(v, biblioteca.ReferenciaDe(v.Id), v.Id == predeterminada);
+            CargarVariantes(biblioteca, tarjeta);
+            Voces.Add(tarjeta);
+        }
         SinVoces = Voces.Count == 0;
+    }
+
+    private static void CargarVariantes(BibliotecaVoces biblioteca, TarjetaVoz t)
+    {
+        t.Variantes.Clear();
+        foreach (var v in biblioteca.Variantes(t.Voz.Id))
+            t.Variantes.Add(new FilaVariante(v, biblioteca.ReferenciaDeVariante(t.Voz.Id, v.Id)));
+    }
+
+    // --- Variantes -----------------------------------------------------------------------------
+
+    [RelayCommand]
+    private void AlternarVariante(TarjetaVoz t)
+    {
+        t.ErrorVariante = null;
+        t.MostrarAnadirVariante = !t.MostrarAnadirVariante;
+    }
+
+    [RelayCommand]
+    private void ExaminarVariante(TarjetaVoz t)
+    {
+        var dialogo = new OpenFileDialog
+        {
+            Title = "Grabación de la variante",
+            Filter = "Audio (*.wav;*.mp3;*.flac;*.ogg;*.m4a)|*.wav;*.mp3;*.flac;*.ogg;*.m4a|Todos los archivos|*.*",
+        };
+        if (dialogo.ShowDialog() == true)
+            t.ArchivoVariante = dialogo.FileName;
+    }
+
+    /// <summary>Para una voz diseñada: la misma descripción y semilla, con el estilo de la variante añadido.</summary>
+    [RelayCommand]
+    private async Task GenerarVarianteAsync(TarjetaVoz t)
+    {
+        if (t.TipoVariante is not { } tipo || t.Voz.Descripcion is not { } descripcion)
+            return;
+        t.ErrorVariante = null;
+        t.TrabajandoVariante = true;
+        try
+        {
+            var instruccion = CatalogoVariantes.InstruccionPara(descripcion, tipo);
+            var texto = TextosDeReferencia.Para(t.Voz.Idioma);
+            var salida = await _voces.ArchivoTemporalAsync($"variante-{tipo.Id}");
+            var r = await Motor.DisenarAsync(instruccion, t.Voz.Idioma, texto, salida, t.Voz.Semilla ?? 1234);
+            var biblioteca = await _voces.BibliotecaAsync();
+            await biblioteca.AnadirVarianteAsync(t.Voz.Id, tipo.Id, tipo.Nombre, r.Salida, texto, sinTranscripcion: false, instruccion);
+            CargarVariantes(biblioteca, t);
+            t.MostrarAnadirVariante = false;
+            Reproductor.Reproducir(biblioteca.ReferenciaDeVariante(t.Voz.Id, tipo.Id));
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            t.ErrorVariante = e is VozInvalidaException ? e.Message : ServicioMotor.Explicar(e);
+        }
+        finally
+        {
+            t.TrabajandoVariante = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportarVarianteAsync(TarjetaVoz t)
+    {
+        if (t.TipoVariante is not { } tipo)
+            return;
+        t.ErrorVariante = null;
+        t.TrabajandoVariante = true;
+        try
+        {
+            var biblioteca = await _voces.BibliotecaAsync();
+            await biblioteca.AnadirVarianteAsync(t.Voz.Id, tipo.Id, tipo.Nombre, t.ArchivoVariante, t.TranscripcionVariante,
+                t.SinTranscripcionVariante);
+            CargarVariantes(biblioteca, t);
+            t.MostrarAnadirVariante = false;
+            t.ArchivoVariante = t.TranscripcionVariante = "";
+        }
+        catch (VozInvalidaException e)
+        {
+            t.ErrorVariante = e.Message;
+        }
+        finally
+        {
+            t.TrabajandoVariante = false;
+        }
+    }
+
+    [RelayCommand]
+    private void EscucharVariante(FilaVariante v) => Alternar(v.Referencia);
+
+    [RelayCommand]
+    private async Task BorrarVarianteAsync(FilaVariante v)
+    {
+        var tarjeta = Voces.FirstOrDefault(t => t.Variantes.Contains(v));
+        if (tarjeta is null)
+            return;
+        if (Reproductor.Sonando == v.Referencia)
+            Reproductor.Detener();
+        var biblioteca = await _voces.BibliotecaAsync();
+        biblioteca.BorrarVariante(tarjeta.Voz.Id, v.Variante.Id);
+        CargarVariantes(biblioteca, tarjeta);
     }
 
     [RelayCommand]

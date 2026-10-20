@@ -1,6 +1,8 @@
-# Constantino
+# Calíope
 
-Caja de herramientas de voz para Windows: instala con botones los motores de síntesis de voz que elijas (Qwen3-TTS, Whisper, Chatterbox) y te deja diseñar voces, clonarlas y crear narraciones sin tocar la línea de comandos.
+<img src="recursos/caliope.png" width="96" alt="Logotipo de Calíope">
+
+Caja de herramientas de voz para Windows (nombre interno del código: Constantino): instala con botones los motores de síntesis de voz que elijas (Qwen3-TTS, Whisper, Chatterbox) y te deja diseñar voces, clonarlas y crear narraciones sin tocar la línea de comandos.
 
 El diseño completo está en [docs/DISENO.md](docs/DISENO.md).
 
@@ -17,6 +19,8 @@ El diseño completo está en [docs/DISENO.md](docs/DISENO.md).
 
 - **H5**: pantalla Clonar voz. Grabar con el micrófono (NAudio) leyendo un texto propuesto, o importar un audio; forma de onda con selección del tramo; análisis de la grabación (voz, saturación, volumen bajo, ruido de fondo, duración); transcripción con Whisper large-v3-turbo (instalable desde Componentes, usa el entorno del motor Qwen), con el texto leído o a mano; consentimiento obligatorio; probar y guardar.
 
+- **H6**: velocidad (0,8–1,2×) y tono (±3 semitonos) en Narrar, aplicados con rubberband conservando los formantes, sin cambiar el tono al cambiar la velocidad ni al revés. Variantes de voz (susurro, tenso, asustado, triste, alegre, grito): grabaciones de la misma voz hablando de otra forma, añadidas desde un audio o, en las voces diseñadas, generadas con VoiceDesign con la misma descripción y semilla. En el guion se usan con su etiqueta (`[asustado]`… hasta `[normal]` o fin de línea); `[whispers]` usa la variante susurro si existe y si no baja el volumen. Los bloques generados antes siguen valiendo mientras no se toquen los ajustes nuevos. Sacar los audios: «Guardar como…», copiar al portapapeles o arrastrar la narración completa o cualquier bloque al editor de vídeo, y «Exportar todo…» a una carpeta.
+
 Chatterbox aparece en el catálogo pero aún no se puede instalar (H7).
 
 ### Proyectos de narración
@@ -25,7 +29,7 @@ Chatterbox aparece en el catálogo pero aún no se puede instalar (H7).
 
 ### El motor de voz
 
-La app lanza `python -m constantino_motor` con el Python del entorno del motor y le envía una petición JSON por línea (`info`, `cargar`, `descargar`, `sintetizar`, `salir`); el motor responde con eventos `progreso`, `resultado` o `error`. stdout queda reservado al protocolo y todo lo demás va a stderr. Con `CONSTANTINO_MOTOR_FALSO=1` usa un motor falso sin torch, que es el que prueban los tests (`CONSTANTINO_EXIGIR_PYTHON=1` hace que falten Python sea un fallo y no se salte la prueba).
+La app lanza `python -m constantino_motor` con el Python del entorno del motor y le envía una petición JSON por línea (`info`, `cargar`, `descargar`, `sintetizar`, `disenar`, `transcribir`, `salir`); el motor responde con eventos `progreso`, `resultado` o `error`. stdout queda reservado al protocolo y todo lo demás va a stderr. Con `CONSTANTINO_MOTOR_FALSO=1` usa un motor falso sin torch, que es el que prueban los tests (`CONSTANTINO_EXIGIR_PYTHON=1` hace que falten Python sea un fallo y no se salte la prueba).
 
 ### Dónde instala
 
@@ -46,8 +50,8 @@ dotnet run --project src/Constantino.App
 La aplicación puede dibujarse a sí misma en un PNG y cerrarse, útil para revisar la interfaz o documentarla:
 
 ```
-Constantino.exe --captura salida.png --pagina PaginaComponentes
-Constantino.exe --captura salida.png --pagina PaginaAsistente --paso 3
+Caliope.exe --captura salida.png --pagina PaginaComponentes
+Caliope.exe --captura salida.png --pagina PaginaAsistente --paso 3
 ```
 
 ## Estructura

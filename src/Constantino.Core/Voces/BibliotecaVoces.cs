@@ -23,6 +23,8 @@ public sealed record SolicitudImportacion(
 /// <param name="Aviso">Algo mejorable pero aceptable (p. ej. una grabación más corta de lo ideal).</param>
 public sealed record ResultadoImportacion(Voz Voz, string? Aviso);
 
+public sealed record ResultadoVariante(Variante Variante, string? Aviso);
+
 /// <summary>
 /// Biblioteca de voces en disco: una carpeta por voz con <c>voz.json</c> y <c>referencia.wav</c>
 /// (siempre WAV mono a 24 kHz, convertido con ffmpeg desde cualquier formato).
@@ -31,6 +33,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
 {
     public const string ArchivoFicha = "voz.json";
     public const string ArchivoReferencia = "referencia.wav";
+    public const string CarpetaVariantes = "variantes", ArchivoVariante = "variante.json";
     public const double DuracionMinima = 3, DuracionMaxima = 60, IdealMinima = 8, IdealMaxima = 25;
     private const int LongitudMinimaTranscripcion = 10;
 
@@ -92,28 +95,12 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
         Directory.CreateDirectory(destino);
         try
         {
-            var referencia = Path.Combine(destino, ArchivoReferencia);
-            var r = await ejecutor.EjecutarAsync(ffmpeg,
-                ["-hide_banner", "-nostdin", "-y", "-i", s.Archivo, "-vn", "-ac", "1", "-ar", "24000", "-sample_fmt", "s16", referencia],
-                new Dictionary<string, string>(), _ => { }, ct).ConfigureAwait(false);
-            if (r.CodigoSalida != 0 || !File.Exists(referencia))
-                throw new VozInvalidaException("No se ha podido leer el audio. Prueba con un WAV o un MP3.");
-
-            var duracion = DuracionWav(referencia);
-            if (duracion is < DuracionMinima or > DuracionMaxima)
-            {
-                throw new VozInvalidaException(
-                    $"La grabación dura {Segundos(duracion)}; tiene que durar entre {DuracionMinima:0} y {DuracionMaxima:0} s (lo ideal, {IdealMinima:0}–{IdealMaxima:0} s).");
-            }
-            if (!s.SinTranscripcion)
-                ComprobarTranscripcion(transcripcion, duracion);
+            var duracion = await ConvertirAsync(s.Archivo, Path.Combine(destino, ArchivoReferencia), transcripcion, s.SinTranscripcion, ct)
+                .ConfigureAwait(false);
             var voz = new Voz(id, nombre, s.Idioma, s.Origen, transcripcion, Math.Round(duracion, 2), DateTimeOffset.Now,
                 s.Consentimiento, s.Descripcion, s.Semilla);
             Escribir(voz);
-            string? aviso = duracion is < IdealMinima or > IdealMaxima
-                ? $"La grabación dura {Segundos(duracion)}. Funciona, pero el resultado suele ser mejor con {IdealMinima:0}–{IdealMaxima:0} s."
-                : null;
-            return new ResultadoImportacion(voz, aviso);
+            return new ResultadoImportacion(voz, AvisoDuracion(duracion));
         }
         catch
         {
@@ -121,6 +108,111 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
             throw;
         }
     }
+
+    // --- Variantes --------------------------------------------------------------------------------
+
+    public IReadOnlyList<Variante> Variantes(string vozId)
+    {
+        var carpetaVariantes = Path.Combine(CarpetaDe(vozId), CarpetaVariantes);
+        if (!Directory.Exists(carpetaVariantes))
+            return [];
+        var lista = new List<Variante>();
+        foreach (var dir in Directory.EnumerateDirectories(carpetaVariantes))
+        {
+            var ficha = Path.Combine(dir, ArchivoVariante);
+            if (!File.Exists(ficha) || !File.Exists(Path.Combine(dir, ArchivoReferencia)))
+                continue;
+            try
+            {
+                if (JsonSerializer.Deserialize<Variante>(File.ReadAllText(ficha), Opciones) is { } v)
+                    lista.Add(v with { Id = Path.GetFileName(dir) });
+            }
+            catch (JsonException)
+            {
+            }
+        }
+        return lista.OrderBy(v => v.Nombre, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    public string ReferenciaDeVariante(string vozId, string varianteId) =>
+        Path.Combine(CarpetaDe(vozId), CarpetaVariantes, varianteId, ArchivoReferencia);
+
+    /// <summary>
+    /// Añade (o sustituye) una variante de la voz: la misma persona en otro tono. Se usa en el guion con la etiqueta
+    /// [<paramref name="varianteId"/>] (o [whispers] para «susurro»).
+    /// </summary>
+    public async Task<ResultadoVariante> AnadirVarianteAsync(string vozId, string varianteId, string nombre, string archivo,
+        string transcripcion, bool sinTranscripcion, string? descripcion = null, CancellationToken ct = default)
+    {
+        if (Leer(vozId) is null)
+            throw new VozInvalidaException("La voz ya no existe.");
+        var id = Textos.Slug(varianteId, "");
+        if (id.Length == 0)
+            throw new VozInvalidaException("La variante necesita un nombre corto (será su etiqueta en el guion).");
+        if (!File.Exists(archivo))
+            throw new VozInvalidaException("No se encuentra el archivo de audio.");
+        var texto = sinTranscripcion ? "" : NormalizarTexto(transcripcion);
+        if (!sinTranscripcion && texto.Length < LongitudMinimaTranscripcion)
+            throw new VozInvalidaException("Escribe la transcripción exacta de la grabación de la variante, o marca «No tengo la transcripción».");
+        if (!File.Exists(ffmpeg))
+            throw new VozInvalidaException("Falta ffmpeg: instala el Núcleo desde Componentes.");
+
+        var destino = Path.Combine(CarpetaDe(vozId), CarpetaVariantes, id);
+        var temporal = destino + ".nueva";
+        if (Directory.Exists(temporal))
+            Directory.Delete(temporal, recursive: true);
+        Directory.CreateDirectory(temporal);
+        try
+        {
+            var duracion = await ConvertirAsync(archivo, Path.Combine(temporal, ArchivoReferencia), texto, sinTranscripcion, ct)
+                .ConfigureAwait(false);
+            var variante = new Variante(id, string.IsNullOrWhiteSpace(nombre) ? id : nombre.Trim(), texto, Math.Round(duracion, 2),
+                DateTimeOffset.Now, descripcion);
+            File.WriteAllText(Path.Combine(temporal, ArchivoVariante), JsonSerializer.Serialize(variante, Opciones));
+            // Se sustituye la anterior solo cuando la nueva está completa.
+            if (Directory.Exists(destino))
+                Directory.Delete(destino, recursive: true);
+            Directory.Move(temporal, destino);
+            return new ResultadoVariante(variante, AvisoDuracion(duracion));
+        }
+        catch
+        {
+            if (Directory.Exists(temporal))
+                Directory.Delete(temporal, recursive: true);
+            throw;
+        }
+    }
+
+    public void BorrarVariante(string vozId, string varianteId)
+    {
+        var dir = Path.Combine(CarpetaDe(vozId), CarpetaVariantes, varianteId);
+        if (Directory.Exists(dir))
+            Directory.Delete(dir, recursive: true);
+    }
+
+    /// <summary>Convierte a WAV mono de 24 kHz y valida duración y transcripción. Devuelve la duración.</summary>
+    private async Task<double> ConvertirAsync(string origen, string referencia, string transcripcion, bool sinTranscripcion, CancellationToken ct)
+    {
+        var r = await ejecutor.EjecutarAsync(ffmpeg,
+            ["-hide_banner", "-nostdin", "-y", "-i", origen, "-vn", "-ac", "1", "-ar", "24000", "-sample_fmt", "s16", referencia],
+            new Dictionary<string, string>(), _ => { }, ct).ConfigureAwait(false);
+        if (r.CodigoSalida != 0 || !File.Exists(referencia))
+            throw new VozInvalidaException("No se ha podido leer el audio. Prueba con un WAV o un MP3.");
+
+        var duracion = DuracionWav(referencia);
+        if (duracion is < DuracionMinima or > DuracionMaxima)
+        {
+            throw new VozInvalidaException(
+                $"La grabación dura {Segundos(duracion)}; tiene que durar entre {DuracionMinima:0} y {DuracionMaxima:0} s (lo ideal, {IdealMinima:0}–{IdealMaxima:0} s).");
+        }
+        if (!sinTranscripcion)
+            ComprobarTranscripcion(transcripcion, duracion);
+        return duracion;
+    }
+
+    private static string? AvisoDuracion(double duracion) => duracion is < IdealMinima or > IdealMaxima
+        ? $"La grabación dura {Segundos(duracion)}. Funciona, pero el resultado suele ser mejor con {IdealMinima:0}–{IdealMaxima:0} s."
+        : null;
 
     /// <summary>Cambia el nombre visible; la carpeta (id) se mantiene para no romper proyectos que la usen.</summary>
     public Voz Renombrar(string id, string nombre)

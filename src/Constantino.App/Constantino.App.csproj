@@ -1,10 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <AssemblyName>Constantino</AssemblyName>
+    <AssemblyName>Caliope</AssemblyName>
+    <Product>Calíope</Product>
+    <AssemblyTitle>Calíope</AssemblyTitle>
+    <ApplicationIcon>..\..\recursos\caliope.ico</ApplicationIcon>
     <RootNamespace>Constantino.App</RootNamespace>
   </PropertyGroup>
 
@@ -18,6 +21,10 @@
     <PackageReference Include="NAudio.Core" Version="2.2.1" />
     <PackageReference Include="NAudio.WinMM" Version="2.2.1" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\recursos\caliope.png" Link="Recursos\caliope.png" />
   </ItemGroup>
 
   <ItemGroup>

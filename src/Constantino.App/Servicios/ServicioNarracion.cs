@@ -5,24 +5,46 @@ using Constantino.Core.Voces;
 
 namespace Constantino.App.Servicios;
 
-/// <summary>El narrador del núcleo leyendo con el motor Qwen y una voz de la biblioteca.</summary>
-public sealed class SintetizadorMotor(ServicioMotor motor, Voz voz, string referencia, string modelo) : ISintetizador
+/// <summary>Una voz de la biblioteca lista para narrar: su grabación y las de sus variantes.</summary>
+public sealed record VozParaNarrar(Voz Voz, string Referencia, IReadOnlyList<(Variante Variante, string Referencia)> Variantes)
 {
-    public string FirmaVoz { get; } = Firma(voz, referencia);
-    public string Modelo => modelo;
-    public bool TieneVarianteSusurro => false;
+    public IReadOnlyCollection<string> IdsVariantes => Variantes.Select(v => v.Variante.Id).ToList();
 
-    public async Task<string> SintetizarAsync(string texto, bool susurro, AjustesNarracion ajustes, string salida, CancellationToken ct)
+    /// <summary>Cambia si cambia la voz, su grabación o sus variantes: los bloques generados quedan desactualizados.</summary>
+    public string Firma
     {
-        var r = await motor.SintetizarAsync(voz, referencia, texto, salida, ajustes.Semilla, ajustes.Temperatura, ct);
-        return r.Salida;
+        get
+        {
+            var firma = $"{Voz.Id}|{Voz.Transcripcion}|{Huella(Referencia)}";
+            // Sin variantes la firma es la de antes de existir, para no invalidar lo ya generado.
+            return Variantes.Count == 0
+                ? firma
+                : firma + "|" + string.Join(";", Variantes.OrderBy(v => v.Variante.Id)
+                    .Select(v => $"{v.Variante.Id}:{v.Variante.Transcripcion}:{Huella(v.Referencia)}"));
+        }
     }
 
-    /// <summary>Cambia si cambia la voz o su grabación: los bloques generados con la anterior quedan desactualizados.</summary>
-    public static string Firma(Voz voz, string referencia)
+    private static string Huella(string ruta)
     {
-        var info = new FileInfo(referencia);
-        return $"{voz.Id}|{voz.Transcripcion}|{(info.Exists ? info.Length : 0)}|{(info.Exists ? info.LastWriteTimeUtc.Ticks : 0)}";
+        var info = new FileInfo(ruta);
+        return info.Exists ? $"{info.Length}|{info.LastWriteTimeUtc.Ticks}" : "0|0";
+    }
+}
+
+/// <summary>El narrador del núcleo leyendo con el motor Qwen y una voz de la biblioteca (o una de sus variantes).</summary>
+public sealed class SintetizadorMotor(ServicioMotor motor, VozParaNarrar voz, string modelo) : ISintetizador
+{
+    public string FirmaVoz { get; } = voz.Firma;
+    public string Modelo => modelo;
+    public IReadOnlyCollection<string> Variantes => voz.IdsVariantes;
+
+    public async Task<string> SintetizarAsync(string texto, string? variante, AjustesNarracion ajustes, string salida, CancellationToken ct)
+    {
+        var (laVoz, referencia) = (voz.Voz, voz.Referencia);
+        if (variante is not null && voz.Variantes.FirstOrDefault(v => v.Variante.Id == variante) is { Variante: { } v } elegida)
+            (laVoz, referencia) = (voz.Voz with { Transcripcion = v.Transcripcion }, elegida.Referencia);
+        var r = await motor.SintetizarAsync(laVoz, referencia, texto, salida, ajustes.Semilla, ajustes.Temperatura, ct);
+        return r.Salida;
     }
 }
 
@@ -36,20 +58,23 @@ public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioM
     public async Task<string?> ModeloAsync() =>
         await motor.ModeloBaseAsync() is { } m ? $"{m.Componente}@{m.Revision}" : null;
 
-    public async Task<(Voz Voz, string Referencia)?> VozAsync(string? id)
+    public async Task<VozParaNarrar?> VozAsync(string? id)
     {
         if (id is null)
             return null;
         var biblioteca = await voces.BibliotecaAsync();
-        return biblioteca.Obtener(id) is { } voz ? (voz, biblioteca.ReferenciaDe(id)) : null;
+        if (biblioteca.Obtener(id) is not { } voz)
+            return null;
+        var variantes = biblioteca.Variantes(id).Select(v => (v, biblioteca.ReferenciaDeVariante(id, v.Id))).ToList();
+        return new VozParaNarrar(voz, biblioteca.ReferenciaDe(id), variantes);
     }
 
-    public async Task<Narrador> NarradorAsync(Voz voz, string referencia, string modelo)
+    public async Task<Narrador> NarradorAsync(VozParaNarrar voz, string modelo)
     {
         var rutas = (await instalacion.InstaladorAsync()).Rutas;
         if (!File.Exists(rutas.Ffmpeg))
             throw new MotorNoDisponibleException("Falta ffmpeg: instala el Núcleo desde Componentes.");
-        return new Narrador(await AlmacenAsync(), new SintetizadorMotor(motor, voz, referencia, modelo),
+        return new Narrador(await AlmacenAsync(), new SintetizadorMotor(motor, voz, modelo),
             new ProcesadorFfmpeg(rutas.Ffmpeg, new EjecutorProcesos()));
     }
 }

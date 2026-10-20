@@ -33,7 +33,7 @@ public class GuionTests
         // Las líneas seguidas del mismo bloque se unen en un solo fragmento.
         Assert.Equal(new EventoVoz("Te quitas la cazadora. Bailáis toda la noche."), b[1].Eventos[2]);
         Assert.Equal([new EventoVoz("De madrugada."), new EventoSilencio(1.5), new EventoVoz("Al día siguiente."),
-            new EventoSilencio(0.6), new EventoVoz("Y te dice que murió.", Susurro: true)], b[2].Eventos);
+            new EventoSilencio(0.6), new EventoVoz("Y te dice que murió.", Susurro: true, Variante: "susurro")], b[2].Eventos);
         Assert.Empty(b[2].Avisos);
     }
 
@@ -43,8 +43,20 @@ public class GuionTests
         var b = Guion.Leer("Hola [sighs] qué tal. [WHISPERS] secreto\nnormal otra vez [Long_Pause] fin [/whispers]")[0];
 
         Assert.Equal(["Etiqueta desconocida eliminada: [sighs]"], b.Avisos);
-        Assert.Equal([new EventoVoz("Hola qué tal."), new EventoVoz("secreto", true), new EventoVoz("normal otra vez"),
+        Assert.Equal([new EventoVoz("Hola qué tal."), new EventoVoz("secreto", true, "susurro"), new EventoVoz("normal otra vez"),
             new EventoSilencio(1.5), new EventoVoz("fin")], b.Eventos);
+    }
+
+    [Fact]
+    public void Reconoce_las_etiquetas_de_las_variantes_de_la_voz()
+    {
+        var b = Guion.Leer("Uno [Tenso] dos [/tenso] tres [alegre] cuatro\ncinco", variantes: ["tenso", "alegre"])[0];
+
+        Assert.Equal([new EventoVoz("Uno"), new EventoVoz("dos", Variante: "tenso"), new EventoVoz("tres"),
+            new EventoVoz("cuatro", Variante: "alegre"), new EventoVoz("cinco")], b.Eventos);
+        Assert.Empty(b.Avisos);
+        // Sin la variante en la voz, la etiqueta se quita y se avisa.
+        Assert.Single(Guion.Leer("Uno [tenso] dos")[0].Avisos);
     }
 
     [Fact]
@@ -258,6 +270,64 @@ public sealed class NarradorTests : IDisposable
         Assert.Equal([1, 2], guardado.Bloques.Select(b => b.Indice));
     }
 
+    [Fact]
+    public async Task Las_variantes_de_la_voz_se_usan_con_sus_etiquetas()
+    {
+        _sintetizador.Variantes = ["susurro", "tenso"];
+        const string guion = "Normal. [tenso] Algo va mal. [whispers] Un secreto.\nOtra vez normal. [desconocida] Fin.";
+        var p = _almacen.Crear("p", Ajustes with { SusurroDb = -20 }, guion);
+
+        var r = await Narrador().NarrarAsync(p, guion, null, false, Sin, CancellationToken.None);
+
+        Assert.Equal([("Normal.", null), ("Algo va mal.", "tenso"), ("Un secreto.", "susurro"), ("Otra vez normal. Fin.", (string?)null)],
+            _sintetizador.Lecturas);
+        // Con variante de susurro, el susurro no se simula bajando el volumen.
+        Assert.Equal(1f, _procesador.Bloques["01_bloque"].Montaje.Muestras.Max(), 2);
+        Assert.Contains("Etiqueta desconocida eliminada: [desconocida]", r.Proyecto.Bloques[0].Avisos);
+    }
+
+    [Fact]
+    public async Task Una_variante_que_la_voz_no_tiene_se_lee_con_la_voz_normal()
+    {
+        const string guion = "[whispers] Secreto.";
+        var p = _almacen.Crear("p", Ajustes, guion);
+
+        await Narrador().NarrarAsync(p, guion, null, false, Sin, CancellationToken.None);
+
+        Assert.Equal([("Secreto.", (string?)null)], _sintetizador.Lecturas);
+    }
+
+    [Fact]
+    public void La_huella_no_cambia_por_ajustes_nuevos_con_su_valor_por_defecto()
+    {
+        var bloque = Guion.Leer("Hola. [whispers] Adiós.")[0];
+        var normal = Huellas.DeBloque(bloque, Ajustes, "voz", "modelo");
+
+        Assert.Equal(normal, Huellas.DeBloque(bloque, Ajustes with { Velocidad = 1.0, TonoSemitonos = 0 }, "voz", "modelo"));
+        Assert.NotEqual(normal, Huellas.DeBloque(bloque, Ajustes with { Velocidad = 1.1 }, "voz", "modelo"));
+        Assert.NotEqual(normal, Huellas.DeBloque(bloque, Ajustes with { TonoSemitonos = -1 }, "voz", "modelo"));
+        Assert.NotEqual(normal, Huellas.DeBloque(Guion.Leer("Hola. [tenso] Adiós.", variantes: ["tenso"])[0], Ajustes, "voz", "modelo"));
+    }
+
+    /// <summary>Huella calculada con la versión del H5: si cambia, los proyectos ya generados se darían por desactualizados.</summary>
+    [Fact]
+    public void La_huella_coincide_con_la_de_versiones_anteriores()
+    {
+        var bloque = Guion.Leer("# uno\nHola. [pause] Qué [whispers] miedo da.", 0.6, 1.5, ["susurro"])[0];
+
+        Assert.Equal("bf9c291cc1d36a9f", Huellas.DeBloque(bloque, new AjustesNarracion(), "voz", "modelo"));
+    }
+
+    [Fact]
+    public void El_filtro_de_velocidad_y_tono_conserva_formantes_y_respeta_los_limites()
+    {
+        Assert.Equal("", ProcesadorFfmpeg.FiltroVelocidadYTono(Ajustes));
+        var filtro = ProcesadorFfmpeg.FiltroVelocidadYTono(Ajustes with { Velocidad = 1.5, TonoSemitonos = -12 });
+        Assert.Contains("tempo=1.2:", filtro);                 // limitado a 1,2
+        Assert.Contains($"pitch={Math.Pow(2, -3.0 / 12):0.#####}".Replace(',', '.'), filtro); // limitado a −3 semitonos
+        Assert.Contains("formant=preserved", filtro);
+    }
+
     private static double Duracion(string texto) => Math.Round(texto.Length / 14.0, 2);
 
     /// <summary>«Lee» un texto como un tono de amplitud 1 con 0,3 s de silencio delante y detrás (que se recorta).</summary>
@@ -268,13 +338,17 @@ public sealed class NarradorTests : IDisposable
         public string? FallarCon { get; set; }
         public string FirmaVoz => "voz-falsa";
         public string Modelo => "modelo-falso";
-        public bool TieneVarianteSusurro => false;
+        public IReadOnlyCollection<string> Variantes { get; set; } = [];
 
-        public Task<string> SintetizarAsync(string texto, bool susurro, AjustesNarracion ajustes, string salida, CancellationToken ct)
+        /// <summary>Con qué variante se leyó cada texto (null = voz normal).</summary>
+        public List<(string Texto, string? Variante)> Lecturas { get; } = [];
+
+        public Task<string> SintetizarAsync(string texto, string? variante, AjustesNarracion ajustes, string salida, CancellationToken ct)
         {
             if (texto == FallarCon)
                 throw new InvalidOperationException("fallo provocado");
             Textos.Add(texto);
+            Lecturas.Add((texto, variante));
             const int sr = 24000;
             var voz = (int)(sr * (Recortar ? 0.3 : Duracion(texto)));
             var muestras = new float[voz + 2 * (int)(0.3 * sr)];
@@ -355,5 +429,10 @@ public sealed class ProcesadorFfmpegTests : IDisposable
         Assert.Equal(48000, resultado.Frecuencia);
         Assert.InRange(resultado.Muestras.Max(), 0.1f, 0.85f); // subido mucho, pero por debajo del techo de −1,5 dB
         Assert.True(new FileInfo(mp3).Length > 10_000);
+
+        // Más rápido: 3 s a velocidad 1,2 duran unos 2,5 s.
+        var rapido = Path.Combine(_carpeta, "rapido.wav");
+        await procesador.NormalizarAsync(entrada, entrada, rapido, ajustes with { Velocidad = 1.2, TonoSemitonos = -2 }, CancellationToken.None);
+        Assert.InRange(Pcm.LeerWav(rapido).Segundos, 2.4, 2.6);
     }
 }

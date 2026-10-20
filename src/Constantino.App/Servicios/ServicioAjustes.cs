@@ -55,6 +55,7 @@ public sealed class ServicioAjustes
                 ApplicationThemeManager.ApplySystemTheme(true);
                 break;
         }
+        Marca.AplicarAcento(ApplicationThemeManager.GetAppTheme());
     }
 
     private AjustesApp Leer()

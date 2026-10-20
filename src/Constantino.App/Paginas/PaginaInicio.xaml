@@ -11,7 +11,7 @@
             <TextBlock
                 Margin="0,4,0,16"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="Constantino ha revisado tu ordenador para recomendarte qué instalar. No se ha cambiado nada."
+                Text="Calíope ha revisado tu ordenador para recomendarte qué instalar. No se ha cambiado nada."
                 TextWrapping="Wrap" />
 
             <StackPanel Orientation="Horizontal" Visibility="{Binding ViewModel.Cargando, Converter={StaticResource BoolAVisibilidad}}">
