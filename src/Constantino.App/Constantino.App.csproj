@@ -9,6 +9,8 @@
     <AssemblyTitle>Calíope</AssemblyTitle>
     <ApplicationIcon>..\..\recursos\caliope.ico</ApplicationIcon>
     <RootNamespace>Constantino.App</RootNamespace>
+    <!-- Solo los recursos en español: el instalador ocupa menos. -->
+    <SatelliteResourceLanguages>es</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>

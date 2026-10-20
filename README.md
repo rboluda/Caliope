@@ -1,65 +1,150 @@
-# Calíope
+<p align="center">
+  <img src="recursos/caliope.png" width="140" alt="Logotipo de Calíope">
+</p>
 
-<img src="recursos/caliope.png" width="96" alt="Logotipo de Calíope">
+<h1 align="center">Calíope</h1>
 
-Caja de herramientas de voz para Windows (nombre interno del código: Constantino): instala con botones los motores de síntesis de voz que elijas (Qwen3-TTS, Whisper, Chatterbox) y te deja diseñar voces, clonarlas y crear narraciones sin tocar la línea de comandos.
+<p align="center">
+  <b>Tu estudio de voces en el ordenador: diseña voces, clónalas y narra guiones completos.</b><br>
+  Sin conexión, sin cuentas y sin pagar por minuto. Para Windows.
+</p>
 
-El diseño completo está en [docs/DISENO.md](docs/DISENO.md).
+<p align="center">
+  <a href="https://github.com/rboluda/Caliope/releases/latest"><b>⬇ Descargar el instalador</b></a> ·
+  <a href="#cómo-se-usa">Cómo se usa</a> ·
+  <a href="#preguntas-frecuentes">Preguntas frecuentes</a>
+</p>
 
-## Estado
+---
 
-- **H0**: ventana principal con navegación, catálogo de componentes y análisis del equipo con recomendaciones.
-- **H1**: asistente de primer arranque (6 pasos) e instalador real del núcleo (uv, Python 3.11, ffmpeg), el motor Qwen3-TTS y sus modelos. Descargas verificadas por SHA-256 o revisión exacta, reanudables y con reintentos; progreso con GB, velocidad y tiempo restante; reparar y desinstalar desde Componentes.
+## ¿Para qué sirve?
 
-- **H2**: motor Qwen3-TTS persistente (proceso Python con protocolo JSON por líneas, en `motores/constantino_motor`) y biblioteca de voces: importar una grabación con su transcripción (o en modo «solo timbre»), escuchar, probar con cualquier texto, renombrar, corregir la transcripción, elegir la predeterminada y borrar.
+Calíope convierte texto en voz con modelos de inteligencia artificial que **se ejecutan en tu propio equipo**. Está pensado para quien necesita locuciones a menudo: vídeos de YouTube o TikTok, pódcast, audiolibros, cuentos, cursos, presentaciones o videojuegos. Es una alternativa local a servicios como ElevenLabs.
 
-- **H3**: pantalla Narrar. Proyectos con guion (bloques por párrafos, `# nombre`, comentarios `//`, etiquetas `[pause]`, `[long pause]` y `[whispers]`), ajustes de voz, expresividad, pausas, susurro, volumen (LUFS), semilla y formato. Genera bloque a bloque, solo rehace los que cambian (huella por bloque), normaliza con ffmpeg (ganancia + limitador), monta el audio completo y escribe `manifiesto.json` con la duración y el inicio de cada bloque.
+- 🎨 **Diseña voces nuevas** describiéndolas con palabras: «hombre de 40 años, voz grave y cálida, ritmo pausado, tono misterioso, castellano de España».
+- 🎙️ **Clona una voz** a partir de 10 a 20 segundos de grabación: la tuya o la de alguien que te haya dado permiso. Puedes grabarla con el micrófono desde la propia aplicación, y con Whisper la transcripción se escribe sola.
+- 📖 **Narra guiones largos** por párrafos, con pausas, susurros y cambios de emoción marcados en el texto. Si cambias una frase, solo se vuelve a generar ese párrafo.
+- 🎭 **Variantes de una misma voz**: susurrando, tensa, asustada, triste, alegre o gritando.
+- 🎚️ **Afina el resultado**: expresividad, velocidad y tono (independientes entre sí), pausas y volumen normalizado para vídeo o pódcast.
+- 📤 **Saca el audio en MP3 o WAV** o arrástralo directamente a tu editor de vídeo.
+- 🔒 **Todo es privado**: ni tus textos ni tus voces salen del ordenador. Internet solo se usa para descargar los componentes.
+- 🧩 **Instalación con botones**: un asistente mira qué equipo tienes y te propone qué descargar. No hace falta tocar Python ni la línea de comandos.
 
-- **H4**: pantalla Diseñar voz con VoiceDesign. Descripción guiada (sexo, edad, timbre, textura, ritmo, tono, idioma y acento) que se compone en inglés, ejemplos de partida y variantes con semillas distintas. La variante elegida se guarda tal cual como grabación de referencia, con el texto de muestra como transcripción exacta. El motor cambia solo entre los modelos Base y VoiceDesign según la tarea.
+<p align="center">
+  <img src="docs/capturas/narrar.png" width="860" alt="Pantalla Narrar: guion, voz, ajustes y bloques generados">
+</p>
 
-- **H5**: pantalla Clonar voz. Grabar con el micrófono (NAudio) leyendo un texto propuesto, o importar un audio; forma de onda con selección del tramo; análisis de la grabación (voz, saturación, volumen bajo, ruido de fondo, duración); transcripción con Whisper large-v3-turbo (instalable desde Componentes, usa el entorno del motor Qwen), con el texto leído o a mano; consentimiento obligatorio; probar y guardar.
+## Requisitos
 
-- **H6**: velocidad (0,8–1,2×) y tono (±3 semitonos) en Narrar, aplicados con rubberband conservando los formantes, sin cambiar el tono al cambiar la velocidad ni al revés. Variantes de voz (susurro, tenso, asustado, triste, alegre, grito): grabaciones de la misma voz hablando de otra forma, añadidas desde un audio o, en las voces diseñadas, generadas con VoiceDesign con la misma descripción y semilla. En el guion se usan con su etiqueta (`[asustado]`… hasta `[normal]` o fin de línea); `[whispers]` usa la variante susurro si existe y si no baja el volumen. Los bloques generados antes siguen valiendo mientras no se toquen los ajustes nuevos. Sacar los audios: «Guardar como…», copiar al portapapeles o arrastrar la narración completa o cualquier bloque al editor de vídeo, y «Exportar todo…» a una carpeta.
+| | Mínimo | Recomendado |
+|---|---|---|
+| Sistema | Windows 10 (1809) o 11, 64 bits | Windows 11 |
+| Tarjeta gráfica | Ninguna (funciona con el procesador, mucho más despacio) | NVIDIA con 6 GB o más (RTX 3050 de 8 GB o superior) |
+| Memoria | 8 GB de RAM | 16 GB o más |
+| Disco | 10 GB libres | 25 GB libres (si instalas todos los motores) |
 
-- **H7**: Chatterbox Multilingual (Resemble AI) como motor alternativo, en su propio entorno (chatterbox-tts 0.1.7, torch 2.6.0 cu124, 80 dependencias fijadas, sin gradio) y descargando solo los 6 archivos del modelo multilingüe (3,2 GB de 12). Narrar tiene un selector de motor y, con Chatterbox, «intensidad emocional»; en Voces → Probar se puede escuchar la misma voz con cada motor. Solo hay un motor vivo a la vez en la tarjeta: cambiar de motor cierra el otro. La huella solo incluye el motor cuando no es Qwen.
+Con una tarjeta NVIDIA de 4 GB funciona usando el modelo ligero (0.6B). El motor opcional Chatterbox no es compatible con la serie RTX 50.
 
-### Proyectos de narración
+## Instalación
 
-`<datos>\proyectos\<id>\`: `proyecto.json` (ajustes y estado de cada bloque generado), `guion.txt` y `salida\` con `NN_nombre.mp3`, `<id>_completo.mp3` y `manifiesto.json`.
+1. Descarga **`Caliope-x.y.z-Instalador.exe`** desde [Releases](https://github.com/rboluda/Caliope/releases/latest).
+2. Ábrelo y sigue los pasos. No necesita permisos de administrador, y .NET va incluido.
+   - Si Windows SmartScreen avisa de que el programa no es conocido, pulsa *Más información → Ejecutar de todas formas*. El instalador no está firmado digitalmente.
+3. Al abrir Calíope por primera vez, el **asistente** analiza tu equipo y te propone qué instalar. Cada componente explica qué hace, cuánto ocupa y si es imprescindible.
 
-### El motor de voz
+<p align="center">
+  <img src="docs/capturas/inicio.png" width="420" alt="Análisis del equipo y recomendaciones">
+  <img src="docs/capturas/componentes.png" width="420" alt="Componentes instalables">
+</p>
 
-La app lanza `python -m constantino_motor` con el Python del entorno de cada motor (`CONSTANTINO_MOTOR=chatterbox` elige el adaptador de Chatterbox; sin ella, Qwen) y le envía una petición JSON por línea (`info`, `cargar`, `descargar`, `sintetizar`, `disenar`, `transcribir`, `salir`); el motor responde con eventos `progreso`, `resultado` o `error`. stdout queda reservado al protocolo y todo lo demás va a stderr. Con `CONSTANTINO_MOTOR_FALSO=1` usa un motor falso sin torch, que es el que prueban los tests (`CONSTANTINO_EXIGIR_PYTHON=1` hace que falten Python sea un fallo y no se salte la prueba).
+El instalador solo ocupa unos 50 MB. Los motores y modelos se descargan después, desde la aplicación:
 
-### Dónde instala
+| Componente | ¿Hace falta? | Para qué | Tamaño |
+|---|---|---|---|
+| Núcleo (uv, Python, ffmpeg) | Imprescindible | La base de todo lo demás | 0,3 GB |
+| Motor Qwen3-TTS | Imprescindible | Genera la voz | 1,2–5 GB |
+| Modelo Base 1.7B **o** 0.6B | Imprescindible (uno de los dos) | Clonar voces y narrar | 4,3 / 2,4 GB |
+| Modelo VoiceDesign | Recomendado | Diseñar voces nuevas | 4,3 GB |
+| Whisper | Opcional | Transcribir grabaciones al clonar | 1,6 GB |
+| Chatterbox | Opcional | Motor alternativo con control de la emoción | 4,9–8,4 GB |
 
-En la carpeta de datos elegida en el asistente (por defecto `%LOCALAPPDATA%\Constantino`): `herramientas`, `python`, `entornos`, `modelos`, `cache`, `registros` y `estado.json`. Las preferencias van aparte, en `%LOCALAPPDATA%\Constantino\ajustes.json`. Los pasos de cada componente están en `catalogo/catalogo.json`.
+## Cómo se usa
 
-## Compilar y ejecutar
+1. **Consigue una voz.** Puedes diseñarla en «Diseñar voz», clonarla en «Clonar voz» o importar una grabación en «Voces».
+2. **Escribe el guion** en «Narrar», elige la voz y pulsa «Generar narración».
+3. **Escucha y retoca.** Cada párrafo es un bloque: puedes regenerar solo el que no te guste.
+4. **Saca el audio** con «Guardar como…», arrastrándolo a tu editor o con «Exportar todo…».
 
-Necesita el SDK de .NET 10.
+<p align="center">
+  <img src="docs/capturas/disenar.png" width="860" alt="Diseñar una voz a partir de una descripción">
+</p>
+
+### Marcas del guion
+
+```text
+# inicio
+Era sábado por la noche. [pause] Diluviaba.
+
+# susto
+Alguien llamó a la puerta. [long pause]
+[whispers] No abras. [normal] Pero ella abrió.
+[asustado] ¿Quién anda ahí?
+```
+
+| Marca | Qué hace |
+|---|---|
+| `[pause]` / `[long pause]` | Pausa corta o larga (ajustables) |
+| `[whispers]` | Susurra hasta el final de la línea |
+| `[asustado]`, `[tenso]`, `[alegre]`… | Lee con esa variante de la voz hasta el final de la línea |
+| `[normal]` | Vuelve a la voz normal |
+| `# nombre` | Nombra el bloque (y su archivo) |
+| `// nota` | Comentario, no se lee |
+| Línea en blanco | Empieza un bloque nuevo |
+
+Dentro de la aplicación tienes una sección de **Ayuda** con todo esto, con los ajustes explicados y con soluciones a los problemas más comunes.
+
+## Motores de voz
+
+| | Qwen3-TTS (principal) | Chatterbox (opcional) |
+|---|---|---|
+| Autor y licencia | Alibaba Qwen, Apache 2.0 | Resemble AI, MIT |
+| Clonar voces | ✅ Muy fiel, usa la transcripción | ✅ Solo con la grabación |
+| Diseñar voces | ✅ (VoiceDesign) | — |
+| Control de la emoción | Variantes de la voz | Variantes + intensidad emocional |
+| Pausas | Respeta bien las pausas naturales | Lee más seguido |
+| Marca de agua | No | Sí, inaudible |
+
+En «Voces → Probar» puedes escuchar la misma voz con los dos motores y quedarte con el que prefieras.
+
+## Preguntas frecuentes
+
+**¿Necesito internet?** Solo para descargar los componentes la primera vez. Después funciona sin conexión.
+
+**¿Cuánto tarda?** Con una RTX 3050, unos segundos por frase. La primera generación tarda entre 20 y 60 segundos más, mientras carga el modelo. Sin tarjeta NVIDIA funciona, pero bastante más despacio.
+
+**La voz clonada sale cortada.** Casi siempre es porque la transcripción no coincide con la grabación. Corrígela en «Voces → Editar transcripción» o déjala vacía para imitar solo el timbre.
+
+**¿Dónde se guardan mis voces y narraciones?** En la carpeta de datos que eliges en el asistente (por defecto `%LOCALAPPDATA%\Constantino`). Desinstalar Calíope no la borra.
+
+**¿En qué idiomas habla?** Español, inglés, francés, alemán, italiano, portugués, ruso, chino, japonés y coreano. Puedes elegir acento, por ejemplo castellano de España o español latino.
+
+## Uso responsable
+
+Clona solo tu voz o la de personas que te hayan dado **permiso expreso**: Calíope te pide confirmarlo antes de clonar. No uses voces sintéticas para suplantar a nadie, engañar ni difamar, y avisa de que una voz es sintética cuando pueda confundir a quien la escucha.
+
+## Para desarrolladores
+
+Calíope está hecho en C# con .NET 10, WPF y [WPF-UI](https://github.com/lepoco/wpfui). Los motores de voz corren en procesos de Python aislados, cada uno con su propio entorno, que la aplicación instala con [uv](https://github.com/astral-sh/uv).
 
 ```
 dotnet build
 dotnet test
 dotnet run --project src/Constantino.App
+pwsh instalador/crear-instalador.ps1   # crea el instalador (necesita Inno Setup 6)
 ```
 
-### Capturas de la interfaz
+Hay más detalles en [docs/DESARROLLO.md](docs/DESARROLLO.md) (estructura, protocolo del motor, historia) y en [docs/DISENO.md](docs/DISENO.md) (diseño completo).
 
-La aplicación puede dibujarse a sí misma en un PNG y cerrarse, útil para revisar la interfaz o documentarla:
+## Licencia
 
-```
-Caliope.exe --captura salida.png --pagina PaginaComponentes
-Caliope.exe --captura salida.png --pagina PaginaAsistente --paso 3
-```
-
-## Estructura
-
-| Carpeta | Contenido |
-|---|---|
-| `src/Constantino.App` | Interfaz WPF (WPF-UI, MVVM con CommunityToolkit) |
-| `src/Constantino.Core` | Catálogo, análisis del equipo, recomendaciones e instalador, sin dependencias de la interfaz |
-| `catalogo/catalogo.json` | Componentes instalables: qué son, para qué sirven, tamaño, requisitos, licencias y pasos de instalación |
-| `tests/Constantino.Core.Tests` | Pruebas de xUnit |
-| `docs/` | Diseño y capturas |
+El código de Calíope se publica bajo la [licencia MIT](LICENSE). Los motores y modelos que descarga tienen sus propias licencias, y la aplicación te muestra cada una antes de instalar: Qwen3-TTS (Apache 2.0), Chatterbox (MIT), Whisper (MIT), PyTorch (BSD-3) y ffmpeg (GPL).
