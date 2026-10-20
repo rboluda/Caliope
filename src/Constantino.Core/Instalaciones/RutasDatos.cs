@@ -22,6 +22,8 @@ public sealed partial class RutasDatos
             ["ffmpeg"] = Ffmpeg,
             ["dispositivo"] = usaGpu ? "cuda" : "cpu",
             ["indiceTorch"] = usaGpu ? "https://download.pytorch.org/whl/cu128" : "https://download.pytorch.org/whl/cpu",
+            // Chatterbox fija torch 2.6, que no tiene versión para CUDA 12.8.
+            ["indiceTorchCu124"] = usaGpu ? "https://download.pytorch.org/whl/cu124" : "https://download.pytorch.org/whl/cpu",
         };
     }
 

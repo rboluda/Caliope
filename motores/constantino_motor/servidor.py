@@ -51,6 +51,10 @@ def _crear_motor():
     if os.environ.get("CONSTANTINO_MOTOR_FALSO") == "1":
         from .falso import MotorFalso
         return MotorFalso()
+    # La aplicación arranca un proceso por motor, cada uno con el Python de su entorno.
+    if os.environ.get("CONSTANTINO_MOTOR") == "chatterbox":
+        from .chatterbox import MotorChatterbox
+        return MotorChatterbox()
     from .qwen import MotorQwen
     return MotorQwen()
 

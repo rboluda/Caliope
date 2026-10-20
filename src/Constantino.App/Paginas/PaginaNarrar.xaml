@@ -142,6 +142,34 @@
                             <TextBlock Style="{StaticResource Etiqueta}" Text="Voz" />
                             <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Voces}" SelectedValue="{Binding ViewModel.VozId}" SelectedValuePath="Id" />
 
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Motor" />
+                            <ComboBox
+                                DisplayMemberPath="Nombre"
+                                ItemsSource="{Binding ViewModel.Motores}"
+                                SelectedValue="{Binding ViewModel.MotorVoz}"
+                                SelectedValuePath="Id"
+                                ToolTip="Qwen3-TTS hace más pausas y es más fiel; Chatterbox lee más seguido y deja ajustar la emoción." />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                Text="{Binding ViewModel.AyudaMotor}"
+                                TextWrapping="Wrap"
+                                Visibility="{Binding ViewModel.AyudaMotor, Converter={StaticResource NoNuloAVisibilidad}}" />
+
+                            <StackPanel Visibility="{Binding ViewModel.EsChatterbox, Converter={StaticResource BoolAVisibilidad}}">
+                                <TextBlock Style="{StaticResource Etiqueta}">
+                                    <Run Text="Intensidad emocional: " /><Run FontWeight="SemiBold" Text="{Binding ViewModel.TextoIntensidad, Mode=OneWay}" />
+                                </TextBlock>
+                                <Slider
+                                    IsSnapToTickEnabled="True"
+                                    Maximum="1"
+                                    Minimum="0.25"
+                                    TickFrequency="0.05"
+                                    ToolTip="Cuánto se exagera la emoción al leer. Por encima de 0,7 puede sonar teatral."
+                                    Value="{Binding ViewModel.Intensidad}" />
+                            </StackPanel>
+
                             <TextBlock Style="{StaticResource Etiqueta}">
                                 <Run Text="Expresividad: " /><Run FontWeight="SemiBold" Text="{Binding ViewModel.TextoExpresividad, Mode=OneWay}" />
                             </TextBlock>

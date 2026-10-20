@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using Constantino.App.Paginas;
 using Constantino.App.Servicios;
+using Constantino.Core.Motores;
 using Constantino.Core.Voces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -135,6 +136,15 @@ public sealed partial class VocesViewModel : ObservableObject
     public IReadOnlyList<OpcionIdioma> IdiomasDisponibles { get; } = Idiomas.Todos.Select(i => new OpcionIdioma(i.Clave, i.Nombre)).ToList();
 
     [ObservableProperty] public partial bool SinVoces { get; set; }
+
+    /// <summary>Motores instalados, para escuchar la misma voz con cada uno.</summary>
+    public ObservableCollection<OpcionMotor> Motores { get; } = [new(MotoresDeVoz.Qwen, "Qwen3-TTS")];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HayVariosMotores))]
+    public partial string MotorPrueba { get; set; } = MotoresDeVoz.Qwen;
+
+    public bool HayVariosMotores => Motores.Count > 1;
     [ObservableProperty] public partial string? ErrorGeneral { get; set; }
 
     // --- Formulario de importación ---
@@ -151,6 +161,11 @@ public sealed partial class VocesViewModel : ObservableObject
 
     public async Task CargarAsync()
     {
+        if (await Motor.ChatterboxInstaladoAsync() && Motores.All(m => m.Id != MotoresDeVoz.Chatterbox))
+        {
+            Motores.Add(new OpcionMotor(MotoresDeVoz.Chatterbox, "Chatterbox"));
+            OnPropertyChanged(nameof(HayVariosMotores));
+        }
         var biblioteca = await _voces.BibliotecaAsync();
         var predeterminada = _voces.Predeterminada;
         Voces.Clear();
@@ -362,10 +377,11 @@ public sealed partial class VocesViewModel : ObservableObject
         try
         {
             var salida = await _voces.ArchivoTemporalAsync("prueba-" + t.Voz.Id);
-            var r = await Motor.SintetizarAsync(t.Voz, t.Referencia, t.TextoPrueba.Trim(), salida);
+            var motor = MotorPrueba;
+            var r = await Motor.SintetizarAsync(t.Voz, t.Referencia, t.TextoPrueba.Trim(), salida, motor: motor);
             t.UltimaPrueba = r.Salida;
             var es = CultureInfo.GetCultureInfo("es-ES");
-            t.ResultadoPrueba = $"{r.Duracion.ToString("0.#", es)} s de audio generados en {r.Segundos.ToString("0.#", es)} s" +
+            t.ResultadoPrueba = $"{MotoresDeVoz.Nombre(motor)}: {r.Duracion.ToString("0.#", es)} s de audio generados en {r.Segundos.ToString("0.#", es)} s" +
                                 (r.VramPicoGib is { } v ? $" · {v.ToString("0.#", es)} GB de memoria de la tarjeta" : "");
             Reproductor.Reproducir(r.Salida);
         }

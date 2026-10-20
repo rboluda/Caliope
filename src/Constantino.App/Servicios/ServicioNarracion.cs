@@ -43,7 +43,8 @@ public sealed class SintetizadorMotor(ServicioMotor motor, VozParaNarrar voz, st
         var (laVoz, referencia) = (voz.Voz, voz.Referencia);
         if (variante is not null && voz.Variantes.FirstOrDefault(v => v.Variante.Id == variante) is { Variante: { } v } elegida)
             (laVoz, referencia) = (voz.Voz with { Transcripcion = v.Transcripcion }, elegida.Referencia);
-        var r = await motor.SintetizarAsync(laVoz, referencia, texto, salida, ajustes.Semilla, ajustes.Temperatura, ct);
+        var r = await motor.SintetizarAsync(laVoz, referencia, texto, salida, ajustes.Semilla, ajustes.Temperatura, ct,
+            ajustes.Motor, ajustes.Intensidad);
         return r.Salida;
     }
 }
@@ -54,9 +55,10 @@ public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioM
     public async Task<AlmacenProyectos> AlmacenAsync() =>
         new(Path.Combine((await instalacion.InstaladorAsync()).Rutas.Raiz, "proyectos"));
 
-    /// <summary>Lo que identifica al modelo en las huellas, o null si no hay modelo Base instalado.</summary>
-    public async Task<string?> ModeloAsync() =>
-        await motor.ModeloBaseAsync() is { } m ? $"{m.Componente}@{m.Revision}" : null;
+    /// <summary>Lo que identifica al modelo de <paramref name="motorVoz"/> en las huellas, o null si no está instalado.</summary>
+    public Task<string?> ModeloAsync(string motorVoz) => motor.FirmaModeloAsync(motorVoz);
+
+    public Task<bool> ChatterboxInstaladoAsync() => motor.ChatterboxInstaladoAsync();
 
     public async Task<VozParaNarrar?> VozAsync(string? id)
     {

@@ -12,7 +12,9 @@ public sealed record ResultadoTranscripcion(string Texto, double Segundos);
 public sealed record ResultadoCarga(double Segundos, bool YaCargado, double? VramUsadaGib = null);
 
 /// <summary>Leer <paramref name="Texto"/> con la voz de la grabación de referencia.</summary>
-/// <param name="ReferenciaTexto">Transcripción de la referencia; null o vacía para imitar solo el timbre.</param>
+/// <param name="ReferenciaTexto">Transcripción de la referencia; null o vacía para imitar solo el timbre (Chatterbox no la usa).</param>
+/// <param name="Intensidad">Solo Chatterbox: intensidad emocional (exaggeration).</param>
+/// <param name="Cfg">Solo Chatterbox: cuánto se ciñe a la referencia (cfg_weight).</param>
 public sealed record ParametrosSintesis(
     string Texto,
     string Idioma,
@@ -24,7 +26,9 @@ public sealed record ParametrosSintesis(
     double? TopP = null,
     int? TopK = null,
     double? Repeticion = null,
-    int? MaxTokens = null);
+    int? MaxTokens = null,
+    double? Intensidad = null,
+    double? Cfg = null);
 
 /// <summary>Inventar una voz a partir de <paramref name="Instruccion"/> (VoiceDesign) y leer <paramref name="Texto"/> con ella.</summary>
 public sealed record ParametrosDiseno(

@@ -103,7 +103,7 @@ public static class Recomendador
         };
         var motivo = c.Necesidad switch
         {
-            Necesidad.Imprescindible => "Sin esto, Constantino no puede funcionar.",
+            Necesidad.Imprescindible => "Sin esto, Calíope no puede funcionar.",
             Necesidad.Recomendado => "Recomendado: amplía mucho lo que puedes hacer.",
             _ => "Opcional: instálalo solo si lo vas a usar.",
         };
@@ -162,7 +162,7 @@ public static class Recomendador
             var nvidiaSinDriver = equipo.Gpus.FirstOrDefault(g => g.Nombre.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase));
             avisos.Add(nvidiaSinDriver is not null
                 ? new Aviso(SeveridadAviso.Problema, "Falta el driver de NVIDIA",
-                    $"Hay una {nvidiaSinDriver.Nombre}, pero no responde. Instala el driver más reciente desde nvidia.com para que Constantino pueda usarla.")
+                    $"Hay una {nvidiaSinDriver.Nombre}, pero no responde. Instala el driver más reciente desde nvidia.com para que Calíope pueda usarla.")
                 : new Aviso(SeveridadAviso.Atencion, "Sin tarjeta NVIDIA",
                     "La voz se generará con el procesador. Funciona, pero puede tardar varias veces más que la duración del audio."));
             return;

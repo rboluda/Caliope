@@ -54,5 +54,7 @@ public sealed record MedidaProgreso(IReadOnlyList<string> Carpetas, long BytesCo
 }
 
 /// <summary>Descarga un modelo de Hugging Face con el Python de <paramref name="Python"/>, fijado a una revisión exacta.</summary>
-public sealed record PasoModelo(string Descripcion, string Python, string Repositorio, string Revision, long TamanoBytes)
+/// <param name="Archivos">Si se indica, solo se descargan estos archivos del repositorio (patrones de huggingface_hub).</param>
+public sealed record PasoModelo(string Descripcion, string Python, string Repositorio, string Revision, long TamanoBytes,
+    IReadOnlyList<string>? Archivos = null)
     : PasoInstalacion(Descripcion);

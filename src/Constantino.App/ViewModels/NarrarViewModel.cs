@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using Constantino.Core;
 using Constantino.App.Paginas;
 using Constantino.App.Servicios;
+using Constantino.Core.Motores;
 using Constantino.Core.Narracion;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -68,6 +69,8 @@ public sealed record OpcionProyecto(string Id, string Nombre);
 public sealed record OpcionVoz(string Id, string Nombre);
 
 public sealed record OpcionFormato(FormatoSalida Valor, string Nombre);
+
+public sealed record OpcionMotor(string Id, string Nombre);
 
 /// <summary>Una etiqueta de variante de la voz, para insertarla en el guion.</summary>
 public sealed record EtiquetaVariante(string Nombre, string Etiqueta);
@@ -142,6 +145,30 @@ public sealed partial class NarrarViewModel : ObservableObject
         ? "natural"
         : $"{(TonoSemitonos > 0 ? "+" : "")}{TonoSemitonos.ToString("0.#", Es)} semitonos";
 
+    // --- Motor de voz ---
+    public ObservableCollection<OpcionMotor> Motores { get; } = [new(MotoresDeVoz.Qwen, "Qwen3-TTS")];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EsChatterbox))]
+    public partial string MotorVoz { get; set; } = MotoresDeVoz.Qwen;
+
+    public bool EsChatterbox => MotorVoz == MotoresDeVoz.Chatterbox;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoIntensidad))]
+    public partial double Intensidad { get; set; } = 0.5;
+
+    public string TextoIntensidad => Intensidad switch
+    {
+        < 0.4 => "contenida",
+        < 0.65 => "natural",
+        < 0.85 => "intensa",
+        _ => "exagerada",
+    };
+
+    /// <summary>Explica el motor elegido, o cómo conseguir el otro.</summary>
+    [ObservableProperty] public partial string? AyudaMotor { get; set; }
+
     /// <summary>Etiquetas de las variantes de la voz elegida (además de [whispers]).</summary>
     public ObservableCollection<EtiquetaVariante> EtiquetasVoz { get; } = [];
 
@@ -188,6 +215,11 @@ public sealed partial class NarrarViewModel : ObservableObject
             Voces.Add(new OpcionVoz(v.Id, v.Nombre));
         SinVoces = Voces.Count == 0;
 
+        var hayChatterbox = await _narracion.ChatterboxInstaladoAsync();
+        if (hayChatterbox && Motores.All(m => m.Id != MotoresDeVoz.Chatterbox))
+            Motores.Add(new OpcionMotor(MotoresDeVoz.Chatterbox, "Chatterbox"));
+        AyudaMotor = hayChatterbox ? null : "Instala Chatterbox en «Componentes» para poder comparar con otro motor.";
+
         var almacen = await _narracion.AlmacenAsync();
         var actual = ProyectoSeleccionado?.Id;
         Proyectos.Clear();
@@ -227,6 +259,8 @@ public sealed partial class NarrarViewModel : ObservableObject
         Lufs = a.Lufs;
         Formato = a.Formato;
         Velocidad = a.Velocidad;
+        MotorVoz = a.Motor;
+        Intensidad = a.Intensidad;
         TonoSemitonos = a.TonoSemitonos;
         _cargando = false;
         Error = null;
@@ -250,6 +284,8 @@ public sealed partial class NarrarViewModel : ObservableObject
     partial void OnLufsChanged(double value) => Programar();
     partial void OnFormatoChanged(FormatoSalida value) => Programar();
     partial void OnVelocidadChanged(double value) => Programar();
+    partial void OnMotorVozChanged(string value) => Programar();
+    partial void OnIntensidadChanged(double value) => Programar();
     partial void OnTonoSemitonosChanged(double value) => Programar();
 
     private void Programar()
@@ -272,6 +308,8 @@ public sealed partial class NarrarViewModel : ObservableObject
         Lufs = Lufs,
         Formato = Formato,
         Velocidad = Math.Round(Velocidad, 2),
+        Motor = MotorVoz,
+        Intensidad = Math.Round(Intensidad, 2),
         TonoSemitonos = Math.Round(TonoSemitonos, 1),
     };
 
@@ -296,7 +334,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         var voz = await _narracion.VozAsync(VozId);
         var bloques = Guion.Leer(TextoGuion, ajustes.Pausa, ajustes.PausaLarga, voz?.IdsVariantes);
         ActualizarEtiquetas(voz);
-        var modelo = await _narracion.ModeloAsync();
+        var modelo = await _narracion.ModeloAsync(ajustes.Motor);
         var salida = (await _narracion.AlmacenAsync()).CarpetaSalida(_proyecto.Id);
         Salida = salida;
         var estados = _proyecto.Bloques.ToDictionary(b => b.Indice);
@@ -528,9 +566,11 @@ public sealed partial class NarrarViewModel : ObservableObject
             Error = Voces.Count == 0 ? "Primero añade una voz en «Voces»." : "Elige la voz con la que narrar.";
             return;
         }
-        if (await _narracion.ModeloAsync() is not { } modelo)
+        if (await _narracion.ModeloAsync(MotorVoz) is not { } modelo)
         {
-            Error = "Falta un modelo Base: instálalo desde Componentes.";
+            Error = EsChatterbox
+                ? "Falta Chatterbox: instálalo desde Componentes o elige Qwen3-TTS."
+                : "Falta un modelo Base: instálalo desde Componentes.";
             return;
         }
 

@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json;
 using Constantino.Core.Catalogo;
 
 namespace Constantino.Core.Instalaciones;
@@ -337,13 +338,13 @@ public sealed class Instalador
     {
         var carpeta = Path.Combine(_rutas.Modelos, "hub", "models--" + m.Repositorio.Replace("/", "--"));
         const string script = """
-            import sys, time
+            import json, sys, time
             from huggingface_hub import snapshot_download
             from huggingface_hub.errors import RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError
             INTENTOS = 5
             for intento in range(1, INTENTOS + 1):
                 try:
-                    ruta = snapshot_download(repo_id=sys.argv[1], revision=sys.argv[2])
+                    ruta = snapshot_download(repo_id=sys.argv[1], revision=sys.argv[2], allow_patterns=json.loads(sys.argv[3]))
                     break
                 except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError):
                     raise
@@ -355,7 +356,8 @@ public sealed class Instalador
                     time.sleep(min(30, 2 ** intento))
             print("descargado=" + ruta, flush=True)
             """;
-        var paso = new PasoEjecutar(m.Descripcion, m.Python, ["-c", script, m.Repositorio, m.Revision], "descargado=");
+        var archivos = m.Archivos is { Count: > 0 } a ? JsonSerializer.Serialize(a) : "null";
+        var paso = new PasoEjecutar(m.Descripcion, m.Python, ["-c", script, m.Repositorio, m.Revision, archivos], "descargado=");
         // huggingface_hub no informa del avance de forma fiable: se mide lo que ocupa la carpeta del modelo
         // (en total, no lo que crece: si se reanuda una descarga, lo ya bajado cuenta).
         await EjecutarAsync(c, paso, avance, linea, ct, new Medicion(() => TamanoCarpeta(carpeta), m.TamanoBytes, Aproximado: false),

@@ -1,3 +1,4 @@
+using Constantino.Core.Motores;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Constantino.Core.Audio;
@@ -307,6 +308,19 @@ public sealed class NarradorTests : IDisposable
         Assert.NotEqual(normal, Huellas.DeBloque(bloque, Ajustes with { Velocidad = 1.1 }, "voz", "modelo"));
         Assert.NotEqual(normal, Huellas.DeBloque(bloque, Ajustes with { TonoSemitonos = -1 }, "voz", "modelo"));
         Assert.NotEqual(normal, Huellas.DeBloque(Guion.Leer("Hola. [tenso] Adiós.", variantes: ["tenso"])[0], Ajustes, "voz", "modelo"));
+    }
+
+    [Fact]
+    public void El_motor_y_la_intensidad_solo_cuentan_con_chatterbox()
+    {
+        var bloque = Guion.Leer("Hola.")[0];
+        var qwen = Huellas.DeBloque(bloque, Ajustes, "voz", "modelo");
+
+        // Con Qwen la intensidad no se usa: cambiarla no obliga a regenerar.
+        Assert.Equal(qwen, Huellas.DeBloque(bloque, Ajustes with { Intensidad = 0.9 }, "voz", "modelo"));
+        var chatterbox = Huellas.DeBloque(bloque, Ajustes with { Motor = MotoresDeVoz.Chatterbox }, "voz", "modelo");
+        Assert.NotEqual(qwen, chatterbox);
+        Assert.NotEqual(chatterbox, Huellas.DeBloque(bloque, Ajustes with { Motor = MotoresDeVoz.Chatterbox, Intensidad = 0.9 }, "voz", "modelo"));
     }
 
     /// <summary>Huella calculada con la versión del H5: si cambia, los proyectos ya generados se darían por desactualizados.</summary>

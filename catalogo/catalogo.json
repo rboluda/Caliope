@@ -118,7 +118,7 @@
       "nombre": "Motor de voz Qwen3-TTS",
       "grupo": "Motor de voz",
       "necesidad": "imprescindible",
-      "resumen": "El programa que convierte texto en voz. Sin él, Constantino no puede hablar.",
+      "resumen": "El programa que convierte texto en voz. Sin él, Calíope no puede hablar.",
       "detalle": "Crea un entorno de Python propio con PyTorch (con CUDA si tienes una tarjeta NVIDIA compatible, o para procesador si no) y la librería qwen-tts. Por sí solo no trae ninguna voz: necesita al menos uno de los modelos Base.",
       "habilita": [
         "Narrar",
@@ -332,7 +332,7 @@
       "grupo": "Modelos de voz",
       "necesidad": "recomendado",
       "resumen": "Crea voces nuevas a partir de una descripción escrita.",
-      "detalle": "Le describes la voz con palabras («hombre de unos 40 años, voz grave y cálida, ritmo pausado…») y la inventa. Después Constantino la guarda en tu biblioteca para narrar con ella. Solo existe en tamaño 1.7B. No hace falta si solo vas a clonar voces grabadas.",
+      "detalle": "Le describes la voz con palabras («hombre de unos 40 años, voz grave y cálida, ritmo pausado…») y la inventa. Después Calíope la guarda en tu biblioteca para narrar con ella. Solo existe en tamaño 1.7B. No hace falta si solo vas a clonar voces grabadas.",
       "habilita": [
         "Diseñar voces"
       ],
@@ -429,8 +429,8 @@
       "nombre": "Chatterbox (motor alternativo)",
       "grupo": "Extras",
       "necesidad": "opcional",
-      "resumen": "Otro motor de voz: más rápido y con control de intensidad emocional.",
-      "detalle": "Clona voces y narra como Qwen, unas tres veces más rápido, con un control de «intensidad emocional». Tiende a leer más seguido y con menos pausas. Todo lo que genera lleva una marca de agua inaudible de Resemble AI.",
+      "resumen": "Otro motor de voz, con control de la intensidad emocional, para comparar con Qwen.",
+      "detalle": "Clona voces y narra como Qwen, con un control de «intensidad emocional». Tiende a leer más seguido y con menos pausas. Usa la misma grabación de la voz, pero no su transcripción. Tiene su propio entorno de Python (con PyTorch 2.6), así que ocupa bastante. No funciona con las tarjetas NVIDIA de la serie RTX 50. Todo lo que genera lleva una marca de agua inaudible de Resemble AI.",
       "habilita": [
         "Narrar con un motor alternativo"
       ],
@@ -438,21 +438,202 @@
         "nucleo"
       ],
       "tamano": {
-        "conGpuGb": 8.3,
-        "sinGpuGb": 4.5
+        "conGpuGb": 8.4,
+        "sinGpuGb": 4.9
       },
       "requisitos": {
-        "vramMinimaGb": 5.0,
+        "vramMinimaGb": 4.5,
         "vramRecomendadaGb": 6.0,
         "funcionaEnCpu": true
       },
       "licencias": [
         {
-          "nombre": "MIT",
+          "nombre": "Chatterbox: MIT",
           "url": "https://github.com/resemble-ai/chatterbox/blob/master/LICENSE"
+        },
+        {
+          "nombre": "PyTorch: BSD-3",
+          "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
         }
       ],
-      "disponibleEn": "Llegará en el hito H7."
+      "instalacion": {
+        "version": "chatterbox-tts 0.1.7 · torch 2.6.0 · modelo 5bb1f6ee58e5",
+        "pasos": [
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Creando el entorno de Python",
+            "programa": "{uv}",
+            "argumentos": [
+              "venv",
+              "{entornos}/chatterbox",
+              "--python",
+              "3.11",
+              "--clear"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando PyTorch (la parte más pesada)",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--python",
+              "{entornos}/chatterbox/Scripts/python.exe",
+              "torch==2.6.0",
+              "torchaudio==2.6.0",
+              "--index-url",
+              "{indiceTorchCu124}"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/chatterbox"
+              ],
+              "bytesConGpu": 4300000000,
+              "bytesSinGpu": 1000000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando Chatterbox",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--no-deps",
+              "--python",
+              "{entornos}/chatterbox/Scripts/python.exe",
+              "annotated-doc==0.0.5",
+              "anyio==4.15.1",
+              "audioread==3.1.0",
+              "catalogue==2.0.10",
+              "certifi==2026.10.18",
+              "cffi==2.1.1",
+              "cfgv==3.5.0",
+              "charset-normalizer==3.5.2",
+              "chatterbox-tts==0.1.7",
+              "click==8.5.0",
+              "cloudpickle==3.1.2",
+              "colorama==0.4.6",
+              "conformer==0.3.2",
+              "decorator==5.3.1",
+              "deprecated==1.3.1",
+              "diffusers==0.29.0",
+              "distlib==0.4.4",
+              "einops==0.8.2",
+              "filelock==3.32.3",
+              "fsspec==2026.7.0",
+              "h11==0.16.0",
+              "hf-xet==1.7.0",
+              "httpcore==1.0.9",
+              "httpx==0.28.1",
+              "huggingface-hub==1.33.0",
+              "identify==2.6.20",
+              "idna==3.20",
+              "importlib-metadata==9.0.1",
+              "jaconv==0.5.0",
+              "joblib==1.6.0",
+              "lazy-loader==0.6",
+              "librosa==0.11.0",
+              "llvmlite==0.50.0",
+              "markdown-it-py==4.2.0",
+              "mdurl==0.1.2",
+              "ml-dtypes==0.5.4",
+              "msgpack==1.2.3",
+              "narwhals==2.27.1",
+              "nodeenv==1.11.0",
+              "numba==0.68.0",
+              "numpy==1.26.4",
+              "omegaconf==2.4.0",
+              "onnx==1.23.2",
+              "packaging==26.3",
+              "pillow==12.3.0",
+              "platformdirs==4.13.5",
+              "pooch==1.9.0",
+              "pre-commit==4.7.0",
+              "protobuf==7.36.2",
+              "pycparser==3.11",
+              "pygments==2.21.0",
+              "pykakasi==2.3.0",
+              "pyloudnorm==0.2.0",
+              "python-discovery==1.6.4",
+              "pyyaml==6.0.3",
+              "regex==2026.9.29",
+              "requests==2.34.2",
+              "resemble-perth==1.0.1",
+              "rich==15.0.0",
+              "s3tokenizer==0.3.0",
+              "safetensors==0.5.3",
+              "scikit-learn==1.9.1",
+              "scipy==1.17.1",
+              "setuptools==65.5.0",
+              "shellingham==1.5.4",
+              "soundfile==0.14.0",
+              "soxr==1.1.0",
+              "spacy-pkuseg==1.0.1",
+              "srsly==2.5.4",
+              "threadpoolctl==3.7.0",
+              "tokenizers==0.22.2",
+              "tqdm==4.70.1",
+              "transformers==5.2.0",
+              "typer==0.27.3",
+              "typer-slim==0.24.0",
+              "typing-extensions==4.16.0",
+              "urllib3==2.8.0",
+              "virtualenv==21.14.11",
+              "wrapt==2.5.1",
+              "zipp==4.1.1"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/chatterbox"
+              ],
+              "bytesConGpu": 900000000,
+              "bytesSinGpu": 900000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando que el motor arranca",
+            "programa": "{entornos}/chatterbox/Scripts/python.exe",
+            "argumentos": [
+              "-c",
+              "import torch, perth, chatterbox.mtl_tts; assert perth.PerthImplicitWatermarker, 'falta la marca de agua (perth)'; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
+            ],
+            "debeContener": "dispositivo={dispositivo}"
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modelo multilingüe de Chatterbox",
+            "python": "{entornos}/chatterbox/Scripts/python.exe",
+            "repositorio": "ResembleAI/chatterbox",
+            "revision": "5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18",
+            "tamanoBytes": 3208951748,
+            "archivos": [
+              "ve.pt",
+              "t3_mtl23ls_v2.safetensors",
+              "s3gen.pt",
+              "grapheme_mtl_merged_expanded_v1.json",
+              "conds.pt",
+              "Cangjie5_TC.json"
+            ]
+          }
+        ],
+        "rutas": [
+          "{entornos}/chatterbox",
+          "{modelos}/hub/models--ResembleAI--chatterbox"
+        ],
+        "comprobar": [
+          "{entornos}/chatterbox/Scripts/python.exe",
+          "{modelos}/hub/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/t3_mtl23ls_v2.safetensors",
+          "{modelos}/hub/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/s3gen.pt",
+          "{modelos}/hub/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/ve.pt"
+        ]
+      }
     }
   ]
-}
+}

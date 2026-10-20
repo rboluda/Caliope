@@ -223,13 +223,15 @@ public sealed class InstaladorTests : IDisposable
                 "tamano": { "conGpuGb": 1, "sinGpuGb": 1 }, "requisitos": {},
                 "instalacion": { "version": "abc",
                   "pasos": [ { "tipo": "modelo", "descripcion": "Bajando modelo", "python": "{entornos}/m/python.exe",
-                               "repositorio": "Org/Nombre", "revision": "abc", "tamanoBytes": 1000 } ],
+                               "repositorio": "Org/Nombre", "revision": "abc", "tamanoBytes": 1000,
+                               "archivos": ["a.pt", "b.json"] } ],
                   "rutas": ["{modelos}/hub/models--Org--Nombre"], "comprobar": ["{modelos}/hub/models--Org--Nombre/listo"] } } ] }
             """);
         var carpeta = Path.Combine(_datos, "modelos", "hub", "models--Org--Nombre");
         _ejecutor.Accion = async args =>
         {
-            Assert.Equal(["Org/Nombre", "abc"], args.Skip(2));
+            // Solo los archivos indicados, como JSON para allow_patterns.
+            Assert.Equal(["Org/Nombre", "abc", "[\"a.pt\",\"b.json\"]"], args.Skip(2));
             Directory.CreateDirectory(carpeta);
             await File.WriteAllBytesAsync(Path.Combine(carpeta, "parte"), new byte[500]);
             await Task.Delay(100);

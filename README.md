@@ -21,7 +21,7 @@ El diseño completo está en [docs/DISENO.md](docs/DISENO.md).
 
 - **H6**: velocidad (0,8–1,2×) y tono (±3 semitonos) en Narrar, aplicados con rubberband conservando los formantes, sin cambiar el tono al cambiar la velocidad ni al revés. Variantes de voz (susurro, tenso, asustado, triste, alegre, grito): grabaciones de la misma voz hablando de otra forma, añadidas desde un audio o, en las voces diseñadas, generadas con VoiceDesign con la misma descripción y semilla. En el guion se usan con su etiqueta (`[asustado]`… hasta `[normal]` o fin de línea); `[whispers]` usa la variante susurro si existe y si no baja el volumen. Los bloques generados antes siguen valiendo mientras no se toquen los ajustes nuevos. Sacar los audios: «Guardar como…», copiar al portapapeles o arrastrar la narración completa o cualquier bloque al editor de vídeo, y «Exportar todo…» a una carpeta.
 
-Chatterbox aparece en el catálogo pero aún no se puede instalar (H7).
+- **H7**: Chatterbox Multilingual (Resemble AI) como motor alternativo, en su propio entorno (chatterbox-tts 0.1.7, torch 2.6.0 cu124, 80 dependencias fijadas, sin gradio) y descargando solo los 6 archivos del modelo multilingüe (3,2 GB de 12). Narrar tiene un selector de motor y, con Chatterbox, «intensidad emocional»; en Voces → Probar se puede escuchar la misma voz con cada motor. Solo hay un motor vivo a la vez en la tarjeta: cambiar de motor cierra el otro. La huella solo incluye el motor cuando no es Qwen.
 
 ### Proyectos de narración
 
@@ -29,7 +29,7 @@ Chatterbox aparece en el catálogo pero aún no se puede instalar (H7).
 
 ### El motor de voz
 
-La app lanza `python -m constantino_motor` con el Python del entorno del motor y le envía una petición JSON por línea (`info`, `cargar`, `descargar`, `sintetizar`, `disenar`, `transcribir`, `salir`); el motor responde con eventos `progreso`, `resultado` o `error`. stdout queda reservado al protocolo y todo lo demás va a stderr. Con `CONSTANTINO_MOTOR_FALSO=1` usa un motor falso sin torch, que es el que prueban los tests (`CONSTANTINO_EXIGIR_PYTHON=1` hace que falten Python sea un fallo y no se salte la prueba).
+La app lanza `python -m constantino_motor` con el Python del entorno de cada motor (`CONSTANTINO_MOTOR=chatterbox` elige el adaptador de Chatterbox; sin ella, Qwen) y le envía una petición JSON por línea (`info`, `cargar`, `descargar`, `sintetizar`, `disenar`, `transcribir`, `salir`); el motor responde con eventos `progreso`, `resultado` o `error`. stdout queda reservado al protocolo y todo lo demás va a stderr. Con `CONSTANTINO_MOTOR_FALSO=1` usa un motor falso sin torch, que es el que prueban los tests (`CONSTANTINO_EXIGIR_PYTHON=1` hace que falten Python sea un fallo y no se salte la prueba).
 
 ### Dónde instala
 

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Constantino.Core.Motores;
 using Constantino.Core.Voces;
 
 namespace Constantino.Core.Narracion;
@@ -34,10 +35,15 @@ public sealed record AjustesNarracion(
     double UmbralSilencioDb = -50,
     double MargenRecorte = 0.05,
     double Velocidad = 1.0,
-    double TonoSemitonos = 0)
+    double TonoSemitonos = 0,
+    string Motor = MotoresDeVoz.Qwen,
+    double Intensidad = 0.5)
 {
     /// <summary>Velocidad entre 0,8 y 1,2: más allá se nota artificial.</summary>
     public const double VelocidadMinima = 0.8, VelocidadMaxima = 1.2, TonoMaximo = 3;
+
+    /// <summary>Intensidad emocional de Chatterbox: 0,25 contenida, 0,5 natural, 1 exagerada.</summary>
+    public const double IntensidadMinima = 0.25, IntensidadMaxima = 1.0;
 
     [JsonIgnore]
     public bool CambiaVelocidadOTono => Math.Abs(Velocidad - 1) > 0.001 || Math.Abs(TonoSemitonos) > 0.001;
@@ -78,6 +84,12 @@ public static class Huellas
         {
             relevantes.Remove(nameof(AjustesNarracion.Velocidad));
             relevantes.Remove(nameof(AjustesNarracion.TonoSemitonos));
+        }
+        // El motor (y sus ajustes propios) solo cuentan si no es Qwen, el único que había antes.
+        if (ajustes.Motor == MotoresDeVoz.Qwen)
+        {
+            relevantes.Remove(nameof(AjustesNarracion.Motor));
+            relevantes.Remove(nameof(AjustesNarracion.Intensidad));
         }
         var datos = JsonSerializer.Serialize(new
         {

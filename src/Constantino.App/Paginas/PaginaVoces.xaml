@@ -274,6 +274,15 @@
                                         <TextBlock Margin="0,0,0,6" Text="Escribe un texto y escúchalo con esta voz:" />
                                         <ui:TextBox AcceptsReturn="True" MinHeight="60" Text="{Binding TextoPrueba, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" />
                                         <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                                            <ComboBox
+                                                Margin="0,0,8,0"
+                                                MinWidth="140"
+                                                DisplayMemberPath="Nombre"
+                                                ItemsSource="{Binding DataContext.ViewModel.Motores, ElementName=Raiz}"
+                                                SelectedValue="{Binding DataContext.ViewModel.MotorPrueba, ElementName=Raiz}"
+                                                SelectedValuePath="Id"
+                                                ToolTip="Motor con el que se lee la prueba: escucha el mismo texto con los dos para compararlos"
+                                                Visibility="{Binding DataContext.ViewModel.HayVariosMotores, ElementName=Raiz, Converter={StaticResource BoolAVisibilidad}}" />
                                             <ui:Button
                                                 Appearance="Primary"
                                                 Command="{Binding DataContext.ViewModel.ProbarCommand, ElementName=Raiz}"

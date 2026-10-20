@@ -20,6 +20,24 @@ public class CatalogoTests
     }
 
     [Fact]
+    public void Chatterbox_se_instala_en_su_propio_entorno_y_solo_baja_el_modelo_multilingue()
+    {
+        var c = CatalogoComponentes.CargarPredeterminado()["chatterbox"];
+
+        Assert.Null(c.DisponibleEn);
+        var pasos = c.Instalacion!.Pasos;
+        Assert.Contains(pasos.OfType<PasoEjecutar>(), p => p.Argumentos.Contains("{indiceTorchCu124}"));
+        // Sin gradio: solo lo usan sus demos y ocupa más de 1 GB.
+        Assert.DoesNotContain(pasos.OfType<PasoEjecutar>().SelectMany(p => p.Argumentos), a => a.StartsWith("gradio", StringComparison.Ordinal));
+        // Perth (la marca de agua) necesita pkg_resources: sin setuptools, Chatterbox falla al generar.
+        Assert.Contains(pasos.OfType<PasoEjecutar>().SelectMany(p => p.Argumentos), a => a.StartsWith("setuptools==", StringComparison.Ordinal));
+        Assert.Contains(pasos.OfType<PasoEjecutar>(), p => p.Argumentos.Any(a => a.Contains("PerthImplicitWatermarker", StringComparison.Ordinal)));
+        var modelo = pasos.OfType<PasoModelo>().Single();
+        Assert.Equal("{entornos}/chatterbox/Scripts/python.exe", modelo.Python);
+        Assert.Contains("t3_mtl23ls_v2.safetensors", modelo.Archivos!);
+    }
+
+    [Fact]
     public void Todo_depende_del_nucleo_salvo_el_propio_nucleo()
     {
         var catalogo = CatalogoComponentes.CargarPredeterminado();
