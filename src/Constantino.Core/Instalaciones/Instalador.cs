@@ -75,14 +75,52 @@ public sealed class Instalador
         return plan;
     }
 
+    /// <summary>Cuántos modelos se descargan a la vez en segundo plano (cada uno ya usa varias conexiones).</summary>
+    public const int ModelosALaVez = 3;
+
+    /// <summary>
+    /// Instala el plan en orden. Cuando a un componente solo le quedan modelos por descargar, esas descargas siguen en
+    /// segundo plano (hasta <see cref="ModelosALaVez"/> a la vez) y se pasa al siguiente: así se aprovecha la conexión
+    /// mientras se preparan los entornos. Lo que dependa de un componente que aún se descarga, espera a que termine.
+    /// </summary>
     public async Task InstalarAsync(IEnumerable<string> ids, IProgress<EventoInstalacion> progreso, CancellationToken ct, bool forzar = false)
     {
         var plan = Plan(ids, forzar);
         Registrar($"=== Instalación: {string.Join(", ", plan.Select(c => c.Id))} (dispositivo {_rutas.Variables["dispositivo"]})");
+        var informador = Informador(progreso);
+        using var todo = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        using var turnos = new SemaphoreSlim(ModelosALaVez);
+        var enSegundoPlano = new Dictionary<string, Task>(StringComparer.Ordinal);
         try
         {
-            foreach (var componente in plan)
-                await InstalarComponenteAsync(componente, Informador(progreso), ct).ConfigureAwait(false);
+            try
+            {
+                foreach (var componente in plan)
+                {
+                    foreach (var dep in _catalogo.DependenciasDe(componente.Id))
+                        if (enSegundoPlano.TryGetValue(dep.Id, out var pendiente))
+                            await pendiente.ConfigureAwait(false);
+                    // Si una descarga en segundo plano ya ha fallado, no se sigue instalando lo demás.
+                    if (enSegundoPlano.Values.FirstOrDefault(t => t.IsFaulted) is { } fallida)
+                        await fallida.ConfigureAwait(false);
+                    if (await InstalarComponenteAsync(componente, informador, todo.Token, turnos).ConfigureAwait(false) is { } resto)
+                        enSegundoPlano[componente.Id] = resto;
+                }
+                if (enSegundoPlano.Values.Any(t => !t.IsCompleted))
+                {
+                    informador.Report(new EventoInstalacion(TipoEvento.Paso, "", T("Terminando de descargar los modelos"), Paso: 1, TotalPasos: 1));
+                    await EsperarTodasAsync(enSegundoPlano.Values).ConfigureAwait(false);
+                }
+            }
+            catch (Exception) when (enSegundoPlano.Values.Any(t => !t.IsCompleted))
+            {
+                // Si algo falla (o se cancela), se paran también las descargas en segundo plano: lo bajado se conserva
+                // y se reanuda al reintentar.
+                await todo.CancelAsync().ConfigureAwait(false);
+                try { await Task.WhenAll(enSegundoPlano.Values).ConfigureAwait(false); }
+                catch (Exception) { }
+                throw;
+            }
         }
         catch (OperationCanceledException)
         {
@@ -137,22 +175,69 @@ public sealed class Instalador
         Estado.Quitar(id);
     }
 
-    private async Task InstalarComponenteAsync(Componente c, IProgress<EventoInstalacion> progreso, CancellationToken ct)
+    /// <summary>Espera a todas las tareas y, si alguna falla, lanza su error (no el de la primera de la lista).</summary>
+    private static async Task EsperarTodasAsync(IEnumerable<Task> tareas)
+    {
+        var lista = tareas.ToList();
+        while (lista.Count > 0)
+        {
+            var hecha = await Task.WhenAny(lista).ConfigureAwait(false);
+            await hecha.ConfigureAwait(false);
+            lista.Remove(hecha);
+        }
+    }
+
+    /// <summary>
+    /// Instala <paramref name="c"/>. Si al final solo le quedan modelos, devuelve la tarea que los descarga en segundo
+    /// plano (y termina de registrar el componente); si no, null.
+    /// </summary>
+    private async Task<Task?> InstalarComponenteAsync(Componente c, IProgress<EventoInstalacion> progreso, CancellationToken ct,
+        SemaphoreSlim turnos)
     {
         var inst = c.Instalacion!;
         var total = inst.Pasos.Count;
         progreso.Report(new EventoInstalacion(TipoEvento.InicioComponente, c.Id, T("Instalando {0}", c.Nombre), TotalPasos: total));
+        // Desde aquí solo quedan descargas de modelos: van en segundo plano.
+        var primerModelo = total;
+        while (primerModelo > 0 && inst.Pasos[primerModelo - 1] is PasoModelo)
+            primerModelo--;
 
-        for (var i = 0; i < total; i++)
+        await PasosAsync(c, 0, primerModelo, progreso, segundoPlano: false, ct).ConfigureAwait(false);
+        if (primerModelo == total)
+        {
+            Finalizar(c, progreso);
+            return null;
+        }
+        return Task.Run(async () =>
+        {
+            await turnos.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                await PasosAsync(c, primerModelo, total, progreso, segundoPlano: true, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                turnos.Release();
+            }
+            Finalizar(c, progreso);
+        }, ct);
+    }
+
+    private async Task PasosAsync(Componente c, int desde, int hasta, IProgress<EventoInstalacion> progreso, bool segundoPlano,
+        CancellationToken ct)
+    {
+        var inst = c.Instalacion!;
+        var total = inst.Pasos.Count;
+        for (var i = desde; i < hasta; i++)
         {
             ct.ThrowIfCancellationRequested();
             var paso = inst.Pasos[i];
             var numero = i + 1;
-            progreso.Report(new EventoInstalacion(TipoEvento.Paso, c.Id, paso.Descripcion, null, numero, total));
+            progreso.Report(new EventoInstalacion(TipoEvento.Paso, c.Id, paso.Descripcion, null, numero, total, segundoPlano));
             void Avance(double? fraccion, string mensaje) =>
-                progreso.Report(new EventoInstalacion(TipoEvento.Progreso, c.Id, mensaje, fraccion, numero, total));
+                progreso.Report(new EventoInstalacion(TipoEvento.Progreso, c.Id, mensaje, fraccion, numero, total, segundoPlano));
             void Linea(string texto) =>
-                progreso.Report(new EventoInstalacion(TipoEvento.Linea, c.Id, texto, null, numero, total));
+                progreso.Report(new EventoInstalacion(TipoEvento.Linea, c.Id, texto, null, numero, total, segundoPlano));
 
             try
             {
@@ -179,7 +264,12 @@ public sealed class Instalador
                 throw new InstalacionFallidaException(c.Id, paso.Descripcion, $"{paso.Descripcion}: {e.Message}", causa: e);
             }
         }
+    }
 
+    private void Finalizar(Componente c, IProgress<EventoInstalacion> progreso)
+    {
+        var inst = c.Instalacion!;
+        var total = inst.Pasos.Count;
         var faltan = inst.Comprobar.Select(_rutas.Ruta).Where(r => !File.Exists(r) && !Directory.Exists(r)).ToList();
         if (faltan.Count > 0)
         {

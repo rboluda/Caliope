@@ -185,6 +185,9 @@ public sealed class AvisosYReintentosTests : IDisposable
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
+            // La consulta previa (¿admite rangos?) no cuenta: este servidor no los admite.
+            if (request.Method == HttpMethod.Head)
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
             Peticiones++;
             if (fallar && Peticiones == 1)
                 throw new HttpRequestException("Conexión cortada");

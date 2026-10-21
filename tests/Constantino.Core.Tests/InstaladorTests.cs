@@ -48,7 +48,8 @@ public sealed class InstaladorTests : IDisposable
 
     private RutasDatos Rutas => new(_datos, usaGpu: true);
 
-    private IProgress<EventoInstalacion> Progreso => new ProgresoSincrono<EventoInstalacion>(_eventos.Add);
+    // Con descargas en segundo plano llegan eventos desde varios hilos.
+    private IProgress<EventoInstalacion> Progreso => new ProgresoSincrono<EventoInstalacion>(e => { lock (_eventos) _eventos.Add(e); });
 
     [Fact]
     public void El_plan_incluye_las_dependencias_en_orden()
@@ -134,6 +135,75 @@ public sealed class InstaladorTests : IDisposable
         Assert.Contains("=== ERROR en motor", File.ReadAllText(instalador.ArchivoRegistro));
         Assert.Equal(EstadoComponente.Instalado, instalador.EstadoDe("base"));
         Assert.Equal(EstadoComponente.NoInstalado, instalador.EstadoDe("motor"));
+    }
+
+    [Fact]
+    public async Task Los_modelos_se_descargan_mientras_se_instala_lo_siguiente()
+    {
+        var catalogo = CatalogoComponentes.Leer("""
+            { "version": 1, "componentes": [
+              { "id": "a", "nombre": "A", "grupo": "G", "necesidad": "opcional", "resumen": "r", "detalle": "d",
+                "tamano": { "conGpuGb": 1, "sinGpuGb": 1 }, "requisitos": {},
+                "instalacion": { "version": "1",
+                  "pasos": [ { "tipo": "ejecutar", "descripcion": "Entorno A", "programa": "{uv}", "argumentos": ["entorno-a"] },
+                             { "tipo": "modelo", "descripcion": "Modelo A", "python": "{entornos}/a/python.exe",
+                               "repositorio": "Org/A", "revision": "r1", "tamanoBytes": 10 } ],
+                  "rutas": ["{modelos}/hub/models--Org--A"], "comprobar": ["{modelos}/hub/models--Org--A/listo"] } },
+              { "id": "b", "nombre": "B", "grupo": "G", "necesidad": "opcional", "resumen": "r", "detalle": "d",
+                "tamano": { "conGpuGb": 1, "sinGpuGb": 1 }, "requisitos": {},
+                "instalacion": { "version": "1",
+                  "pasos": [ { "tipo": "ejecutar", "descripcion": "Entorno B", "programa": "{uv}", "argumentos": ["entorno-b"] } ],
+                  "rutas": ["{entornos}/b"], "comprobar": ["{entornos}/b/listo"] } } ] }
+            """);
+        var bEmpezado = new TaskCompletionSource();
+        _ejecutor.Accion = async args =>
+        {
+            if (args.Contains("Org/A"))
+            {
+                // Si el instalador esperase a este modelo antes de seguir con B, esto no terminaría nunca.
+                await bEmpezado.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                var carpeta = Path.Combine(Rutas.Modelos, "hub", "models--Org--A");
+                Directory.CreateDirectory(carpeta);
+                await File.WriteAllTextAsync(Path.Combine(carpeta, "listo"), "");
+                return "descargado=ok";
+            }
+            if (args.Contains("entorno-b"))
+            {
+                bEmpezado.TrySetResult();
+                Directory.CreateDirectory(Path.Combine(Rutas.Entornos, "b"));
+                await File.WriteAllTextAsync(Path.Combine(Rutas.Entornos, "b", "listo"), "");
+            }
+            return "ok";
+        };
+
+        var instalador = Instalador(catalogo);
+        await instalador.InstalarAsync(["a", "b"], Progreso, CancellationToken.None);
+
+        Assert.Equal(EstadoComponente.Instalado, instalador.EstadoDe("a"));
+        Assert.Equal(EstadoComponente.Instalado, instalador.EstadoDe("b"));
+        Assert.Contains(_eventos, e => e.ComponenteId == "a" && e.SegundoPlano && e.Tipo == TipoEvento.Paso);
+    }
+
+    [Fact]
+    public async Task Si_falla_un_modelo_en_segundo_plano_la_instalacion_falla()
+    {
+        var catalogo = CatalogoComponentes.Leer("""
+            { "version": 1, "componentes": [
+              { "id": "a", "nombre": "A", "grupo": "G", "necesidad": "opcional", "resumen": "r", "detalle": "d",
+                "tamano": { "conGpuGb": 1, "sinGpuGb": 1 }, "requisitos": {},
+                "instalacion": { "version": "1",
+                  "pasos": [ { "tipo": "modelo", "descripcion": "Modelo A", "python": "{entornos}/a/python.exe",
+                               "repositorio": "Org/A", "revision": "r1", "tamanoBytes": 10 } ],
+                  "rutas": ["{modelos}/hub/models--Org--A"], "comprobar": ["{modelos}/hub/models--Org--A/listo"] } } ] }
+            """);
+        _ejecutor.CodigoPara = _ => 1;
+
+        var instalador = Instalador(catalogo);
+        var e = await Assert.ThrowsAsync<InstalacionFallidaException>(() => instalador.InstalarAsync(["a"], Progreso, CancellationToken.None));
+
+        Assert.Equal("a", e.ComponenteId);
+        Assert.Equal(EstadoComponente.NoInstalado, instalador.EstadoDe("a"));
+        Assert.Contains("=== ERROR en a", File.ReadAllText(instalador.ArchivoRegistro));
     }
 
     [Fact]

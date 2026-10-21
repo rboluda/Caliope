@@ -24,8 +24,18 @@ public sealed partial class FilaInstalacion(string id, string nombre) : Observab
 {
     public string Id { get; } = id;
     public string Nombre { get; } = nombre;
-    [ObservableProperty] public partial EstadoFila Estado { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MostrarBarra))]
+    public partial EstadoFila Estado { get; set; }
+
     [ObservableProperty] public partial string Detalle { get; set; } = T("Pendiente");
+
+    /// <summary>Avance de su descarga en segundo plano (de 0 a 1), o null si no hay ninguna.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MostrarBarra))]
+    public partial double? Fraccion { get; set; }
+
+    public bool MostrarBarra => Estado == EstadoFila.Instalando && Fraccion is not null;
 }
 
 /// <summary>
@@ -139,7 +149,7 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
                 Error = T("Has cancelado la instalación. Lo descargado se aprovechará si vuelves a intentarlo.");
                 return false;
             case InstalacionFallidaException e:
-                MarcarFilaActual(T("Error"));
+                MarcarFilaActual(T("Error"), e.ComponenteId);
                 Titulo = T("La instalación no se ha completado");
                 Error = e.Message;
                 DetalleError = e.Detalle;
@@ -197,16 +207,32 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
                     fila.Detalle = T("Instalando…");
                 }
                 break;
+            // Lo que va en segundo plano (descargas de modelos) solo se muestra en su fila, con su propia barra; el
+            // mensaje y la barra de abajo son para lo que se está instalando en primer plano.
             case TipoEvento.Paso:
-                Mensaje = T("{0} (paso {1} de {2})", e.Mensaje, e.Paso, e.TotalPasos);
-                Indeterminado = true;
+                if (!e.SegundoPlano)
+                {
+                    Mensaje = e.TotalPasos > 1 ? T("{0} (paso {1} de {2})", e.Mensaje, e.Paso, e.TotalPasos) : e.Mensaje;
+                    Indeterminado = true;
+                }
                 if (fila is not null)
+                {
                     fila.Detalle = e.Mensaje;
+                    fila.Fraccion = e.SegundoPlano ? 0 : null;
+                }
                 break;
             case TipoEvento.Progreso:
-                Mensaje = e.Mensaje;
-                Indeterminado = e.Fraccion is null;
-                Fraccion = e.Fraccion ?? 0;
+                if (!e.SegundoPlano)
+                {
+                    Mensaje = e.Mensaje;
+                    Indeterminado = e.Fraccion is null;
+                    Fraccion = e.Fraccion ?? 0;
+                }
+                else if (fila is not null)
+                {
+                    fila.Detalle = e.Mensaje;
+                    fila.Fraccion = e.Fraccion ?? 0;
+                }
                 break;
             case TipoEvento.Linea:
                 Lineas.Add(e.Mensaje);
@@ -218,17 +244,32 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
                 {
                     fila.Estado = EstadoFila.Instalado;
                     fila.Detalle = T("Instalado");
+                    fila.Fraccion = null;
                 }
                 break;
         }
     }
 
-    private void MarcarFilaActual(string detalle)
+    /// <summary>
+    /// Marca la fila que ha fallado (o la primera en curso) y deja en espera las descargas que seguían en segundo
+    /// plano: se pararon y continuarán al reintentar.
+    /// </summary>
+    private void MarcarFilaActual(string detalle, string? componenteId = null)
     {
-        if (Filas.FirstOrDefault(f => f.Estado == EstadoFila.Instalando) is { } fila)
+        var fallida = Filas.FirstOrDefault(f => f.Id == componenteId) ?? Filas.FirstOrDefault(f => f.Estado == EstadoFila.Instalando);
+        foreach (var fila in Filas.Where(f => f.Estado == EstadoFila.Instalando || f == fallida))
         {
-            fila.Estado = EstadoFila.Error;
-            fila.Detalle = detalle;
+            fila.Fraccion = null;
+            if (fila == fallida)
+            {
+                fila.Estado = EstadoFila.Error;
+                fila.Detalle = detalle;
+            }
+            else
+            {
+                fila.Estado = EstadoFila.Pendiente;
+                fila.Detalle = T("Detenido: seguirá al reintentar");
+            }
         }
     }
 

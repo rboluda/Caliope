@@ -21,12 +21,20 @@
                             </Grid.ColumnDefinitions>
                             <ui:SymbolIcon x:Name="Icono" Symbol="Circle24" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                             <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Nombre}" />
-                            <TextBlock
-                                Grid.Column="2"
-                                VerticalAlignment="Center"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Binding Detalle}"
-                                TextTrimming="CharacterEllipsis" />
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                <TextBlock
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding Detalle}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <!--  Descarga de modelos en segundo plano: su propia barra  -->
+                                <ProgressBar
+                                    Height="3"
+                                    Margin="0,3,0,0"
+                                    Maximum="1"
+                                    Minimum="0"
+                                    Visibility="{Binding MostrarBarra, Converter={StaticResource BoolAVisibilidad}}"
+                                    Value="{Binding Fraccion, Mode=OneWay, TargetNullValue=0}" />
+                            </StackPanel>
                         </Grid>
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding Estado}" Value="Instalando">

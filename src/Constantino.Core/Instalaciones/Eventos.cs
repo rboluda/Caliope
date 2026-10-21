@@ -22,13 +22,15 @@ public enum TipoEvento
 }
 
 /// <param name="Fraccion">De 0 a 1 dentro del paso actual, o null si no se puede medir.</param>
+/// <param name="SegundoPlano">De una descarga de modelos que sigue mientras se instala lo demás.</param>
 public sealed record EventoInstalacion(
     TipoEvento Tipo,
     string ComponenteId,
     string Mensaje,
     double? Fraccion = null,
     int Paso = 0,
-    int TotalPasos = 0);
+    int TotalPasos = 0,
+    bool SegundoPlano = false);
 
 public sealed class InstalacionFallidaException(string componenteId, string paso, string mensaje, string? detalle = null, Exception? causa = null)
     : Exception(mensaje, causa)
