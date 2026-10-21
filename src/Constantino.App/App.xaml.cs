@@ -59,6 +59,10 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        // La ventana se dibuja con el procesador: la tarjeta gráfica queda entera para los motores de voz. Si la
+        // llenan (o la llena otro programa), WPF no se queda sin memoria para dibujar y no se cierra con
+        // UCEERR_RENDERTHREADFAILURE. La interfaz es sencilla y no lo nota.
+        System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         base.OnStartup(e);
         // Fechas y números de los bindings en español.
         FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement),
