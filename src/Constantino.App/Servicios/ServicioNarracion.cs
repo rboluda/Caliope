@@ -74,6 +74,13 @@ public sealed class SintetizadorMotor(ServicioMotor motor, VozParaNarrar voz, st
     }
 }
 
+/// <summary>Whisper escuchando cada bloque para comprobar que dice lo que tiene que decir.</summary>
+public sealed class RevisorWhisper(ServicioMotor motor, string idioma) : IRevisor
+{
+    public async Task<string> TranscribirAsync(string wav, CancellationToken ct) =>
+        (await motor.TranscribirAsync(wav, idioma, ct)).Texto;
+}
+
 /// <summary>Proyectos de narración de la carpeta de datos actual y lo necesario para narrarlos.</summary>
 public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioMotor motor, ServicioVoces voces)
 {
@@ -84,6 +91,9 @@ public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioM
     public Task<string?> ModeloAsync(string motorVoz) => motor.FirmaModeloAsync(motorVoz);
 
     public Task<bool> ChatterboxInstaladoAsync() => motor.ChatterboxInstaladoAsync();
+
+    public async Task<bool> RevisionDisponibleAsync() =>
+        (await instalacion.InstaladorAsync()).EstaInstalado(ServicioMotor.ModeloWhisper);
 
     public async Task<VozParaNarrar?> VozAsync(string? id) => id is null ? null : Cargar(await voces.BibliotecaAsync(), id);
 
@@ -171,7 +181,11 @@ public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioM
             otras.TryAdd(v.Id, v.Id);
         }
         var sintetizador = new SintetizadorMotor(motor, voz, modelo, otras, id => Cargar(biblioteca, id));
+        // Con la transcripción automática instalada, cada bloque nuevo se escucha para comprobar que se ha leído bien.
+        IRevisor? revisor = (await instalacion.InstaladorAsync()).EstaInstalado(ServicioMotor.ModeloWhisper)
+            ? new RevisorWhisper(motor, voz.Voz.Idioma)
+            : null;
         return new Narrador(await AlmacenAsync(), sintetizador, new ProcesadorFfmpeg(rutas.Ffmpeg, new EjecutorProcesos()),
-            await SonidosAsync(esperarSonidos), await DiccionarioAsync());
+            await SonidosAsync(esperarSonidos), await DiccionarioAsync(), revisor);
     }
 }

@@ -37,7 +37,13 @@ public sealed record AjustesNarracion(
     double Velocidad = 1.0,
     double TonoSemitonos = 0,
     string Motor = MotoresDeVoz.Qwen,
-    double Intensidad = 0.5)
+    double Intensidad = 0.5,
+    bool Revisar = true,
+    double? DuracionMaxima = null,
+    string? Ambiente = null,
+    double VolumenAmbiente = -20,
+    string? Musica = null,
+    double VolumenMusica = -22)
 {
     /// <summary>Velocidad entre 0,8 y 1,2: más allá se nota artificial.</summary>
     public const double VelocidadMinima = 0.8, VelocidadMaxima = 1.2, TonoMaximo = 3;
@@ -97,6 +103,13 @@ public static class Huellas
             relevantes.Remove(nameof(AjustesNarracion.Velocidad));
             relevantes.Remove(nameof(AjustesNarracion.TonoSemitonos));
         }
+        // Lo que solo afecta a la revisión o al audio completo (no al de cada bloque) no cuenta.
+        foreach (var soloCompleto in new[]
+                 {
+                     nameof(AjustesNarracion.Revisar), nameof(AjustesNarracion.DuracionMaxima), nameof(AjustesNarracion.Ambiente),
+                     nameof(AjustesNarracion.VolumenAmbiente), nameof(AjustesNarracion.Musica), nameof(AjustesNarracion.VolumenMusica),
+                 })
+            relevantes.Remove(soloCompleto);
         // El motor (y sus ajustes propios) solo cuentan si no es Qwen, el único que había antes.
         if (ajustes.Motor == MotoresDeVoz.Qwen)
         {

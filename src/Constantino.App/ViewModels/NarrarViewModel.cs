@@ -88,6 +88,9 @@ public sealed record OpcionFormato(FormatoSalida Valor, string Nombre);
 
 public sealed record OpcionMotor(string Id, string Nombre);
 
+/// <summary>Un sonido de fondo elegible; Clave vacía = ninguno.</summary>
+public sealed record OpcionSonido(string Clave, string Nombre);
+
 /// <summary>Una etiqueta de variante de la voz, para insertarla en el guion.</summary>
 public sealed record EtiquetaVariante(string Nombre, string Etiqueta);
 
@@ -191,6 +194,18 @@ public sealed partial class NarrarViewModel : ObservableObject
     /// <summary>Efectos de «Mis sonidos», para insertar [sfx: …].</summary>
     public ObservableCollection<EtiquetaVariante> Efectos { get; } = [];
 
+    // --- Revisión, duración y fondo ---
+    [ObservableProperty] public partial bool Revisar { get; set; } = true;
+    [ObservableProperty] public partial bool RevisionDisponible { get; set; }
+    [ObservableProperty] public partial double DuracionMaxima { get; set; }
+    public ObservableCollection<OpcionSonido> Ambientes { get; } = [];
+    public ObservableCollection<OpcionSonido> Musicas { get; } = [];
+    [ObservableProperty] public partial string Ambiente { get; set; } = "";
+    [ObservableProperty] public partial double VolumenAmbiente { get; set; } = -20;
+    [ObservableProperty] public partial string Musica { get; set; } = "";
+    [ObservableProperty] public partial double VolumenMusica { get; set; } = -22;
+    [ObservableProperty] public partial string? AvisosResultado { get; set; }
+
     // --- Diccionario de pronunciación ---
     public ObservableCollection<FilaPronunciacion> Diccionario { get; } = [];
     [ObservableProperty] public partial bool MostrarDiccionario { get; set; }
@@ -285,6 +300,13 @@ public sealed partial class NarrarViewModel : ObservableObject
         SusurroDb = a.SusurroDb;
         Lufs = a.Lufs;
         Formato = a.Formato;
+        Revisar = a.Revisar;
+        DuracionMaxima = a.DuracionMaxima ?? 0;
+        Ambiente = a.Ambiente ?? "";
+        VolumenAmbiente = a.VolumenAmbiente;
+        Musica = a.Musica ?? "";
+        VolumenMusica = a.VolumenMusica;
+        AvisosResultado = null;
         Velocidad = a.Velocidad;
         MotorVoz = a.Motor;
         Intensidad = a.Intensidad;
@@ -311,6 +333,12 @@ public sealed partial class NarrarViewModel : ObservableObject
     partial void OnLufsChanged(double value) => Programar();
     partial void OnFormatoChanged(FormatoSalida value) => Programar();
     partial void OnVelocidadChanged(double value) => Programar();
+    partial void OnRevisarChanged(bool value) => Programar();
+    partial void OnDuracionMaximaChanged(double value) => Programar();
+    partial void OnAmbienteChanged(string value) => Programar();
+    partial void OnVolumenAmbienteChanged(double value) => Programar();
+    partial void OnMusicaChanged(string value) => Programar();
+    partial void OnVolumenMusicaChanged(double value) => Programar();
     partial void OnMotorVozChanged(string value) => Programar();
     partial void OnIntensidadChanged(double value) => Programar();
     partial void OnTonoSemitonosChanged(double value) => Programar();
@@ -335,6 +363,12 @@ public sealed partial class NarrarViewModel : ObservableObject
         Lufs = Lufs,
         Formato = Formato,
         Velocidad = Math.Round(Velocidad, 2),
+        Revisar = Revisar,
+        DuracionMaxima = DuracionMaxima > 0 ? Math.Round(DuracionMaxima, 1) : null,
+        Ambiente = string.IsNullOrEmpty(Ambiente) ? null : Ambiente,
+        VolumenAmbiente = Math.Round(VolumenAmbiente),
+        Musica = string.IsNullOrEmpty(Musica) ? null : Musica,
+        VolumenMusica = Math.Round(VolumenMusica),
         Motor = MotorVoz,
         Intensidad = Math.Round(Intensidad, 2),
         TonoSemitonos = Math.Round(TonoSemitonos, 1),
@@ -410,9 +444,37 @@ public sealed partial class NarrarViewModel : ObservableObject
         OtrasVoces.Clear();
         foreach (var v in await _narracion.OtrasVocesAsync(voz?.Voz.Id))
             OtrasVoces.Add(new EtiquetaVariante(v.Nombre, $"[voz: {v.Nombre}] "));
+        var sonidos = await _narracion.SonidosAsync(esperar: false);
         Efectos.Clear();
-        foreach (var e in (await _narracion.SonidosAsync(esperar: false)).ListaEfectos)
+        foreach (var e in sonidos.ListaEfectos)
             Efectos.Add(new EtiquetaVariante(e.Nombre, $"[sfx: {e.Nombre}] "));
+        // Las listas de fondo se rellenan sin perder lo elegido (el ComboBox lo borraría al vaciarse).
+        var (ambiente, musica) = (Ambiente, Musica);
+        _cargando = true;
+        Rellenar(Ambientes, "Sin ambiente", sonidos.ListaAmbientes);
+        Rellenar(Musicas, "Sin música", sonidos.ListaMusica);
+        (Ambiente, Musica) = (ambiente, musica);
+        _cargando = false;
+        RevisionDisponible = await _narracion.RevisionDisponibleAsync();
+    }
+
+    private static void Rellenar(ObservableCollection<OpcionSonido> lista, string ninguno, IEnumerable<Constantino.Core.Audio.Sonido> sonidos)
+    {
+        var nuevas = new List<OpcionSonido> { new("", ninguno) };
+        nuevas.AddRange(sonidos.Select(s => new OpcionSonido(s.Nombre, s.Nombre)));
+        if (lista.SequenceEqual(nuevas))
+            return;
+        lista.Clear();
+        foreach (var o in nuevas)
+            lista.Add(o);
+    }
+
+    [RelayCommand]
+    private async Task AbrirCarpetaMusicaAsync()
+    {
+        var carpeta = (await _narracion.SonidosAsync(esperar: false)).CarpetaMusica;
+        Directory.CreateDirectory(carpeta);
+        Process.Start(new ProcessStartInfo(carpeta) { UseShellExecute = true });
     }
 
     // --- Diccionario de pronunciación ------------------------------------------------------------
@@ -799,8 +861,9 @@ public sealed partial class NarrarViewModel : ObservableObject
             var r = await narrador.NarrarAsync(_proyecto, TextoGuion, solo, forzar, progreso, _cancelacion.Token);
             _proyecto = r.Proyecto;
             Mensaje = r.Generados == 0
-                ? "No había nada que actualizar."
+                ? (r.Completo is null ? "No había nada que actualizar." : "Listo: audio completo actualizado.")
                 : $"Listo: {r.Generados} bloque(s) generado(s)" + (r.SinCambios > 0 ? $", {r.SinCambios} sin cambios." : ".");
+            AvisosResultado = r.Avisos is { Count: > 0 } avisos ? string.Join("\n", avisos) : null;
         }
         catch (OperationCanceledException)
         {

@@ -29,6 +29,8 @@ public sealed class BibliotecaSonidos(string carpeta) : ISonidos
     public string? RutaEfecto(string nombre) => Buscar(ListaEfectos, nombre);
     public string? RutaAmbiente(string nombre) => Buscar(ListaAmbientes, nombre);
     public string? RutaMusica(string nombre) => Buscar(ListaMusica, nombre);
+    string? ISonidos.RutaAmbiente(string nombre) => RutaAmbiente(nombre);
+    string? ISonidos.RutaMusica(string nombre) => RutaMusica(nombre);
 
     private static string? Buscar(IReadOnlyList<Sonido> lista, string nombre)
     {

@@ -311,6 +311,54 @@
                                 </StackPanel>
                             </Grid>
 
+                            <Expander Margin="0,10,0,0" Header="Fondo, duración y revisión">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Ambiente de fondo" />
+                                    <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Ambientes}" SelectedValue="{Binding ViewModel.Ambiente}" SelectedValuePath="Clave" />
+                                    <Slider
+                                        Margin="0,4,0,0"
+                                        Maximum="-6"
+                                        Minimum="-36"
+                                        ToolTip="Volumen del ambiente: baja solo cuando habla la voz"
+                                        Value="{Binding ViewModel.VolumenAmbiente}"
+                                        Visibility="{Binding ViewModel.Ambiente, Converter={StaticResource NoNuloAVisibilidad}}" />
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Música de fondo" />
+                                    <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Musicas}" SelectedValue="{Binding ViewModel.Musica}" SelectedValuePath="Clave" />
+                                    <Slider
+                                        Margin="0,4,0,0"
+                                        Maximum="-6"
+                                        Minimum="-36"
+                                        ToolTip="Volumen de la música: baja sola cuando habla la voz"
+                                        Value="{Binding ViewModel.VolumenMusica}"
+                                        Visibility="{Binding ViewModel.Musica, Converter={StaticResource NoNuloAVisibilidad}}" />
+                                    <ui:HyperlinkButton
+                                        Padding="0,4"
+                                        Command="{Binding ViewModel.AbrirCarpetaMusicaCommand}"
+                                        Content="Añadir mi música (abre la carpeta)" />
+
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Duración máxima del audio completo (s; 0 = sin límite)" />
+                                    <ui:NumberBox
+                                        Maximum="3600"
+                                        Minimum="0"
+                                        SmallChange="1"
+                                        ToolTip="Para un Short, 59. Si se pasa, se acelera un poco (sin cambiar el tono) para que quepa."
+                                        Value="{Binding ViewModel.DuracionMaxima}" />
+
+                                    <CheckBox
+                                        Margin="0,10,0,0"
+                                        Content="Revisar que se lee bien y repetir lo que falle"
+                                        IsChecked="{Binding ViewModel.Revisar}"
+                                        IsEnabled="{Binding ViewModel.RevisionDisponible}"
+                                        ToolTip="Escucha cada bloque nuevo con la transcripción automática y repite los que se salten o inventen palabras" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                        Text="Necesita la «Transcripción automática» (Componentes)."
+                                        TextWrapping="Wrap"
+                                        Visibility="{Binding ViewModel.RevisionDisponible, Converter={StaticResource BoolInversoAVisibilidad}}" />
+                                </StackPanel>
+                            </Expander>
+
                             <Expander Margin="0,10,0,0" Header="Más ajustes">
                                 <StackPanel>
                                     <TextBlock Style="{StaticResource Etiqueta}" Text="Silencio entre bloques en el audio completo (s)" />
@@ -345,6 +393,13 @@
                                 <ui:Button Margin="0,8,0,0" Command="{Binding ViewModel.CancelarCommand}" Content="Cancelar" />
                             </StackPanel>
                             <TextBlock Margin="0,8,0,0" Text="{Binding ViewModel.Mensaje}" TextWrapping="Wrap" />
+                            <ui:InfoBar
+                                Margin="0,8,0,0"
+                                IsClosable="True"
+                                IsOpen="{Binding ViewModel.AvisosResultado, Converter={StaticResource TextoNoVacio}, Mode=OneWay}"
+                                Message="{Binding ViewModel.AvisosResultado}"
+                                Severity="Informational"
+                                Title="A tener en cuenta" />
                             <TextBlock
                                 Margin="0,4,0,0"
                                 FontSize="12"

@@ -42,6 +42,12 @@ public interface ISonidos
     IReadOnlyCollection<string> Efectos { get; }
 
     string? RutaEfecto(string nombre);
+
+    /// <summary>Ambiente de fondo (lluvia, hoguera…), por nombre.</summary>
+    string? RutaAmbiente(string nombre) => null;
+
+    /// <summary>Música de fondo, por nombre.</summary>
+    string? RutaMusica(string nombre) => null;
 }
 
 /// <summary>Una versión alternativa de un bloque, generada con otra semilla.</summary>
@@ -62,6 +68,16 @@ public interface IProcesadorAudio
 
     /// <summary>Convierte cualquier audio (un efecto) a WAV mono a <paramref name="frecuencia"/>.</summary>
     Task ConvertirAsync(string origen, string destinoWav, int frecuencia, CancellationToken ct);
+
+    /// <summary>Acelera (o frena) sin cambiar el tono: <paramref name="factor"/> 1,1 = un 10 % más rápido.</summary>
+    Task CambiarTempoAsync(string wav, string destinoWav, double factor, CancellationToken ct);
+
+    /// <summary>
+    /// Mezcla ambiente y/o música bajo la voz, en bucle y con «ducking» (bajan solos cuando habla la voz). Los
+    /// volúmenes son en dB respecto a como están los archivos.
+    /// </summary>
+    Task MezclarFondoAsync(string voz, string? ambiente, double volumenAmbiente, string? musica, double volumenMusica,
+        double duracion, string destinoWav, AjustesNarracion ajustes, CancellationToken ct);
 }
 
 public enum TipoEventoNarracion
@@ -76,7 +92,9 @@ public enum TipoEventoNarracion
 /// <param name="Fraccion">Avance global, de 0 a 1.</param>
 public sealed record EventoNarracion(TipoEventoNarracion Tipo, int Bloque, int TotalBloques, string Mensaje, double Fraccion);
 
-public sealed record ResultadoNarracion(Proyecto Proyecto, int Generados, int SinCambios, string? Completo, string Manifiesto);
+/// <param name="Avisos">Lo que conviene saber del resultado (revisión, duración…).</param>
+public sealed record ResultadoNarracion(Proyecto Proyecto, int Generados, int SinCambios, string? Completo, string Manifiesto,
+    IReadOnlyList<string>? Avisos = null);
 
 /// <summary>
 /// Genera los bloques de un proyecto: frase a frase con el sintetizador, recorta silencios, monta pausas y
@@ -84,8 +102,11 @@ public sealed record ResultadoNarracion(Proyecto Proyecto, int Generados, int Si
 /// archivo completo y escribe un manifiesto con la duración y el inicio de cada bloque para el montaje de vídeo.
 /// </summary>
 public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sintetizador, IProcesadorAudio procesador,
-    ISonidos? sonidos = null, IReadOnlyList<Pronunciacion>? diccionario = null)
+    ISonidos? sonidos = null, IReadOnlyList<Pronunciacion>? diccionario = null, IRevisor? revisor = null)
 {
+    /// <summary>Máximo que se acelera el audio completo para que quepa en la duración pedida.</summary>
+    public const double AceleracionMaxima = 1.25;
+
     private const string CarpetaTomas = ".tomas";
 
     /// <summary>Lee el guion con todo lo que sabe el narrador: variantes, otras voces, efectos y pronunciaciones.</summary>
@@ -122,6 +143,8 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
 
         var previos = proyecto.Bloques.ToDictionary(b => b.Indice);
         var estados = new SortedDictionary<int, EstadoBloque>();
+        var nuevos = new List<int>();
+        var avisosResultado = new List<string>();
         int generados = 0, sinCambios = 0;
         // Para repartir la barra: cada bloque pesa según el texto que hay que leer.
         var pesos = bloques.Select(b => Math.Max(1, b.TextoLeido.Length)).ToList();
@@ -183,6 +206,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 estados[b.Indice] = new EstadoBloque(b.Indice, b.Nombre, huella, Path.GetFileName(final),
                     Math.Round(duracion, 2), [.. b.Avisos, .. avisos], DateTimeOffset.Now);
                 generados++;
+                nuevos.Add(b.Indice);
                 hecho += pesos[i];
                 progreso.Report(new EventoNarracion(TipoEventoNarracion.BloqueListo, b.Indice, bloques.Count,
                     $"Bloque {b.Indice} listo ({duracion:0.0} s)", hecho / pesoTotal));
@@ -194,6 +218,14 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             proyecto = almacen.Guardar(proyecto with { Bloques = Fusionar(proyecto.Bloques, estados, bloques.Count) });
         }
 
+        // Revisión: escuchar lo nuevo y repetir lo que se haya leído mal.
+        if (revisor is not null && a.Revisar && nuevos.Count > 0)
+        {
+            proyecto = await RevisarAsync(proyecto, guion, nuevos, avisosResultado, progreso, ct).ConfigureAwait(false);
+            foreach (var e in proyecto.Bloques)
+                estados[e.Indice] = e;
+        }
+
         // Bloques que ya no existen en el guion.
         foreach (var sobrante in previos.Values.Where(p => p.Indice > bloques.Count))
             BorrarArchivosDe(salida, Path.GetFileNameWithoutExtension(sobrante.Archivo));
@@ -203,13 +235,74 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         if (bloques.Count > 0 && estados.Count == bloques.Count)
         {
             progreso.Report(new EventoNarracion(TipoEventoNarracion.Montando, 0, bloques.Count, "Montando el audio completo", 1));
-            (completo, infoCompleto) = await MontarCompletoAsync(proyecto, estados.Values.ToList(), normalizados, temporal, ct).ConfigureAwait(false);
+            (completo, infoCompleto) = await MontarCompletoAsync(proyecto, estados.Values.ToList(), normalizados, temporal,
+                avisosResultado, ct).ConfigureAwait(false);
         }
         var manifiesto = EscribirManifiesto(proyecto, bloques, estados, infoCompleto);
         try { Directory.Delete(temporal, recursive: true); }
         catch (IOException) { }
-        return new ResultadoNarracion(proyecto, generados, sinCambios, completo, manifiesto);
+        return new ResultadoNarracion(proyecto, generados, sinCambios, completo, manifiesto, avisosResultado);
     }
+
+    /// <summary>
+    /// Escucha cada bloque recién generado con el revisor (Whisper) y lo compara con su texto. Para los que se han
+    /// leído mal (frases cortadas, palabras inventadas) genera dos tomas más y se queda con la que mejor se ajusta;
+    /// las demás quedan en «Otras tomas». Todo de una vez para no cambiar de modelo más de lo necesario.
+    /// </summary>
+    private async Task<Proyecto> RevisarAsync(Proyecto proyecto, string guion, IReadOnlyList<int> indices, List<string> avisos,
+        IProgress<EventoNarracion> progreso, CancellationToken ct)
+    {
+        var bloques = Leer(proyecto, guion).ToDictionary(b => b.Indice);
+        var normalizados = Path.Combine(almacen.CarpetaSalida(proyecto.Id), CarpetaNormalizados);
+        var fallidos = new List<(Bloque Bloque, ComparacionLectura Original)>();
+        for (var k = 0; k < indices.Count; k++)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!bloques.TryGetValue(indices[k], out var b) || b.Vacio)
+                continue;
+            progreso.Report(new EventoNarracion(TipoEventoNarracion.Montando, b.Indice, bloques.Count,
+                $"Revisando que se lee bien: bloque {b.Indice}", (double)k / indices.Count));
+            var oido = await revisor!.TranscribirAsync(Path.Combine(normalizados, $"{b.Archivo}.wav"), ct).ConfigureAwait(false);
+            var c = Revision.Comparar(b.TextoLeido, oido);
+            if (c.MalLeido)
+                fallidos.Add((b, c));
+        }
+        if (fallidos.Count == 0)
+            return proyecto;
+
+        // Primero todas las tomas nuevas (motor de voz) y luego todas las escuchas (Whisper).
+        var candidatas = new List<(Bloque Bloque, ComparacionLectura Original, IReadOnlyList<Toma> Tomas)>();
+        foreach (var (b, original) in fallidos)
+        {
+            progreso.Report(new EventoNarracion(TipoEventoNarracion.Bloque, b.Indice, bloques.Count,
+                $"El bloque {b.Indice} no se ha leído bien: probando otras tomas", 1));
+            candidatas.Add((b, original, await GenerarTomasAsync(proyecto, guion, b.Indice, 2, progreso, ct).ConfigureAwait(false)));
+        }
+        foreach (var (b, original, tomas) in candidatas)
+        {
+            var mejor = (Semilla: (int?)null, Comparacion: original);
+            foreach (var t in tomas)
+            {
+                var c = Revision.Comparar(b.TextoLeido, await revisor!.TranscribirAsync(t.Archivo, ct).ConfigureAwait(false));
+                if (c.Errores < mejor.Comparacion.Errores)
+                    mejor = (t.Semilla, c);
+            }
+            if (mejor.Semilla is { } semilla)
+                proyecto = await ElegirTomaAsync(proyecto, guion, b.Indice, semilla, ct).ConfigureAwait(false);
+            var aviso = mejor.Comparacion.MalLeido
+                ? $"Revisa cómo suena: la voz no dice exactamente el texto ({mejor.Comparacion.Errores} diferencias). Prueba «Otras tomas» o cambia la frase."
+                : $"Se ha leído mal a la primera ({original.Errores} diferencias) y se ha corregido solo con otra toma.";
+            avisos.Add($"Bloque {b.Indice}: {aviso}");
+            proyecto = ConAviso(proyecto, b.Indice, aviso);
+        }
+        return proyecto;
+    }
+
+    private Proyecto ConAviso(Proyecto p, int indice, string aviso) =>
+        almacen.Guardar(p with
+        {
+            Bloques = p.Bloques.Select(e => e.Indice == indice ? e with { Avisos = [.. e.Avisos, aviso] } : e).ToList(),
+        });
 
     private async Task<(Pcm Montaje, Pcm Medida, List<string> Avisos)> GenerarBloqueAsync(
         Bloque b, AjustesNarracion a, string temporal, Action<double, string> avance, CancellationToken ct)
@@ -285,7 +378,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
     }
 
     private async Task<(string, JsonObject)> MontarCompletoAsync(Proyecto p, IReadOnlyList<EstadoBloque> estados,
-        string normalizados, string temporal, CancellationToken ct)
+        string normalizados, string temporal, List<string> avisos, CancellationToken ct)
     {
         var a = p.Ajustes;
         var piezas = new List<Pcm>();
@@ -306,9 +399,48 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         }
         var unido = Path.Combine(temporal, "completo.wav");
         Pcm.Unir(piezas, piezas[0].Frecuencia).EscribirWav(unido);
+        var info = new JsonObject();
+
+        // Que quepa en la duración pedida (p. ej. 59 s para un Short): se acelera sin cambiar el tono, con un límite.
+        if (a.DuracionMaxima is > 0 and var maxima && t > maxima + 0.05)
+        {
+            var factor = t / maxima;
+            if (factor <= AceleracionMaxima)
+            {
+                var rapido = Path.Combine(temporal, "completo-rapido.wav");
+                await procesador.CambiarTempoAsync(unido, rapido, factor, ct).ConfigureAwait(false);
+                unido = rapido;
+                foreach (var nodo in inicios)
+                    nodo!["inicio_s"] = Math.Round((double)nodo["inicio_s"]! / factor, 3);
+                t /= factor;
+                info["acelerado"] = Math.Round(factor, 3);
+                avisos.Add($"El audio completo se ha acelerado un {(factor - 1) * 100:0} % para que dure {maxima:0} s.");
+            }
+            else
+            {
+                avisos.Add($"El audio completo dura {t:0} s y el máximo es {maxima:0} s: haría falta acelerarlo un {(factor - 1) * 100:0} %, " +
+                           "demasiado para que suene natural. Acorta el guion o reduce las pausas.");
+            }
+        }
+
+        // Ambiente y música de fondo, que bajan solos cuando habla la voz.
+        var ambiente = a.Ambiente is { Length: > 0 } nombreAmbiente ? sonidos?.RutaAmbiente(nombreAmbiente) : null;
+        var musica = a.Musica is { Length: > 0 } nombreMusica ? sonidos?.RutaMusica(nombreMusica) : null;
+        if (ambiente is not null || musica is not null)
+        {
+            var mezclado = Path.Combine(temporal, "completo-fondo.wav");
+            await procesador.MezclarFondoAsync(unido, ambiente, a.VolumenAmbiente, musica, a.VolumenMusica, t, mezclado, a, ct).ConfigureAwait(false);
+            unido = mezclado;
+            info["ambiente"] = a.Ambiente;
+            info["musica"] = a.Musica;
+        }
+
         var destino = Path.Combine(almacen.CarpetaSalida(p.Id), ArchivoCompleto(p));
         await procesador.CodificarAsync(unido, destino, a, ct).ConfigureAwait(false);
-        return (destino, new JsonObject { ["archivo"] = Path.GetFileName(destino), ["duracion_s"] = Math.Round(t, 2), ["bloques"] = inicios });
+        info["archivo"] = Path.GetFileName(destino);
+        info["duracion_s"] = Math.Round(t, 2);
+        info["bloques"] = inicios;
+        return (destino, info);
     }
 
     // --- Otras tomas ---------------------------------------------------------------------------
@@ -527,6 +659,38 @@ public sealed partial class ProcesadorFfmpeg(string ffmpeg, IEjecutorProcesos ej
         // Un efecto añadido por el usuario puede venir a cualquier volumen: se iguala al de una voz.
         return Ejecutar(["-y", "-i", origen, "-af", "loudnorm=I=-20:TP=-2:LRA=11",
             "-ar", frecuencia.ToString(CultureInfo.InvariantCulture), "-ac", "1", "-c:a", "pcm_s16le", destinoWav], ct);
+    }
+
+    public Task CambiarTempoAsync(string wav, string destinoWav, double factor, CancellationToken ct) =>
+        Ejecutar(["-y", "-i", wav, "-af", FormattableString.Invariant($"rubberband=tempo={factor:0.####}:pitchq=quality:transients=mixed"),
+            "-c:a", "pcm_f32le", destinoWav], ct);
+
+    public Task MezclarFondoAsync(string voz, string? ambiente, double volumenAmbiente, string? musica, double volumenMusica,
+        double duracion, string destinoWav, AjustesNarracion a, CancellationToken ct)
+    {
+        var sr = a.Frecuencia.ToString(CultureInfo.InvariantCulture);
+        var formato = $"aformat=sample_fmts=fltp:sample_rates={sr}:channel_layouts=mono";
+        var entradas = new List<string> { "-y", "-i", voz };
+        var fondos = new List<string>();
+        var filtro = new System.Text.StringBuilder($"[0:a]{formato},asplit=2[voz][guia];");
+        void Fondo(string? ruta, double volumen, string etiqueta)
+        {
+            if (ruta is null)
+                return;
+            // En bucle: dura lo que haga falta.
+            entradas.AddRange(["-stream_loop", "-1", "-i", ruta]);
+            filtro.Append(FormattableString.Invariant($"[{fondos.Count + 1}:a]{formato},volume={volumen:0.#}dB[{etiqueta}];"));
+            fondos.Add($"[{etiqueta}]");
+        }
+        Fondo(ambiente, volumenAmbiente, "amb");
+        Fondo(musica, volumenMusica, "mus");
+        filtro.Append(fondos.Count == 1 ? $"{fondos[0]}anull[fondo];" : $"{string.Concat(fondos)}amix=inputs={fondos.Count}:normalize=0[fondo];");
+        var fin = Math.Max(0, duracion - 2.5);
+        filtro.Append(FormattableString.Invariant($"[fondo]afade=t=in:d=1.5,afade=t=out:st={fin:0.##}:d=2.5[fondoSuave];"));
+        // Ducking: el fondo se comprime cuando suena la voz.
+        filtro.Append("[fondoSuave][guia]sidechaincompress=threshold=0.02:ratio=8:attack=30:release=600[fondoBajo];");
+        filtro.Append("[voz][fondoBajo]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[salida]");
+        return Ejecutar([.. entradas, "-filter_complex", filtro.ToString(), "-map", "[salida]", "-c:a", "pcm_f32le", destinoWav], ct);
     }
 
     private async Task<string> Ejecutar(string[] argumentos, CancellationToken ct)

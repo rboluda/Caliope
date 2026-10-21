@@ -106,7 +106,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" Style="{StaticResource Codigo}" Text="[pause]" />
                         <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource Celda}" Text="Pausa corta (0,6 s por defecto)." />
@@ -124,11 +124,37 @@
                         <TextBlock Grid.Row="6" Grid.Column="1" Style="{StaticResource Celda}" Text="Comentario: no se lee." />
                         <TextBlock Grid.Row="7" Style="{StaticResource Codigo}" Text="(línea en blanco)" />
                         <TextBlock Grid.Row="7" Grid.Column="1" Style="{StaticResource Celda}" Text="Separa bloques. Entre bloques hay una pausa que ajustas en «Más ajustes»." />
+                        <TextBlock Grid.Row="8" Style="{StaticResource Codigo}" Text="[voz: Nombre]" />
+                        <TextBlock Grid.Row="8" Grid.Column="1" Style="{StaticResource Celda}" Text="Lee con otra voz de tu biblioteca hasta el final de la línea: para diálogos y personajes. [normal] vuelve a la tuya." />
+                        <TextBlock Grid.Row="9" Style="{StaticResource Codigo}" Text="[sfx: trueno]" />
+                        <TextBlock Grid.Row="9" Grid.Column="1" Style="{StaticResource Celda}" Text="Un efecto de sonido de «Mis sonidos», con la voz en pausa mientras suena." />
                     </Grid>
                     <TextBlock Style="{StaticResource Subtitulo}" Text="Ejemplo" />
                     <Border Padding="12" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
-                        <TextBlock FontFamily="Cascadia Mono, Consolas" TextWrapping="Wrap"><Run Text="# inicio" /><LineBreak /><Run Text="Era sábado por la noche. [pause] Diluviaba." /><LineBreak /><LineBreak /><Run Text="# susto" /><LineBreak /><Run Text="Alguien llamó a la puerta. [long pause]" /><LineBreak /><Run Text="[whispers] No abras. [normal] Pero ella abrió." /></TextBlock>
+                        <TextBlock FontFamily="Cascadia Mono, Consolas" TextWrapping="Wrap"><Run Text="# inicio" /><LineBreak /><Run Text="Era sábado por la noche. [pause] Diluviaba." /><LineBreak /><LineBreak /><Run Text="# susto" /><LineBreak /><Run Text="Alguien llamó a la puerta. [long pause]" /><LineBreak /><Run Text="[whispers] No abras. [normal] Pero ella abrió. [sfx: trueno]" /><LineBreak /><Run Text="[voz: Anciano] ¿Quién anda ahí?" /></TextBlock>
                     </Border>
+                </StackPanel>
+            </ui:CardExpander>
+
+            <!--  Herramientas del guion  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="Wand24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="Pronunciación, otras tomas y sonidos" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Pronunciación" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Si la voz dice mal una palabra (un nombre, una sigla, una palabra extranjera), pulsa «Pronunciación» en Narrar y escribe cómo debe sonar: «ONU» → «o ene u». Sirve para todos tus proyectos." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Otras tomas" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Cada vez que se genera un bloque, la voz lo interpreta de una manera. Si no te convence, pulsa el botón de capas del bloque y «Generar 2 tomas»: escúchalas y quédate con la que mejor suene. La anterior no se pierde, queda como otra toma." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Revisión automática" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Con la transcripción automática instalada, Calíope escucha cada bloque nuevo y lo compara con el guion. Si la voz se ha saltado o inventado palabras, prueba otras tomas y se queda con la buena; si ninguna lo consigue, te avisa para que lo revises." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Sonidos" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="En «Mis sonidos» hay efectos (trueno, latido, reloj…) y ambientes (lluvia, viento, hoguera, noche) creados por Calíope, libres de derechos. Puedes añadir tus propios audios a cada carpeta. La música de fondo la pones tú en la carpeta «Música»: usa solo música con licencia para tu uso." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="Fondo y duración" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="En «Fondo, duración y revisión» eliges un ambiente o una música para el audio completo: bajan solos cuando habla la voz. Con una duración máxima (59 s para un Short), si el audio se pasa un poco, se acelera sin cambiar el tono para que quepa." />
                 </StackPanel>
             </ui:CardExpander>
 

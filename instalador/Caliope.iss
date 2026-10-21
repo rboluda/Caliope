@@ -311,6 +311,7 @@ begin
   begin
     Borrar(D + '\Mis voces');
     Borrar(D + '\Mis narraciones');
+    Borrar(D + '\Mis sonidos');
     Borrar(D + '\voces');
     Borrar(D + '\proyectos');
     DeleteFile(D + '\LÉEME.txt');

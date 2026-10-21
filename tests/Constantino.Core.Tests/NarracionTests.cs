@@ -423,6 +423,23 @@ public sealed class NarradorTests : IDisposable
             return Task.CompletedTask;
         }
 
+        public List<(string? Ambiente, string? Musica)> Mezclas { get; } = [];
+
+        public Task CambiarTempoAsync(string wav, string destinoWav, double factor, CancellationToken ct)
+        {
+            var pcm = Pcm.LeerWav(wav);
+            pcm.Subrango(0, pcm.Segundos / factor).EscribirWav(destinoWav);
+            return Task.CompletedTask;
+        }
+
+        public Task MezclarFondoAsync(string voz, string? ambiente, double volumenAmbiente, string? musica, double volumenMusica,
+            double duracion, string destinoWav, AjustesNarracion ajustes, CancellationToken ct)
+        {
+            Mezclas.Add((ambiente, musica));
+            File.Copy(voz, destinoWav, overwrite: true);
+            return Task.CompletedTask;
+        }
+
         /// <summary>Un «efecto» de medio segundo.</summary>
         public Task ConvertirAsync(string origen, string destinoWav, int frecuencia, CancellationToken ct)
         {
@@ -437,6 +454,8 @@ public sealed class NarradorTests : IDisposable
     {
         public IReadOnlyCollection<string> Efectos => ["trueno"];
 
+        public string? RutaAmbiente(string nombre) => nombre == "lluvia" ? RutaEfecto("trueno") : null;
+
         public string? RutaEfecto(string nombre)
         {
             if (nombre != "trueno")
@@ -449,6 +468,88 @@ public sealed class NarradorTests : IDisposable
             }
             return ruta;
         }
+    }
+
+    /// <summary>«Oye» el texto de cada bloque salvo en los indicados, donde oye una frase cortada (solo la primera vez).</summary>
+    private sealed class RevisorFalso(Dictionary<string, string> textos, HashSet<string> malLeidos) : IRevisor
+    {
+        public int Escuchas { get; private set; }
+
+        public Task<string> TranscribirAsync(string wav, CancellationToken ct)
+        {
+            Escuchas++;
+            var nombre = Path.GetFileNameWithoutExtension(wav);
+            // Las tomas nuevas (en .tomas) ya se leen bien.
+            if (wav.Contains(".tomas"))
+                return Task.FromResult(textos.Values.First(t => malLeidos.Any(m => textos[m] == t)));
+            return Task.FromResult(malLeidos.Contains(nombre) ? "Un" : textos[nombre]);
+        }
+    }
+
+    [Fact]
+    public async Task La_revision_repite_con_otra_toma_lo_que_se_ha_leido_mal()
+    {
+        const string guion = "# uno\nLa primera frase se lee perfectamente bien.\n\n# dos\nEsta otra frase se va a cortar a la mitad sin avisar.";
+        var revisor = new RevisorFalso(
+            new() { ["01_uno"] = "La primera frase se lee perfectamente bien.", ["02_dos"] = "Esta otra frase se va a cortar a la mitad sin avisar." },
+            ["02_dos"]);
+        var p = _almacen.Crear("p", Ajustes, guion);
+        var narrador = new Narrador(_almacen, _sintetizador, _procesador, revisor: revisor);
+
+        var r = await narrador.NarrarAsync(p, guion, null, false, Sin, CancellationToken.None);
+
+        // 2 escuchas iniciales + 2 tomas del bloque mal leído.
+        Assert.Equal(4, revisor.Escuchas);
+        var aviso = Assert.Single(r.Avisos!);
+        Assert.Contains("Bloque 2", aviso);
+        Assert.Contains("corregido", aviso);
+        Assert.Single(r.Proyecto.Tomas!);
+        // La toma elegida ya es el audio del bloque: la siguiente vez no hay nada que hacer.
+        var r2 = await narrador.NarrarAsync(r.Proyecto, guion, null, false, Sin, CancellationToken.None);
+        Assert.Equal((0, 2), (r2.Generados, r2.SinCambios));
+
+        // Desactivada, no se escucha nada.
+        var sinRevisar = new RevisorFalso(new() { ["01_uno"] = "x" }, []);
+        var p2 = _almacen.Crear("q", Ajustes with { Revisar = false }, "# uno\nHola.");
+        await new Narrador(_almacen, _sintetizador, _procesador, revisor: sinRevisar)
+            .NarrarAsync(p2, "# uno\nHola.", null, false, Sin, CancellationToken.None);
+        Assert.Equal(0, sinRevisar.Escuchas);
+    }
+
+    [Fact]
+    public async Task Acelera_el_completo_para_que_quepa_y_avisa_si_no_cabe()
+    {
+        var p = _almacen.Crear("p", Ajustes, GuionTres);
+        var r1 = await Narrador().NarrarAsync(p, GuionTres, null, false, Sin, CancellationToken.None);
+        var total = JsonNode.Parse(File.ReadAllText(r1.Manifiesto))!["completo"]!["duracion_s"]!.GetValue<double>();
+
+        var cabe = r1.Proyecto with { Ajustes = r1.Proyecto.Ajustes with { DuracionMaxima = total / 1.1 } };
+        var r2 = await Narrador().NarrarAsync(cabe, GuionTres, null, false, Sin, CancellationToken.None);
+        // Los bloques no cambian: la duración solo afecta al completo.
+        Assert.Equal(0, r2.Generados);
+        Assert.Contains(r2.Avisos!, a => a.Contains("acelerado"));
+        Assert.Equal(total / 1.1, JsonNode.Parse(File.ReadAllText(r2.Manifiesto))!["completo"]!["duracion_s"]!.GetValue<double>(), 1);
+
+        var noCabe = r1.Proyecto with { Ajustes = r1.Proyecto.Ajustes with { DuracionMaxima = total / 2 } };
+        var r3 = await Narrador().NarrarAsync(noCabe, GuionTres, null, false, Sin, CancellationToken.None);
+        Assert.Contains(r3.Avisos!, a => a.Contains("Acorta el guion"));
+    }
+
+    [Fact]
+    public async Task Mezcla_el_ambiente_bajo_la_voz_sin_regenerar_bloques()
+    {
+        var p = _almacen.Crear("p", Ajustes, GuionTres);
+        var narrador = new Narrador(_almacen, _sintetizador, _procesador, new SonidosFalsos(Path.Combine(_carpeta, "sonidos")));
+        var r1 = await narrador.NarrarAsync(p, GuionTres, null, false, Sin, CancellationToken.None);
+        Assert.Empty(_procesador.Mezclas);
+
+        var conLluvia = r1.Proyecto with { Ajustes = r1.Proyecto.Ajustes with { Ambiente = "lluvia" } };
+        var r2 = await narrador.NarrarAsync(conLluvia, GuionTres, null, false, Sin, CancellationToken.None);
+
+        Assert.Equal(0, r2.Generados);
+        var mezcla = Assert.Single(_procesador.Mezclas);
+        Assert.NotNull(mezcla.Ambiente);
+        Assert.Null(mezcla.Musica);
     }
 
     // --- Otras voces, efectos y tomas ---------------------------------------------------------
@@ -543,6 +644,35 @@ public sealed class ProcesadorFfmpegTests : IDisposable
         {
             return null;
         }
+    }
+
+    [Fact]
+    public async Task Acelera_sin_cambiar_el_tono_y_mezcla_el_fondo_con_ffmpeg()
+    {
+        if (Ffmpeg() is not { } ffmpeg)
+            return;
+        const int sr = 48000;
+        Pcm Tono(double segundos, float hz, float amplitud)
+        {
+            var m = new float[(int)(sr * segundos)];
+            for (var i = 0; i < m.Length; i++)
+                m[i] = amplitud * MathF.Sin(2 * MathF.PI * hz * i / sr);
+            return new Pcm(m, sr);
+        }
+        var voz = Path.Combine(_carpeta, "voz.wav");
+        Tono(6, 220, 0.3f).EscribirWav(voz);
+        var lluvia = Path.Combine(_carpeta, "lluvia.wav");
+        Tono(2, 1000, 0.2f).EscribirWav(lluvia); // más corta que la voz: tiene que repetirse
+        var procesador = new ProcesadorFfmpeg(ffmpeg, new EjecutorProcesos());
+        var ajustes = new AjustesNarracion(Frecuencia: sr);
+
+        var rapido = Path.Combine(_carpeta, "rapido.wav");
+        await procesador.CambiarTempoAsync(voz, rapido, 1.2, CancellationToken.None);
+        Assert.InRange(Pcm.LeerWav(rapido).Segundos, 4.9, 5.1);
+
+        var mezclado = Path.Combine(_carpeta, "mezclado.wav");
+        await procesador.MezclarFondoAsync(voz, lluvia, -12, null, 0, 6, mezclado, ajustes, CancellationToken.None);
+        Assert.InRange(Pcm.LeerWav(mezclado).Segundos, 5.9, 6.1);
     }
 
     [Fact]
