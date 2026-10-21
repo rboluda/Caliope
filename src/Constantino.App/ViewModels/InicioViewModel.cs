@@ -84,7 +84,7 @@ public sealed partial class InicioViewModel(ServicioEquipo servicio, INavigation
     private static FilaGpu FilaDe(Gpu g)
     {
         if (g.VramTotalGb is not { } total)
-            return new FilaGpu(g.Nombre, g.CompatibleCuda ? "Memoria desconocida" : "No compatible con CUDA: no se usará para generar voz", 0, false, false);
+            return new FilaGpu(g.Nombre, g.CompatibleCuda ? "Memoria desconocida" : "No sirve para generar voz: se usará el procesador", 0, false, false);
         var usada = g.VramUsadaGb ?? 0;
         var detalle = $"{Presentacion.Gb(total)} de memoria · {Presentacion.Gb(usada)} en uso ahora · driver {g.Driver}";
         return new FilaGpu(g.Nombre, detalle, total > 0 ? usada / total * 100 : 0, true, true);

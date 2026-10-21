@@ -18,7 +18,7 @@ public static partial class DiagnosticoErrores
           "dns error", "error sending request"],
             "se ha cortado la conexión o no hay acceso a internet. Comprueba la conexión y pulsa «Reintentar»: lo ya descargado se aprovecha."),
         (["dispositivo=cpu"],
-            "PyTorch no detecta la tarjeta NVIDIA. Actualiza el driver desde nvidia.com y pulsa «Reparar»."),
+            "el motor no detecta tu tarjeta NVIDIA. Actualiza su driver desde nvidia.com y pulsa «Reparar»."),
     ];
 
     /// <summary>La explicación de la causa más probable, o la última línea de error si no se reconoce.</summary>

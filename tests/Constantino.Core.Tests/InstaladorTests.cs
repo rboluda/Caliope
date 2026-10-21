@@ -143,7 +143,7 @@ public sealed class InstaladorTests : IDisposable
         var e = await Assert.ThrowsAsync<InstalacionFallidaException>(() =>
             instalador.InstalarAsync(["motor"], Progreso, CancellationToken.None));
 
-        Assert.Contains("PyTorch no detecta la tarjeta NVIDIA", e.Message);
+        Assert.Contains("el motor no detecta tu tarjeta NVIDIA", e.Message);
     }
 
     [Fact]

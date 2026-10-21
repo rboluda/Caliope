@@ -151,7 +151,7 @@ public sealed partial class ClonarViewModel : ObservableObject
             // Cualquier formato se convierte a WAV mono para poder dibujarlo y recortarlo.
             var rutas = (await _instalacion.InstaladorAsync()).Rutas;
             if (!File.Exists(rutas.Ffmpeg))
-                throw new InvalidOperationException("Falta ffmpeg: instala el Núcleo desde Componentes.");
+                throw new InvalidOperationException("Faltan las herramientas básicas: instálalas desde Componentes.");
             var destino = await _voces.ArchivoTemporalAsync("clon-importado");
             var r = await new EjecutorProcesos().EjecutarAsync(rutas.Ffmpeg,
                 ["-hide_banner", "-nostdin", "-y", "-i", dialogo.FileName, "-vn", "-ac", "1", "-ar", "24000", "-c:a", "pcm_f32le", destino],

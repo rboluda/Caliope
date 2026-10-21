@@ -90,7 +90,7 @@
                         <ui:InfoBar
                             IsClosable="False"
                             IsOpen="True"
-                            Message="No se instalará nada hasta que pulses «Instalar» en el paso 4. Todo queda dentro de una sola carpeta y no toca otros programas ni tu Python, si lo tienes."
+                            Message="No se instalará nada hasta que pulses «Instalar» en el paso 4. Todo queda dentro de una sola carpeta y no toca nada más de tu equipo."
                             Severity="Informational"
                             Title="Tú decides" />
                     </StackPanel>
@@ -210,6 +210,13 @@
                                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                     Text="{Binding Motivo}"
                                                     TextWrapping="Wrap" />
+                                                <TextBlock
+                                                    Margin="0,2,0,0"
+                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                    TextWrapping="Wrap"
+                                                    Visibility="{Binding Consejo, Converter={StaticResource NoNuloAVisibilidad}}">
+                                                    <Run FontWeight="SemiBold" Text="¿Lo necesito? " /><Run Text="{Binding Consejo, Mode=OneWay}" />
+                                                </TextBlock>
                                             </StackPanel>
                                             <TextBlock Grid.Column="2" Margin="16,0,0,0" FontWeight="SemiBold" Text="{Binding Tamano}" />
                                         </Grid>

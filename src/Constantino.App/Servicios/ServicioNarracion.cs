@@ -75,7 +75,7 @@ public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioM
     {
         var rutas = (await instalacion.InstaladorAsync()).Rutas;
         if (!File.Exists(rutas.Ffmpeg))
-            throw new MotorNoDisponibleException("Falta ffmpeg: instala el Núcleo desde Componentes.");
+            throw new MotorNoDisponibleException("Faltan las herramientas básicas: instálalas desde Componentes.");
         return new Narrador(await AlmacenAsync(), new SintetizadorMotor(motor, voz, modelo),
             new ProcesadorFfmpeg(rutas.Ffmpeg, new EjecutorProcesos()));
     }

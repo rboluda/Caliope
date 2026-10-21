@@ -569,8 +569,8 @@ public sealed partial class NarrarViewModel : ObservableObject
         if (await _narracion.ModeloAsync(MotorVoz) is not { } modelo)
         {
             Error = EsChatterbox
-                ? "Falta Chatterbox: instálalo desde Componentes o elige Qwen3-TTS."
-                : "Falta un modelo Base: instálalo desde Componentes.";
+                ? "Falta el motor alternativo: instálalo desde Componentes o elige el motor principal."
+                : "Falta una voz: instala la «Voz de alta calidad» desde Componentes.";
             return;
         }
 

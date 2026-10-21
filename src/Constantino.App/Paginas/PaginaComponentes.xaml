@@ -71,6 +71,16 @@
                                                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                         Text="{Binding Motivo}"
                                                         TextWrapping="Wrap" />
+                                                    <Border
+                                                        Margin="0,8,0,0"
+                                                        Padding="10,6"
+                                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                        CornerRadius="4"
+                                                        Visibility="{Binding Consejo, Converter={StaticResource NoNuloAVisibilidad}}">
+                                                        <TextBlock TextWrapping="Wrap">
+                                                            <Run FontWeight="SemiBold" Text="¿Lo necesito? " /><Run Text="{Binding Consejo, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                    </Border>
                                                     <Expander Margin="0,8,0,0" Header="Más información">
                                                         <StackPanel Margin="0,8,0,0">
                                                             <TextBlock Text="{Binding Detalle}" TextWrapping="Wrap" />
@@ -79,6 +89,14 @@
                                                             </TextBlock>
                                                             <TextBlock Margin="0,4,0,0" TextWrapping="Wrap">
                                                                 <Run FontWeight="SemiBold" Text="Necesita: " /><Run Text="{Binding Necesita, Mode=OneWay}" />
+                                                            </TextBlock>
+                                                            <TextBlock
+                                                                Margin="0,8,0,0"
+                                                                FontSize="12"
+                                                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                TextWrapping="Wrap"
+                                                                Visibility="{Binding Tecnico, Converter={StaticResource NoNuloAVisibilidad}}">
+                                                                <Run FontWeight="SemiBold" Text="Detalles técnicos: " /><Run Text="{Binding Tecnico, Mode=OneWay}" />
                                                             </TextBlock>
                                                             <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="Licencias:" />
                                                             <ItemsControl ItemsSource="{Binding Licencias}">

@@ -65,9 +65,9 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         if (motor == MotoresDeVoz.Chatterbox)
             return await ChatterboxInstaladoAsync()
                 ? MotoresDeVoz.Componente(motor)
-                : throw new MotorNoDisponibleException("Falta Chatterbox: instálalo desde Componentes.");
+                : throw new MotorNoDisponibleException("Falta el motor alternativo: instálalo desde Componentes.");
         return (await ModeloBaseAsync())?.Componente
-               ?? throw new MotorNoDisponibleException("Falta un modelo Base: instala uno desde Componentes.");
+               ?? throw new MotorNoDisponibleException("Falta una voz: instala la «Voz de alta calidad» (o la ligera) desde Componentes.");
     }
 
     public async Task<bool> ChatterboxInstaladoAsync() =>
@@ -91,7 +91,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         int semilla, double? temperatura = null, CancellationToken ct = default)
     {
         if (!(await instalacion.InstaladorAsync()).EstaInstalado(ModeloVoiceDesign))
-            throw new MotorNoDisponibleException("Falta el modelo VoiceDesign: instálalo desde Componentes.");
+            throw new MotorNoDisponibleException("Falta el diseñador de voces: instálalo desde Componentes.");
         return await EjecutarAsync(ModeloVoiceDesign, (motor, progreso) => motor.DisenarAsync(
             new ParametrosDiseno(texto, idioma, instruccion, salida, semilla, temperatura), progreso, ct), ct);
     }
@@ -100,7 +100,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     public async Task<ResultadoTranscripcion> TranscribirAsync(string audio, string idioma, CancellationToken ct = default)
     {
         if (!(await instalacion.InstaladorAsync()).EstaInstalado(ModeloWhisper))
-            throw new MotorNoDisponibleException("Falta Whisper: instálalo desde Componentes para transcribir automáticamente.");
+            throw new MotorNoDisponibleException("Falta la transcripción automática: instálala desde Componentes, o escribe el texto a mano.");
         return await EjecutarAsync(ModeloWhisper, (motor, progreso) =>
             motor.TranscribirAsync(new ParametrosTranscripcion(audio, idioma), progreso, ct), ct);
     }
@@ -202,10 +202,10 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             Estado = EstadoMotor.CargandoModelo;
             Descripcion = modelo switch
             {
-                ModeloVoiceDesign => "Cargando el modelo de diseño de voces (unos segundos)…",
-                ModeloWhisper => "Cargando Whisper (unos segundos)…",
-                "chatterbox" => "Cargando Chatterbox (unos segundos)…",
-                _ => "Cargando el modelo de voz (unos segundos la primera vez)…",
+                ModeloVoiceDesign => "Preparando el diseñador de voces (unos segundos)…",
+                ModeloWhisper => "Preparando la transcripción (unos segundos)…",
+                "chatterbox" => "Preparando el motor alternativo (unos segundos)…",
+                _ => "Preparando la voz (unos segundos la primera vez)…",
             };
             var paso = instalacion.Catalogo[modelo].Instalacion!.Pasos.OfType<PasoModelo>().First();
             await _motor.CargarAsync(paso.Repositorio, paso.Revision, null, ct, modelo == ModeloWhisper ? "asr" : "tts");
@@ -245,7 +245,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         MotorNoDisponibleException => e.Message,
         MotorException { Codigo: "sin_memoria" } =>
             "No hay memoria suficiente en la tarjeta gráfica. Cierra navegadores y otros programas que la usen y vuelve a intentarlo.",
-        MotorException { Codigo: "modelo_no_encontrado" } => "El modelo no está bien instalado: repáralo desde Componentes.",
+        MotorException { Codigo: "modelo_no_encontrado" } => "Falta algo por instalar o se ha estropeado: pulsa «Reparar» en Componentes.",
         MotorException { Codigo: "sin_descripcion" } => "Describe la voz que quieres crear.",
         MotorException { Codigo: "idioma_no_soportado" or "no_soportado" or "instalacion_incompleta" } m => m.Message,
         MotorException { Codigo: "archivo_no_encontrado" } => "No se encuentra la grabación de referencia de la voz.",

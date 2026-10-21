@@ -17,8 +17,10 @@ namespace Constantino.App.ViewModels;
 /// <summary>Un componente en el paso de selección del asistente.</summary>
 public sealed partial class OpcionComponente(
     string id, string nombre, string resumen, string motivo, NivelRecomendacion nivel, double tamanoGb,
-    string? grupoExclusivo, bool bloqueado, bool disponible, string? disponibleEn, bool yaInstalado) : ObservableObject
+    string? grupoExclusivo, bool bloqueado, bool disponible, string? disponibleEn, bool yaInstalado,
+    string? consejo = null) : ObservableObject
 {
+    public string? Consejo { get; } = yaInstalado ? null : consejo;
     public string Id { get; } = id;
     public string Nombre { get; } = nombre;
     public string Resumen { get; } = resumen;
@@ -159,7 +161,7 @@ public sealed partial class AsistenteViewModel(
             var instalado = c.SePuedeInstalar && instalador.EstaInstalado(c.Id);
             var bloqueado = c.GrupoExclusivo is null && r.Nivel == NivelRecomendacion.Imprescindible;
             var opcion = new OpcionComponente(c.Id, c.Nombre, c.Resumen, r.Motivo, r.Nivel, c.Tamano.Para(rec.UsaGpu),
-                c.GrupoExclusivo, bloqueado, c.SePuedeInstalar, c.DisponibleEn, instalado)
+                c.GrupoExclusivo, bloqueado, c.SePuedeInstalar, c.DisponibleEn, instalado, c.Consejo)
             {
                 Seleccionado = instalado || (c.SePuedeInstalar && rec.Propuestos.Contains(c.Id)),
             };

@@ -88,7 +88,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
         if (!s.Consentimiento)
             throw new VozInvalidaException("Confirma que la voz es tuya o que tienes permiso de su dueño para usarla.");
         if (!File.Exists(ffmpeg))
-            throw new VozInvalidaException("Falta ffmpeg: instala el Núcleo desde Componentes.");
+            throw new VozInvalidaException("Faltan las herramientas básicas: instálalas desde Componentes.");
 
         var id = IdLibre(nombre);
         var destino = CarpetaDe(id);
@@ -155,7 +155,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
         if (!sinTranscripcion && texto.Length < LongitudMinimaTranscripcion)
             throw new VozInvalidaException("Escribe la transcripción exacta de la grabación de la variante, o marca «No tengo la transcripción».");
         if (!File.Exists(ffmpeg))
-            throw new VozInvalidaException("Falta ffmpeg: instala el Núcleo desde Componentes.");
+            throw new VozInvalidaException("Faltan las herramientas básicas: instálalas desde Componentes.");
 
         var destino = Path.Combine(CarpetaDe(vozId), CarpetaVariantes, id);
         var temporal = destino + ".nueva";

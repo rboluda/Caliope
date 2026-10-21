@@ -20,6 +20,8 @@ public sealed partial class TarjetaComponente(Componente c, Recomendacion r, str
     public string Nombre { get; } = c.Nombre;
     public string Resumen { get; } = c.Resumen;
     public string Detalle { get; } = c.Detalle;
+    public string? Consejo { get; } = c.Consejo;
+    public string? Tecnico { get; } = c.Tecnico;
     public string Tamano { get; } = tamano;
     public string Habilita { get; } = string.Join(" · ", c.Habilita);
     public string Necesita { get; } = necesita;

@@ -51,7 +51,7 @@
                     <TextBlock FontWeight="SemiBold" Text="Primeros pasos" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Parrafo}" Text="1. Instala lo necesario. El asistente del primer arranque analiza tu equipo y propone qué instalar. Siempre puedes añadir o quitar piezas desde «Componentes». Lo imprescindible es el Núcleo, el motor Qwen3-TTS y un modelo Base." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="1. Instala lo necesario. El asistente del primer arranque analiza tu equipo y propone qué instalar. Siempre puedes añadir o quitar piezas desde «Componentes». Lo imprescindible son las herramientas básicas, el motor de voz y una de las voces (la de alta calidad, o la ligera en equipos modestos)." />
                     <TextBlock Style="{StaticResource Parrafo}" Text="2. Consigue una voz. Puedes diseñarla describiéndola con palabras («Diseñar voz»), clonarla a partir de una grabación tuya o de alguien que te haya dado permiso («Clonar voz»), o importar un audio que ya tengas («Voces → Importar una voz»)." />
                     <TextBlock Style="{StaticResource Parrafo}" Text="3. Narra. En «Narrar» crea un proyecto, escribe o pega el guion, elige la voz y pulsa «Generar narración». Cada párrafo se convierte en un bloque de audio; si cambias algo, solo se rehace lo que ha cambiado." />
                     <TextBlock Style="{StaticResource Parrafo}" Text="4. Saca el audio. En la zona «Narración completa» puedes escucharla, guardarla donde quieras, copiarla o arrastrarla directamente a tu editor de vídeo. «Exportar todo…» copia también cada bloque por separado." />
@@ -80,13 +80,13 @@
                 </ui:CardExpander.Header>
                 <StackPanel>
                     <TextBlock Style="{StaticResource Subtitulo}" Text="Diseñar una voz" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Elige sexo, edad, timbre, ritmo, tono y acento (o escribe la descripción tú mismo). Calíope genera varias versiones con semillas distintas: escúchalas y guarda la que más te guste. Necesita el modelo VoiceDesign." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Elige sexo, edad, timbre, ritmo, tono y acento (o escribe la descripción tú mismo). Calíope genera varias versiones con semillas distintas: escúchalas y guarda la que más te guste. Necesita el diseñador de voces." />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="Clonar una voz" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Graba entre 10 y 20 segundos leyendo el texto propuesto (o importa un audio), recorta el tramo bueno y comprueba el análisis: sin saturar, sin ruido de fondo y con volumen suficiente. La transcripción tiene que ser exacta: con Whisper instalado se escribe sola." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Graba entre 10 y 20 segundos leyendo el texto propuesto (o importa un audio), recorta el tramo bueno y comprueba el análisis: sin saturar, sin ruido de fondo y con volumen suficiente. La transcripción tiene que ser exacta: con la transcripción automática instalada se escribe sola." />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="La transcripción importa" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="Si la transcripción no coincide con lo que se oye, la voz sale cortada (medio segundo de audio). Calíope avisa cuando no encaja. Si no la tienes, marca «No tengo la transcripción»: se imitará solo el timbre, algo menos parecido pero sin riesgo." />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="Variantes" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Una variante es la misma voz hablando de otra forma: susurrando, tensa, asustada, triste, alegre o gritando. Se añaden en «Voces → Añadir variante» desde una grabación o, si la voz es diseñada, generándola con VoiceDesign. En el guion se usan con su etiqueta." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Una variante es la misma voz hablando de otra forma: susurrando, tensa, asustada, triste, alegre o gritando. Se añaden en «Voces → Añadir variante» desde una grabación o, si la voz es diseñada, generándola con el diseñador de voces. En el guion se usan con su etiqueta." />
                 </StackPanel>
             </ui:CardExpander>
 
@@ -178,7 +178,7 @@
                     <TextBlock Style="{StaticResource Subtitulo}" Text="La voz sale cortada o muy corta" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="Casi siempre es la transcripción de la voz: corrígela en «Voces → Editar transcripción» o déjala vacía para imitar solo el timbre." />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="«No hay memoria suficiente en la tarjeta gráfica»" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Cierra navegadores, juegos y otros programas que usen la tarjeta y vuelve a intentarlo. En equipos de 4 GB usa el modelo Base 0.6B." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="Cierra navegadores, juegos y otros programas que usen la tarjeta y vuelve a intentarlo. En equipos de 4 GB usa la «Voz ligera»." />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="La primera vez tarda" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="Arrancar el motor y cargar el modelo lleva entre 20 y 60 segundos. Después queda en memoria y cada bloque va mucho más rápido." />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="Un componente da errores" />
