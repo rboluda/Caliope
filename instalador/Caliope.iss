@@ -42,8 +42,10 @@ SolidCompression=yes
 CloseApplications=yes
 OutputDir=..\publish
 OutputBaseFilename=Caliope-{#Version}-Instalador
+ShowLanguageDialog=auto
 
 [Languages]
+; El primero (castellano) es el predeterminado; Inno elige solo el del sistema y únicamente pregunta si no coincide ninguno.
 Name: "es"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "en"; MessagesFile: "compiler:Default.isl"
 
@@ -53,7 +55,7 @@ en.Escritorio=Create a desktop shortcut
 es.Abrir=Abrir {#Nombre}
 en.Abrir=Launch {#Nombre}
 es.Bienvenida=Calíope convierte textos en voz en tu propio ordenador: diseña voces, clónalas y narra guiones completos sin conexión.%n%nEste instalador solo copia la aplicación (unos 150 MB). Al abrirla por primera vez, un asistente te propondrá qué motores y modelos de voz descargar según tu equipo (entre 5 y 20 GB).
-en.Bienvenida=Calíope turns text into speech on your own computer.%n%nThis installer only copies the application. On first launch, a wizard will suggest which voice engines and models to download for your hardware.
+en.Bienvenida=Calíope turns text into speech on your own computer: design voices, clone them and narrate full scripts offline.%n%nThis installer only copies the application (about 150 MB). The first time you open it, a wizard will suggest which voice engines and models to download for your computer (between 5 and 20 GB).
 es.Datos=Tus voces, narraciones y modelos se han conservado en:%n%1
 en.Datos=Your voices, narrations and models have been kept in:%n%1
 es.Borrado=Listo. Se ha liberado el espacio de los modelos y motores en:%n%1
@@ -71,7 +73,7 @@ en.BorrarModelos=Delete models and engines to free space (keep my voices and nar
 es.BorrarTodo=Borrarlo todo, también mis voces y narraciones
 en.BorrarTodo=Delete everything, including my voices and narrations
 es.Aviso=Los modelos ocupan varios GB; si vuelves a instalar Calíope tendrá que descargarlos otra vez.
-en.Aviso=Models take several GB; if you reinstall Calíope they will be downloaded again.
+en.Aviso=The models take up several GB; if you install Calíope again, it will have to download them again.
 es.Continuar=Desinstalar
 en.Continuar=Uninstall
 es.Cancelar=Cancelar
@@ -86,6 +88,11 @@ Name: "escritorio"; Description: "{cm:Escritorio}"
 
 [Files]
 Source: "..\publish\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Licencias de lo que se incluye y créditos de los componentes que se descargan después.
+Source: "licencias\*"; DestDir: "{app}\licencias"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}\licencias"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\TERCEROS.md"; DestDir: "{app}\licencias"; Flags: ignoreversion
+Source: "..\TERCEROS.en.md"; DestDir: "{app}\licencias"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#Nombre}"; Filename: "{app}\{#Exe}"
