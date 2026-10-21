@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
@@ -51,8 +52,8 @@ public sealed partial class InicioViewModel(ServicioEquipo servicio, INavigation
         var (equipo, rec) = await tarea;
 
         SistemaOperativo = equipo.SistemaOperativo;
-        Procesador = $"{equipo.Procesador} · {equipo.Nucleos} hilos";
-        Memoria = $"{Presentacion.Gb(equipo.RamGb)} de RAM";
+        Procesador = T("{0} · {1} hilos", equipo.Procesador, equipo.Nucleos);
+        Memoria = T("{0} de RAM", Presentacion.Gb(equipo.RamGb));
 
         Gpus.Clear();
         foreach (var g in equipo.Gpus)
@@ -62,8 +63,8 @@ public sealed partial class InicioViewModel(ServicioEquipo servicio, INavigation
         var disco = equipo.Disco;
         CarpetaDatos = disco?.Ruta ?? "";
         EspacioDisco = disco is null
-            ? "No se pudo consultar el disco."
-            : $"{Presentacion.Gb(disco.LibreGb)} libres de {Presentacion.Gb(disco.TotalGb)} en {disco.Unidad}";
+            ? T("No se pudo consultar el disco.")
+            : T("{0} libres de {1} en {2}", Presentacion.Gb(disco.LibreGb), Presentacion.Gb(disco.TotalGb), disco.Unidad);
 
         ResumenDispositivo = rec.ResumenDispositivo;
         Avisos.Clear();
@@ -77,16 +78,16 @@ public sealed partial class InicioViewModel(ServicioEquipo servicio, INavigation
             Propuesta.Add(new FilaPropuesta(c.Nombre, Presentacion.Etiqueta(nivel), Presentacion.Apariencia(nivel),
                 Presentacion.Gb(c.Tamano.Para(rec.UsaGpu))));
         }
-        DescargaPropuesta = $"En total, unos {Presentacion.Gb(rec.DescargaPropuestaGb)} de descarga.";
+        DescargaPropuesta = T("En total, unos {0} de descarga.", Presentacion.Gb(rec.DescargaPropuestaGb));
         Cargando = false;
     }
 
     private static FilaGpu FilaDe(Gpu g)
     {
         if (g.VramTotalGb is not { } total)
-            return new FilaGpu(g.Nombre, g.CompatibleCuda ? "Memoria desconocida" : "No sirve para generar voz: se usará el procesador", 0, false, false);
+            return new FilaGpu(g.Nombre, g.CompatibleCuda ? T("Memoria desconocida") : T("No sirve para generar voz: se usará el procesador"), 0, false, false);
         var usada = g.VramUsadaGb ?? 0;
-        var detalle = $"{Presentacion.Gb(total)} de memoria · {Presentacion.Gb(usada)} en uso ahora · driver {g.Driver}";
+        var detalle = T("{0} de memoria · {1} en uso ahora · driver {2}", Presentacion.Gb(total), Presentacion.Gb(usada), g.Driver);
         return new FilaGpu(g.Nombre, detalle, total > 0 ? usada / total * 100 : 0, true, true);
     }
 }

@@ -6,6 +6,7 @@ using Constantino.Core.Instalaciones;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Wpf.Ui;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
@@ -42,11 +43,11 @@ public sealed partial class AvisosViewModel(
     {
         _version = v;
         _actualizables = [];
-        Titulo = $"Hay una versión nueva de Calíope: {v.Version.ToString(3)}";
+        Titulo = T("Hay una versión nueva de Calíope: {0}", v.Version.ToString(3));
         Mensaje = ServicioActualizaciones.PuedeActualizarseSola
-            ? "Se descarga e instala sola en un momento; Calíope se volverá a abrir al terminar."
-            : "Descárgala desde la página de la versión.";
-        TextoBoton = ServicioActualizaciones.PuedeActualizarseSola ? "Actualizar ahora" : "Ver la versión nueva";
+            ? T("Se descarga e instala sola en un momento; Calíope se volverá a abrir al terminar.")
+            : T("Descárgala desde la página de la versión.");
+        TextoBoton = ServicioActualizaciones.PuedeActualizarseSola ? T("Actualizar ahora") : T("Ver la versión nueva");
         HayNovedades = !string.IsNullOrWhiteSpace(v.Pagina);
         Visible = true;
     }
@@ -62,9 +63,9 @@ public sealed partial class AvisosViewModel(
             return;
         _version = null;
         _actualizables = ids.Select(c => c.Id).ToList();
-        Titulo = ids.Count == 1 ? "Hay una mejora para un componente" : $"Hay mejoras para {ids.Count} componentes";
+        Titulo = ids.Count == 1 ? T("Hay una mejora para un componente") : T("Hay mejoras para {0} componentes", ids.Count);
         Mensaje = string.Join(", ", ids.Select(c => c.Nombre)) + ".";
-        TextoBoton = "Actualizar";
+        TextoBoton = T("Actualizar");
         HayNovedades = false;
         Visible = true;
     }
@@ -80,20 +81,20 @@ public sealed partial class AvisosViewModel(
                 return;
             }
             Ocupado = true;
-            Mensaje = "Descargando la versión nueva…";
+            Mensaje = T("Descargando la versión nueva…");
             try
             {
                 var archivo = await actualizaciones.DescargarAsync(v, new Progress<double>(p =>
                 {
                     Progreso = p;
-                    Mensaje = $"Descargando la versión nueva… {p:P0}";
+                    Mensaje = T("Descargando la versión nueva… {0:P0}", p);
                 }));
-                Mensaje = "Instalando… Calíope se cerrará y volverá a abrirse.";
+                Mensaje = T("Instalando… Calíope se cerrará y volverá a abrirse.");
                 ServicioActualizaciones.InstalarYSalir(archivo);
             }
             catch (Exception e) when (e is System.Net.Http.HttpRequestException or System.IO.IOException or TaskCanceledException)
             {
-                Mensaje = "No se ha podido descargar. Comprueba la conexión y vuelve a intentarlo.";
+                Mensaje = T("No se ha podido descargar. Comprueba la conexión y vuelve a intentarlo.");
                 Ocupado = false;
             }
             return;

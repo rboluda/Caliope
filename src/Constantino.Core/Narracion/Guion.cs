@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using Constantino.Core.Voces;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Narracion;
 
@@ -56,6 +58,17 @@ public sealed record Bloque(int Indice, string Nombre, string Texto, IReadOnlyLi
 /// </summary>
 public static partial class Guion
 {
+    /// <summary>Nombres en inglés de los efectos que trae Calíope.</summary>
+    private static readonly Dictionary<string, string> EfectosEnIngles = new(StringComparer.Ordinal)
+    {
+        ["thunder"] = "trueno",
+        ["heartbeat"] = "latido",
+        ["clock"] = "reloj",
+        ["bell"] = "campana",
+        ["gust"] = "rafaga",
+        ["wind-gust"] = "rafaga",
+    };
+
     private static readonly HashSet<string> EtiquetasSusurro = ["whispers", "whisper", "whispering", "susurro", "susurra", "susurrando"];
     private static readonly HashSet<string> EtiquetasFinSusurro = ["/whispers", "/whisper", "/susurro", "normal"];
 
@@ -99,28 +112,31 @@ public static partial class Guion
                 AnadirVoz(eventos, linea[pos..m.Index], susurro, variante, voz, diccionario);
                 pos = m.Index + m.Length;
                 var etiqueta = NormalizarEtiqueta(m.Groups[1].Value);
-                var comoVariante = Textos.Slug(etiqueta.TrimStart('/'), "");
-                if (Parametro(etiqueta, "voz") is { } nombreVoz)
+                var comoVariante = CatalogoVariantes.DesdeIngles(Textos.Slug(etiqueta.TrimStart('/'), ""));
+                if ((Parametro(etiqueta, "voz") ?? Parametro(etiqueta, "voice")) is { } nombreVoz)
                 {
                     var clave = Textos.Slug(nombreVoz, "");
-                    if (clave is "normal" or "principal" or "narrador")
+                    if (clave is "normal" or "principal" or "narrador" or "main" or "narrator")
                         voz = null;
                     else if (contexto.Voces is not null && contexto.Voces.TryGetValue(clave, out var id))
                         voz = id;
                     else
                     {
                         voz = null;
-                        avisos.Add($"Voz desconocida en [{m.Groups[1].Value}]: se lee con la voz del proyecto.");
+                        avisos.Add(T("Voz desconocida en [{0}]: se lee con la voz del proyecto.", m.Groups[1].Value));
                     }
                     (susurro, variante) = (false, null);
                 }
                 else if ((Parametro(etiqueta, "sfx") ?? Parametro(etiqueta, "efecto")) is { } nombreEfecto)
                 {
                     var efecto = Textos.Slug(nombreEfecto, "");
+                    // Los efectos incluidos también con su nombre en inglés ([sfx: thunder]), si no hay uno propio así.
+                    if (contexto.Efectos?.Contains(efecto) != true && EfectosEnIngles.TryGetValue(efecto, out var espanol))
+                        efecto = espanol;
                     if (contexto.Efectos?.Contains(efecto) == true)
                         eventos.Add(new EventoEfecto(efecto));
                     else
-                        avisos.Add($"Efecto desconocido eliminado: [{m.Groups[1].Value}]");
+                        avisos.Add(T("Efecto desconocido eliminado: [{0}]", m.Groups[1].Value));
                 }
                 else if (etiqueta == "pause" || etiqueta == "long pause")
                 {
@@ -143,7 +159,7 @@ public static partial class Guion
                 }
                 else
                 {
-                    avisos.Add($"Etiqueta desconocida eliminada: [{m.Groups[1].Value}]");
+                    avisos.Add(T("Etiqueta desconocida eliminada: [{0}]", m.Groups[1].Value));
                 }
             }
             AnadirVoz(eventos, linea[pos..], susurro, variante, voz, diccionario);

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Catalogo;
 
@@ -50,16 +51,33 @@ public sealed class CatalogoComponentes
         var dto = JsonSerializer.Deserialize<CatalogoDto>(json, Opciones)
                   ?? throw new CatalogoInvalidoException("El catálogo está vacío.");
         // Las listas que falten en el JSON llegan como null: se normalizan a vacías.
+        // Los textos que ve el usuario se traducen al idioma de la interfaz (el catálogo está en español).
         var componentes = (dto.Componentes ?? []).Select(c => c with
         {
-            Habilita = c.Habilita ?? [],
+            Nombre = Traducir(c.Nombre)!,
+            Grupo = Traducir(c.Grupo)!,
+            Resumen = Traducir(c.Resumen)!,
+            Detalle = Traducir(c.Detalle)!,
+            Consejo = Traducir(c.Consejo),
+            Tecnico = Traducir(c.Tecnico),
+            DisponibleEn = Traducir(c.DisponibleEn),
+            Habilita = (c.Habilita ?? []).Select(h => Traducir(h)!).ToList(),
             DependeDe = c.DependeDe ?? [],
             Licencias = c.Licencias ?? [],
+            Instalacion = c.Instalacion is { } inst
+                ? inst with
+                {
+                    Pasos = inst.Pasos?.Select(p => p is null ? p! : p with { Descripcion = Traducir(p.Descripcion)! }).ToList()!,
+                }
+                : null,
         }).ToList();
         var catalogo = new CatalogoComponentes(dto.Version, componentes);
         catalogo.Validar();
         return catalogo;
     }
+
+    /// <summary>El texto en el idioma de la interfaz; null se queda en null (lo explica <see cref="Validar"/>).</summary>
+    private static string? Traducir(string? texto) => texto is null ? null : T(texto);
 
     /// <summary>Todos los componentes de los que depende <paramref name="id"/>, directa o indirectamente.</summary>
     public IReadOnlyList<Componente> DependenciasDe(string id)

@@ -1,4 +1,5 @@
 using Constantino.Core.Catalogo;
+using Constantino.Core.Motores;
 
 namespace Constantino.Core.Tests;
 
@@ -20,7 +21,7 @@ public class CatalogoTests
     }
 
     [Fact]
-    public void Chatterbox_se_instala_en_su_propio_entorno_y_solo_baja_el_modelo_multilingue()
+    public void Chatterbox_se_instala_en_su_propio_entorno_con_el_paquete_de_castellano()
     {
         var c = CatalogoComponentes.CargarPredeterminado()["chatterbox"];
 
@@ -32,9 +33,50 @@ public class CatalogoTests
         // Perth (la marca de agua) necesita pkg_resources: sin setuptools, Chatterbox falla al generar.
         Assert.Contains(pasos.OfType<PasoEjecutar>().SelectMany(p => p.Argumentos), a => a.StartsWith("setuptools==", StringComparison.Ordinal));
         Assert.Contains(pasos.OfType<PasoEjecutar>(), p => p.Argumentos.Any(a => a.Contains("PerthImplicitWatermarker", StringComparison.Ordinal)));
+        Assert.Contains(pasos.OfType<PasoEjecutar>().SelectMany(p => p.Argumentos),
+            a => a.StartsWith("chatterbox-tts @ https://github.com/resemble-ai/chatterbox/archive/", StringComparison.Ordinal));
+        // Del repositorio general solo la huella de voz y las condiciones; el resto, del paquete de castellano.
+        var modelos = pasos.OfType<PasoModelo>().ToList();
+        Assert.Equal(2, modelos.Count);
+        Assert.All(modelos, m => Assert.Equal("{entornos}/chatterbox/Scripts/python.exe", m.Python));
+        Assert.Equal(["ve.pt", "conds.pt"], modelos[0].Archivos!);
+        Assert.Equal("ResembleAI/Chatterbox-Multilingual-es-es", modelos[1].Repositorio);
+        Assert.Contains("t3_es_es.safetensors", modelos[1].Archivos!);
+        Assert.True(c.Requisitos.SinRtx50);
+    }
+
+    [Fact]
+    public void VoxCpm_se_instala_sin_las_dependencias_de_sus_demos()
+    {
+        var c = CatalogoComponentes.CargarPredeterminado()["voxcpm2"];
+
+        var pasos = c.Instalacion!.Pasos;
+        var argumentos = pasos.OfType<PasoEjecutar>().SelectMany(p => p.Argumentos).ToList();
+        Assert.Contains("--no-deps", argumentos);
+        Assert.Contains("voxcpm==2.0.3", argumentos);
+        foreach (var sobra in new[] { "gradio", "modelscope", "funasr", "datasets" })
+            Assert.DoesNotContain(argumentos, a => a.StartsWith(sobra + "==", StringComparison.Ordinal));
+        Assert.Contains(pasos.OfType<PasoEjecutar>(), p => p.Argumentos.Contains("{indiceTorch}"));
         var modelo = pasos.OfType<PasoModelo>().Single();
-        Assert.Equal("{entornos}/chatterbox/Scripts/python.exe", modelo.Python);
-        Assert.Contains("t3_mtl23ls_v2.safetensors", modelo.Archivos!);
+        Assert.Equal("openbmb/VoxCPM2", modelo.Repositorio);
+        Assert.Equal("{entornos}/voxcpm2/Scripts/python.exe", modelo.Python);
+        Assert.False(c.Requisitos.FuncionaEnCpu);
+    }
+
+    [Fact]
+    public void Cada_motor_tiene_su_componente_en_el_catalogo()
+    {
+        var catalogo = CatalogoComponentes.CargarPredeterminado();
+
+        foreach (var motor in MotoresDeVoz.Todos)
+        {
+            var c = catalogo[MotoresDeVoz.Componente(motor)];
+            if (motor != MotoresDeVoz.Qwen)
+            {
+                Assert.Equal(motor, MotoresDeVoz.DeComponente(c.Id));
+                Assert.Contains($"{{entornos}}/{MotoresDeVoz.Entorno(motor)}/Scripts/python.exe", c.Instalacion!.Comprobar);
+            }
+        }
     }
 
     [Fact]

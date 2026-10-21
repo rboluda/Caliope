@@ -2,6 +2,7 @@
     x:Class="Constantino.App.Controles.PanelInstalacion"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:servicios="clr-namespace:Constantino.App.Servicios">
     <!--  DataContext: ServicioInstalacion  -->
@@ -77,9 +78,9 @@
                 IsOpen="{Binding Error, Converter={StaticResource TextoNoVacio}}"
                 Message="{Binding Error}"
                 Severity="Error"
-                Title="Algo ha fallado" />
+                Title="{l:T 'Algo ha fallado'}" />
 
-            <Expander Margin="0,12,0,0" Header="Detalles técnicos">
+            <Expander Margin="0,12,0,0" Header="{l:T 'Detalles técnicos'}">
                 <ListBox
                     x:Name="ListaLineas"
                     MaxHeight="220"
@@ -93,9 +94,9 @@
             <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
                 <ui:Button
                     Click="AlCancelar"
-                    Content="Cancelar"
+                    Content="{l:T 'Cancelar'}"
                     Visibility="{Binding Ocupado, Converter={StaticResource BoolAVisibilidad}}" />
-                <ui:Button Margin="8,0,0,0" Click="AlAbrirRegistro" Content="Abrir el registro" />
+                <ui:Button Margin="8,0,0,0" Click="AlAbrirRegistro" Content="{l:T 'Abrir el registro'}" />
             </StackPanel>
         </StackPanel>
     </ui:Card>

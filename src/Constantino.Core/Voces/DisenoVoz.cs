@@ -1,3 +1,5 @@
+using static Constantino.Core.Idioma;
+
 namespace Constantino.Core.Voces;
 
 public enum SexoVoz
@@ -63,51 +65,51 @@ public static class CatalogoDiseno
 {
     public static IReadOnlyList<OpcionDiseno> Timbres { get; } =
     [
-        new("grave", "Grave", "deep, low-pitched"),
-        new("media", "Media", "medium-pitched"),
-        new("aguda", "Aguda", "high-pitched"),
+        new("grave", T("Grave"), "deep, low-pitched"),
+        new("media", T("Media"), "medium-pitched"),
+        new("aguda", T("Aguda"), "high-pitched"),
     ];
 
     public static IReadOnlyList<OpcionDiseno> Texturas { get; } =
     [
-        new("calida", "Cálida", "warm"),
-        new("suave", "Suave", "soft, smooth"),
-        new("aterciopelada", "Aterciopelada", "velvety, rich"),
-        new("clara", "Clara", "clear, crisp"),
-        new("ronca", "Algo ronca", "slightly hoarse and raspy"),
-        new("aspera", "Áspera", "rough, gravelly"),
-        new("aireada", "Con aire, susurrante", "breathy, airy"),
+        new("calida", T("Cálida"), "warm"),
+        new("suave", T("Suave"), "soft, smooth"),
+        new("aterciopelada", T("Aterciopelada"), "velvety, rich"),
+        new("clara", T("Clara"), "clear, crisp"),
+        new("ronca", T("Algo ronca"), "slightly hoarse and raspy"),
+        new("aspera", T("Áspera"), "rough, gravelly"),
+        new("aireada", T("Con aire, susurrante"), "breathy, airy"),
     ];
 
     public static IReadOnlyList<OpcionDiseno> Ritmos { get; } =
     [
-        new("muy-pausado", "Muy pausado", "very slow, unhurried pace with long dramatic pauses"),
-        new("pausado", "Pausado", "slow, calm pace with natural pauses between sentences"),
-        new("normal", "Normal", "natural conversational pace"),
-        new("agil", "Ágil", "lively, fairly fast pace"),
+        new("muy-pausado", T("Muy pausado"), "very slow, unhurried pace with long dramatic pauses"),
+        new("pausado", T("Pausado"), "slow, calm pace with natural pauses between sentences"),
+        new("normal", T("Normal"), "natural conversational pace"),
+        new("agil", T("Ágil"), "lively, fairly fast pace"),
     ];
 
     public static IReadOnlyList<OpcionDiseno> Tonos { get; } =
     [
-        new("intimo", "Íntimo", "intimate and close, as if speaking to a single listener"),
-        new("misterioso", "Misterioso", "mysterious and slightly ominous"),
-        new("narrativo", "Cuentacuentos", "warm storyteller"),
-        new("inquietante", "Inquietante", "unsettling, eerie and tense"),
-        new("serio", "Serio", "serious and authoritative"),
-        new("dramatico", "Dramático", "dramatic and intense"),
-        new("alegre", "Alegre", "cheerful and friendly"),
+        new("intimo", T("Íntimo"), "intimate and close, as if speaking to a single listener"),
+        new("misterioso", T("Misterioso"), "mysterious and slightly ominous"),
+        new("narrativo", T("Cuentacuentos"), "warm storyteller"),
+        new("inquietante", T("Inquietante"), "unsettling, eerie and tense"),
+        new("serio", T("Serio"), "serious and authoritative"),
+        new("dramatico", T("Dramático"), "dramatic and intense"),
+        new("alegre", T("Alegre"), "cheerful and friendly"),
     ];
 
     /// <summary>Solo para español: el acento es lo que más cuesta acertar, así que se pide muy explícito.</summary>
     public static IReadOnlyList<OpcionDiseno> Acentos { get; } =
     [
-        new("castellano", "Castellano de España",
+        new("castellano", T("Castellano de España"),
             "speaking Castilian Spanish from Spain with a clear peninsular accent (distinguishing the z and soft c from s), not Latin American"),
-        new("andaluz", "Andaluz", "speaking Spanish with an Andalusian accent from southern Spain"),
-        new("canario", "Canario", "speaking Spanish with a Canary Islands accent"),
-        new("mexicano", "Mexicano", "speaking Mexican Spanish with a Mexican accent"),
-        new("rioplatense", "Argentino / rioplatense", "speaking Rioplatense Spanish with an Argentinian accent"),
-        new("latino", "Latino neutro", "speaking neutral Latin American Spanish"),
+        new("andaluz", T("Andaluz"), "speaking Spanish with an Andalusian accent from southern Spain"),
+        new("canario", T("Canario"), "speaking Spanish with a Canary Islands accent"),
+        new("mexicano", T("Mexicano"), "speaking Mexican Spanish with a Mexican accent"),
+        new("rioplatense", T("Argentino / rioplatense"), "speaking Rioplatense Spanish with an Argentinian accent"),
+        new("latino", T("Latino neutro"), "speaking neutral Latin American Spanish"),
     ];
 
     public static OpcionDiseno? Buscar(IReadOnlyList<OpcionDiseno> opciones, string? clave) =>
@@ -116,15 +118,15 @@ public static class CatalogoDiseno
     /// <summary>Puntos de partida para no empezar en blanco.</summary>
     public static IReadOnlyList<(string Nombre, DescripcionGuiada Descripcion)> Ejemplos { get; } =
     [
-        ("Narrador de hoguera", new(SexoVoz.Hombre, 40, "grave", "calida", "pausado", "misterioso", "castellano",
+        (T("Narrador de hoguera"), new(SexoVoz.Hombre, 40, "grave", "calida", "pausado", "misterioso", "castellano",
             "Like someone telling a scary story around a campfire at night")),
-        ("Abuelo cuentacuentos", new(SexoVoz.Hombre, 70, "grave", "ronca", "muy-pausado", "narrativo", "castellano",
+        (T("Abuelo cuentacuentos"), new(SexoVoz.Hombre, 70, "grave", "ronca", "muy-pausado", "narrativo", "castellano",
             "Like a grandfather telling an old legend by the fireside")),
-        ("Narradora misteriosa", new(SexoVoz.Mujer, 35, "media", "suave", "pausado", "misterioso", "castellano",
+        (T("Narradora misteriosa"), new(SexoVoz.Mujer, 35, "media", "suave", "pausado", "misterioso", "castellano",
             "Like someone sharing a secret late at night")),
-        ("Locutora de radio nocturna", new(SexoVoz.Mujer, 45, "media", "aterciopelada", "pausado", "intimo", "castellano",
+        (T("Locutora de radio nocturna"), new(SexoVoz.Mujer, 45, "media", "aterciopelada", "pausado", "intimo", "castellano",
             "Like a late-night radio host")),
-        ("Voz inquietante", new(SexoVoz.Hombre, 55, "grave", "aspera", "muy-pausado", "inquietante", "castellano",
+        (T("Voz inquietante"), new(SexoVoz.Hombre, 55, "grave", "aspera", "muy-pausado", "inquietante", "castellano",
             "Whispering at times, as if hiding something terrible")),
     ];
 }

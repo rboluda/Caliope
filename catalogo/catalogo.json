@@ -335,6 +335,421 @@
       "tecnico": "Qwen3-TTS-12Hz-0.6B-Base, revisión 5d83992 (Apache 2.0)."
     },
     {
+      "id": "chatterbox",
+      "nombre": "Motor castellano (Chatterbox)",
+      "grupo": "Otros motores de voz",
+      "necesidad": "opcional",
+      "resumen": "Otro motor de voz, afinado para el castellano de España: rápido y con control de la emoción.",
+      "detalle": "Lee tus guiones con las mismas voces, con una versión especializada en el castellano de España y un control de «intensidad emocional». Es el más rápido de los tres. Solo lee en español. Todo lo que genera lleva una marca de agua inaudible de su fabricante.",
+      "habilita": [
+        "Narrar en castellano con un motor rápido y con emoción"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 8.4,
+        "sinGpuGb": 4.9
+      },
+      "requisitos": {
+        "vramMinimaGb": 4.5,
+        "vramRecomendadaGb": 6.0,
+        "funcionaEnCpu": true,
+        "sinRtx50": true
+      },
+      "licencias": [
+        {
+          "nombre": "Chatterbox: MIT",
+          "url": "https://github.com/resemble-ai/chatterbox/blob/master/LICENSE"
+        },
+        {
+          "nombre": "PyTorch: BSD-3",
+          "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
+        }
+      ],
+      "instalacion": {
+        "version": "chatterbox v3 (5de7a54) · castellano 7262b36 · torch 2.6.0",
+        "pasos": [
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Preparando el motor castellano",
+            "programa": "{uv}",
+            "argumentos": [
+              "venv",
+              "{entornos}/chatterbox",
+              "--python",
+              "3.11",
+              "--clear"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Descargando la parte más pesada del motor",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--python",
+              "{entornos}/chatterbox/Scripts/python.exe",
+              "torch==2.6.0",
+              "torchaudio==2.6.0",
+              "--index-url",
+              "{indiceTorchCu124}"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/chatterbox"
+              ],
+              "bytesConGpu": 4300000000,
+              "bytesSinGpu": 1000000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando el motor castellano",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--no-deps",
+              "--python",
+              "{entornos}/chatterbox/Scripts/python.exe",
+              "annotated-doc==0.0.5",
+              "anyio==4.15.1",
+              "audioread==3.1.0",
+              "catalogue==2.0.10",
+              "certifi==2026.10.18",
+              "cffi==2.1.1",
+              "cfgv==3.5.0",
+              "charset-normalizer==3.5.2",
+              "chatterbox-tts @ https://github.com/resemble-ai/chatterbox/archive/5de7a54aa4e5e2baadb0182dde554908b48b85c2.zip",
+              "click==8.5.0",
+              "cloudpickle==3.1.2",
+              "colorama==0.4.6",
+              "conformer==0.3.2",
+              "decorator==5.3.1",
+              "deprecated==1.3.1",
+              "diffusers==0.29.0",
+              "distlib==0.4.4",
+              "einops==0.8.2",
+              "filelock==3.32.3",
+              "fsspec==2026.7.0",
+              "h11==0.16.0",
+              "hf-xet==1.7.0",
+              "httpcore==1.0.9",
+              "httpx==0.28.1",
+              "huggingface-hub==1.33.0",
+              "identify==2.6.20",
+              "idna==3.20",
+              "importlib-metadata==9.0.1",
+              "jaconv==0.5.0",
+              "joblib==1.6.0",
+              "lazy-loader==0.6",
+              "librosa==0.11.0",
+              "llvmlite==0.50.0",
+              "markdown-it-py==4.2.0",
+              "mdurl==0.1.2",
+              "ml-dtypes==0.5.4",
+              "msgpack==1.2.3",
+              "narwhals==2.27.1",
+              "nodeenv==1.11.0",
+              "numba==0.68.0",
+              "numpy==1.26.4",
+              "omegaconf==2.4.0",
+              "onnx==1.23.2",
+              "packaging==26.3",
+              "pillow==12.3.0",
+              "platformdirs==4.13.5",
+              "pooch==1.9.0",
+              "pre-commit==4.7.0",
+              "protobuf==7.36.2",
+              "pycparser==3.11",
+              "pygments==2.21.0",
+              "pykakasi==2.3.0",
+              "pyloudnorm==0.2.0",
+              "python-discovery==1.6.4",
+              "pyyaml==6.0.3",
+              "regex==2026.9.29",
+              "requests==2.34.2",
+              "resemble-perth==1.0.1",
+              "rich==15.0.0",
+              "s3tokenizer==0.3.0",
+              "safetensors==0.5.3",
+              "scikit-learn==1.9.1",
+              "scipy==1.17.1",
+              "setuptools==65.5.0",
+              "shellingham==1.5.4",
+              "soundfile==0.14.0",
+              "soxr==1.1.0",
+              "spacy-pkuseg==1.0.1",
+              "srsly==2.5.4",
+              "threadpoolctl==3.7.0",
+              "tokenizers==0.22.2",
+              "tqdm==4.70.1",
+              "transformers==5.2.0",
+              "typer==0.27.3",
+              "typer-slim==0.24.0",
+              "typing-extensions==4.16.0",
+              "urllib3==2.8.0",
+              "virtualenv==21.14.11",
+              "wrapt==2.5.1",
+              "zipp==4.1.1"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/chatterbox"
+              ],
+              "bytesConGpu": 900000000,
+              "bytesSinGpu": 900000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando que el motor arranca",
+            "programa": "{entornos}/chatterbox/Scripts/python.exe",
+            "argumentos": [
+              "-c",
+              "import torch, perth, chatterbox.mtl_tts; assert perth.PerthImplicitWatermarker, 'falta la marca de agua (perth)'; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
+            ],
+            "debeContener": "dispositivo={dispositivo}"
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando la base del motor castellano",
+            "python": "{entornos}/chatterbox/Scripts/python.exe",
+            "repositorio": "ResembleAI/chatterbox",
+            "revision": "5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18",
+            "tamanoBytes": 5806000,
+            "archivos": [
+              "ve.pt",
+              "conds.pt"
+            ]
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando la voz castellana",
+            "python": "{entornos}/chatterbox/Scripts/python.exe",
+            "repositorio": "ResembleAI/Chatterbox-Multilingual-es-es",
+            "revision": "7262b364e3222ba9446c9289e7485eadc47ed902",
+            "tamanoBytes": 3200963947,
+            "archivos": [
+              "t3_es_es.safetensors",
+              "s3gen_v3.pt",
+              "grapheme_mtl_merged_expanded_v1.json"
+            ]
+          }
+        ],
+        "rutas": [
+          "{entornos}/chatterbox",
+          "{modelos}/hub/models--ResembleAI--chatterbox",
+          "{modelos}/hub/models--ResembleAI--Chatterbox-Multilingual-es-es"
+        ],
+        "comprobar": [
+          "{entornos}/chatterbox/Scripts/python.exe",
+          "{modelos}/hub/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/ve.pt",
+          "{modelos}/hub/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/conds.pt",
+          "{modelos}/hub/models--ResembleAI--Chatterbox-Multilingual-es-es/snapshots/7262b364e3222ba9446c9289e7485eadc47ed902/t3_es_es.safetensors",
+          "{modelos}/hub/models--ResembleAI--Chatterbox-Multilingual-es-es/snapshots/7262b364e3222ba9446c9289e7485eadc47ed902/s3gen_v3.pt"
+        ]
+      },
+      "consejo": "Opcional. El motor principal ya cubre la narración: instálalo si narras en castellano y quieres más rapidez o más control de la emoción. Funciona desde 4,5 GB de tarjeta. No sirve para las tarjetas NVIDIA RTX 50.",
+      "tecnico": "Chatterbox Multilingual v3 (Resemble AI, MIT), código de GitHub 5de7a54 (julio de 2026), con el paquete de castellano de España ResembleAI/Chatterbox-Multilingual-es-es (t3_es_es y decodificador v3, revisión 7262b36). Entorno propio con PyTorch 2.6 (CUDA 12.4)."
+    },
+    {
+      "id": "voxcpm2",
+      "nombre": "Motor de máximo parecido (VoxCPM2)",
+      "grupo": "Otros motores de voz",
+      "necesidad": "opcional",
+      "resumen": "El que más se parece a la voz original, en 30 idiomas y con la mejor calidad de sonido. Pide una tarjeta potente.",
+      "detalle": "Imita la voz con más fidelidad que los demás (sobre todo si la voz tiene transcripción) y genera el audio a calidad de estudio (48 kHz). Detecta solo el idioma del texto. Es el más pesado: con tarjetas de 8 GB funciona, pero va lento. Si ya tienes el motor principal, reaprovecha su parte más pesada y ocupa unos 6 GB.",
+      "consejo": "Opcional y exigente: necesita una tarjeta NVIDIA de 8 GB como mínimo (mejor de 10 GB o más). Si el motor principal ya te convence, no te hace falta.",
+      "tecnico": "VoxCPM2 2.0.3 (OpenBMB, Apache 2.0), 2.000 millones de parámetros, audio a 48 kHz. Entorno propio con PyTorch 2.11 (CUDA 12.8), sin las dependencias de sus demos. Modelo openbmb/VoxCPM2, revisión 32279ef.",
+      "habilita": [
+        "Narrar con el motor de máximo parecido"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 10.5,
+        "sinGpuGb": 7.2
+      },
+      "requisitos": {
+        "vramMinimaGb": 7.5,
+        "vramRecomendadaGb": 10.0,
+        "funcionaEnCpu": false
+      },
+      "licencias": [
+        {
+          "nombre": "VoxCPM2: Apache 2.0",
+          "url": "https://github.com/OpenBMB/VoxCPM"
+        },
+        {
+          "nombre": "PyTorch: BSD-3",
+          "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
+        }
+      ],
+      "instalacion": {
+        "version": "voxcpm 2.0.3 · torch 2.11.0 · modelo 32279ef",
+        "pasos": [
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Preparando el motor de máximo parecido",
+            "programa": "{uv}",
+            "argumentos": [
+              "venv",
+              "{entornos}/voxcpm2",
+              "--python",
+              "3.11",
+              "--clear"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Descargando la parte más pesada del motor",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--python",
+              "{entornos}/voxcpm2/Scripts/python.exe",
+              "torch==2.11.0",
+              "torchaudio==2.11.0",
+              "--index-url",
+              "{indiceTorch}"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/voxcpm2"
+              ],
+              "bytesConGpu": 4530000000,
+              "bytesSinGpu": 1000000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando el motor de máximo parecido",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--no-deps",
+              "--python",
+              "{entornos}/voxcpm2/Scripts/python.exe",
+              "annotated-doc==0.0.5",
+              "annotated-types==0.8.0",
+              "anyascii==0.3.3",
+              "anyio==4.15.1",
+              "audioread==3.1.0",
+              "certifi==2026.10.19",
+              "cffi==2.1.1",
+              "charset-normalizer==3.5.2",
+              "click==8.5.0",
+              "cloudpickle==3.1.2",
+              "colorama==0.4.6",
+              "contractions==0.1.73",
+              "decorator==5.3.1",
+              "einops==0.8.2",
+              "filelock==3.32.3",
+              "fsspec==2025.3.0",
+              "h11==0.16.0",
+              "hf-xet==1.7.0",
+              "httpcore2==2.16.0",
+              "httpx2==2.16.0",
+              "huggingface-hub==2.2.0",
+              "idna==3.20",
+              "inflect==7.5.0",
+              "joblib==1.6.0",
+              "kaldifst==1.8.2",
+              "lazy-loader==0.6",
+              "librosa==0.11.0",
+              "llvmlite==0.50.0",
+              "markdown-it-py==4.2.0",
+              "mdurl==0.1.2",
+              "more-itertools==11.2.1",
+              "msgpack==1.2.3",
+              "narwhals==2.27.1",
+              "numba==0.68.0",
+              "numpy==2.4.6",
+              "packaging==26.3",
+              "platformdirs==4.13.5",
+              "pooch==1.9.0",
+              "pyahocorasick==2.3.1",
+              "pycparser==3.11",
+              "pydantic==2.14.1",
+              "pydantic-core==2.50.1",
+              "pygments==2.21.0",
+              "pyyaml==6.0.3",
+              "regex==2026.9.29",
+              "requests==2.34.2",
+              "rich==15.0.0",
+              "safetensors==0.8.0",
+              "scikit-learn==1.9.1",
+              "scipy==1.17.1",
+              "shellingham==1.5.4",
+              "soundfile==0.14.0",
+              "soxr==1.1.0",
+              "textsearch==0.0.24",
+              "threadpoolctl==3.7.0",
+              "tokenizers==0.23.3",
+              "tqdm==4.70.1",
+              "transformers==5.20.2",
+              "truststore==0.10.5",
+              "typeguard==4.6.0",
+              "typer==0.27.3",
+              "typing-extensions==4.16.0",
+              "typing-inspection==0.4.4",
+              "urllib3==2.8.0",
+              "voxcpm==2.0.3",
+              "wetext==0.1.8"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/voxcpm2"
+              ],
+              "bytesConGpu": 1100000000,
+              "bytesSinGpu": 1100000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando que el motor arranca",
+            "programa": "{entornos}/voxcpm2/Scripts/python.exe",
+            "argumentos": [
+              "-c",
+              "import torch, voxcpm; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
+            ],
+            "debeContener": "dispositivo={dispositivo}"
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando la voz del motor de máximo parecido",
+            "python": "{entornos}/voxcpm2/Scripts/python.exe",
+            "repositorio": "openbmb/VoxCPM2",
+            "revision": "32279effe8c19989596f05d353d1447f51d9e915",
+            "tamanoBytes": 4960741032
+          }
+        ],
+        "rutas": [
+          "{entornos}/voxcpm2",
+          "{modelos}/hub/models--openbmb--VoxCPM2"
+        ],
+        "comprobar": [
+          "{entornos}/voxcpm2/Scripts/python.exe",
+          "{modelos}/hub/models--openbmb--VoxCPM2/snapshots/32279effe8c19989596f05d353d1447f51d9e915/model.safetensors",
+          "{modelos}/hub/models--openbmb--VoxCPM2/snapshots/32279effe8c19989596f05d353d1447f51d9e915/audiovae.pth"
+        ]
+      }
+    },
+    {
       "id": "modelo-qwen-voicedesign",
       "nombre": "Diseñador de voces",
       "grupo": "Más funciones",
@@ -435,219 +850,6 @@
       },
       "consejo": "Útil si vas a clonar voces. Ocupa poco.",
       "tecnico": "Whisper large-v3-turbo (OpenAI, MIT), revisión 41f01f3. Usa el mismo entorno que el motor de voz."
-    },
-    {
-      "id": "chatterbox",
-      "nombre": "Motor alternativo (con emoción)",
-      "grupo": "Más funciones",
-      "necesidad": "opcional",
-      "resumen": "Otro motor de voz, con control de la intensidad emocional, para comparar.",
-      "detalle": "Lee tus guiones con las mismas voces y añade un control de «intensidad emocional». Suele leer más seguido y con menos pausas. Todo lo que genera lleva una marca de agua inaudible de su fabricante.",
-      "habilita": [
-        "Narrar con un motor alternativo"
-      ],
-      "dependeDe": [
-        "nucleo"
-      ],
-      "tamano": {
-        "conGpuGb": 8.4,
-        "sinGpuGb": 4.9
-      },
-      "requisitos": {
-        "vramMinimaGb": 4.5,
-        "vramRecomendadaGb": 6.0,
-        "funcionaEnCpu": true
-      },
-      "licencias": [
-        {
-          "nombre": "Chatterbox: MIT",
-          "url": "https://github.com/resemble-ai/chatterbox/blob/master/LICENSE"
-        },
-        {
-          "nombre": "PyTorch: BSD-3",
-          "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
-        }
-      ],
-      "instalacion": {
-        "version": "chatterbox-tts 0.1.7 · torch 2.6.0 · modelo 5bb1f6ee58e5",
-        "pasos": [
-          {
-            "tipo": "ejecutar",
-            "descripcion": "Preparando el motor alternativo",
-            "programa": "{uv}",
-            "argumentos": [
-              "venv",
-              "{entornos}/chatterbox",
-              "--python",
-              "3.11",
-              "--clear"
-            ]
-          },
-          {
-            "tipo": "ejecutar",
-            "descripcion": "Descargando la parte más pesada del motor",
-            "programa": "{uv}",
-            "argumentos": [
-              "pip",
-              "install",
-              "--compile-bytecode",
-              "--python",
-              "{entornos}/chatterbox/Scripts/python.exe",
-              "torch==2.6.0",
-              "torchaudio==2.6.0",
-              "--index-url",
-              "{indiceTorchCu124}"
-            ],
-            "progreso": {
-              "carpetas": [
-                "{cache}/uv",
-                "{entornos}/chatterbox"
-              ],
-              "bytesConGpu": 4300000000,
-              "bytesSinGpu": 1000000000
-            }
-          },
-          {
-            "tipo": "ejecutar",
-            "descripcion": "Instalando el motor alternativo",
-            "programa": "{uv}",
-            "argumentos": [
-              "pip",
-              "install",
-              "--compile-bytecode",
-              "--no-deps",
-              "--python",
-              "{entornos}/chatterbox/Scripts/python.exe",
-              "annotated-doc==0.0.5",
-              "anyio==4.15.1",
-              "audioread==3.1.0",
-              "catalogue==2.0.10",
-              "certifi==2026.10.18",
-              "cffi==2.1.1",
-              "cfgv==3.5.0",
-              "charset-normalizer==3.5.2",
-              "chatterbox-tts==0.1.7",
-              "click==8.5.0",
-              "cloudpickle==3.1.2",
-              "colorama==0.4.6",
-              "conformer==0.3.2",
-              "decorator==5.3.1",
-              "deprecated==1.3.1",
-              "diffusers==0.29.0",
-              "distlib==0.4.4",
-              "einops==0.8.2",
-              "filelock==3.32.3",
-              "fsspec==2026.7.0",
-              "h11==0.16.0",
-              "hf-xet==1.7.0",
-              "httpcore==1.0.9",
-              "httpx==0.28.1",
-              "huggingface-hub==1.33.0",
-              "identify==2.6.20",
-              "idna==3.20",
-              "importlib-metadata==9.0.1",
-              "jaconv==0.5.0",
-              "joblib==1.6.0",
-              "lazy-loader==0.6",
-              "librosa==0.11.0",
-              "llvmlite==0.50.0",
-              "markdown-it-py==4.2.0",
-              "mdurl==0.1.2",
-              "ml-dtypes==0.5.4",
-              "msgpack==1.2.3",
-              "narwhals==2.27.1",
-              "nodeenv==1.11.0",
-              "numba==0.68.0",
-              "numpy==1.26.4",
-              "omegaconf==2.4.0",
-              "onnx==1.23.2",
-              "packaging==26.3",
-              "pillow==12.3.0",
-              "platformdirs==4.13.5",
-              "pooch==1.9.0",
-              "pre-commit==4.7.0",
-              "protobuf==7.36.2",
-              "pycparser==3.11",
-              "pygments==2.21.0",
-              "pykakasi==2.3.0",
-              "pyloudnorm==0.2.0",
-              "python-discovery==1.6.4",
-              "pyyaml==6.0.3",
-              "regex==2026.9.29",
-              "requests==2.34.2",
-              "resemble-perth==1.0.1",
-              "rich==15.0.0",
-              "s3tokenizer==0.3.0",
-              "safetensors==0.5.3",
-              "scikit-learn==1.9.1",
-              "scipy==1.17.1",
-              "setuptools==65.5.0",
-              "shellingham==1.5.4",
-              "soundfile==0.14.0",
-              "soxr==1.1.0",
-              "spacy-pkuseg==1.0.1",
-              "srsly==2.5.4",
-              "threadpoolctl==3.7.0",
-              "tokenizers==0.22.2",
-              "tqdm==4.70.1",
-              "transformers==5.2.0",
-              "typer==0.27.3",
-              "typer-slim==0.24.0",
-              "typing-extensions==4.16.0",
-              "urllib3==2.8.0",
-              "virtualenv==21.14.11",
-              "wrapt==2.5.1",
-              "zipp==4.1.1"
-            ],
-            "progreso": {
-              "carpetas": [
-                "{cache}/uv",
-                "{entornos}/chatterbox"
-              ],
-              "bytesConGpu": 900000000,
-              "bytesSinGpu": 900000000
-            }
-          },
-          {
-            "tipo": "ejecutar",
-            "descripcion": "Comprobando que el motor arranca",
-            "programa": "{entornos}/chatterbox/Scripts/python.exe",
-            "argumentos": [
-              "-c",
-              "import torch, perth, chatterbox.mtl_tts; assert perth.PerthImplicitWatermarker, 'falta la marca de agua (perth)'; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
-            ],
-            "debeContener": "dispositivo={dispositivo}"
-          },
-          {
-            "tipo": "modelo",
-            "descripcion": "Descargando la voz del motor alternativo",
-            "python": "{entornos}/chatterbox/Scripts/python.exe",
-            "repositorio": "ResembleAI/chatterbox",
-            "revision": "5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18",
-            "tamanoBytes": 3208951748,
-            "archivos": [
-              "ve.pt",
-              "t3_mtl23ls_v2.safetensors",
-              "s3gen.pt",
-              "grapheme_mtl_merged_expanded_v1.json",
-              "conds.pt",
-              "Cangjie5_TC.json"
-            ]
-          }
-        ],
-        "rutas": [
-          "{entornos}/chatterbox",
-          "{modelos}/hub/models--ResembleAI--chatterbox"
-        ],
-        "comprobar": [
-          "{entornos}/chatterbox/Scripts/python.exe",
-          "{modelos}/hub/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/t3_mtl23ls_v2.safetensors",
-          "{modelos}/hub/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/s3gen.pt",
-          "{modelos}/hub/models--ResembleAI--chatterbox/snapshots/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/ve.pt"
-        ]
-      },
-      "consejo": "Opcional: el motor de voz ya cubre la narración. Instálalo solo si quieres comparar o tener más control de la emoción. No funciona con las tarjetas NVIDIA de la serie RTX 50.",
-      "tecnico": "Chatterbox Multilingual 0.1.7 (Resemble AI, MIT) en un entorno propio con PyTorch 2.6 (CUDA 12.4). Modelo t3_mtl23ls_v2, revisión 5bb1f6e."
     }
   ]
 }

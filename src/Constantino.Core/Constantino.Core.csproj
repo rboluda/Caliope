@@ -9,6 +9,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Traducciones de la interfaz: texto en español → texto traducido. -->
+    <EmbeddedResource Include="Idiomas\*.json" LogicalName="Constantino.Core.Idiomas.%(Filename).json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Constantino.Core.Tests" />
   </ItemGroup>
 

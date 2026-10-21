@@ -323,6 +323,27 @@ public sealed class NarradorTests : IDisposable
     }
 
     [Fact]
+    public void Las_etiquetas_tambien_se_entienden_en_ingles()
+    {
+        var contexto = new ContextoGuion(
+            Variantes: ["asustado"],
+            Voces: new Dictionary<string, string> { ["anciano"] = "abuelo-1" },
+            Efectos: ["trueno"]);
+
+        var b = Guion.Leer("[voice: Anciano] Hola. [sfx: thunder] [scared] Corre. [/scared] Ya. [voice: narrator] Fin.", 0.6, 1.5, contexto)[0];
+
+        Assert.Equal(
+        [
+            new EventoVoz("Hola.", VozId: "abuelo-1"),
+            new EventoEfecto("trueno"),
+            new EventoVoz("Corre.", Variante: "asustado", VozId: "abuelo-1"),
+            new EventoVoz("Ya.", VozId: "abuelo-1"),
+            new EventoVoz("Fin."),
+        ], b.Eventos);
+        Assert.Empty(b.Avisos);
+    }
+
+    [Fact]
     public void La_huella_no_cambia_por_ajustes_nuevos_con_su_valor_por_defecto()
     {
         var bloque = Guion.Leer("Hola. [whispers] Adiós.")[0];
@@ -345,6 +366,17 @@ public sealed class NarradorTests : IDisposable
         var chatterbox = Huellas.DeBloque(bloque, Ajustes with { Motor = MotoresDeVoz.Chatterbox }, "voz", "modelo");
         Assert.NotEqual(qwen, chatterbox);
         Assert.NotEqual(chatterbox, Huellas.DeBloque(bloque, Ajustes with { Motor = MotoresDeVoz.Chatterbox, Intensidad = 0.9 }, "voz", "modelo"));
+    }
+
+    [Fact]
+    public void Con_voxcpm_no_cuentan_ni_la_intensidad_ni_la_expresividad()
+    {
+        var bloque = Guion.Leer("Hola.")[0];
+        var vox = Ajustes with { Motor = MotoresDeVoz.VoxCpm };
+        var huella = Huellas.DeBloque(bloque, vox, "voz", "modelo");
+
+        Assert.NotEqual(Huellas.DeBloque(bloque, Ajustes, "voz", "modelo"), huella);
+        Assert.Equal(huella, Huellas.DeBloque(bloque, vox with { Intensidad = 0.9, Temperatura = 1.1 }, "voz", "modelo"));
     }
 
     /// <summary>Huella calculada con la versión del H5: si cambia, los proyectos ya generados se darían por desactualizados.</summary>

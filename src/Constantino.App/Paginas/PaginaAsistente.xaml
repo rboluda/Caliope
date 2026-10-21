@@ -2,11 +2,12 @@
     x:Class="Constantino.App.Paginas.PaginaAsistente"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     ScrollViewer.CanContentScroll="False"
     xmlns:controles="clr-namespace:Constantino.App.Controles"
     xmlns:vm="clr-namespace:Constantino.App.ViewModels"
-    Title="Configuración inicial">
+    Title="{l:T 'Configuración inicial'}">
     <Page.Resources>
         <Style x:Key="Oculta" TargetType="TabItem">
             <Setter Property="Visibility" Value="Collapsed" />
@@ -76,23 +77,23 @@
             <TabItem Style="{StaticResource Oculta}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Titulo}" Text="Te damos la bienvenida a Calíope" />
-                        <TextBlock Style="{StaticResource Parrafo}" Text="Calíope convierte textos en voz en tu propio ordenador: puedes crear voces nuevas describiéndolas, clonar una voz a partir de una grabación y narrar guiones completos. No necesita internet ni cuentas una vez instalado." />
-                        <TextBlock Style="{StaticResource Parrafo}" Text="Para funcionar necesita descargar algunas herramientas y modelos de voz. En los siguientes pasos:" />
+                        <TextBlock Style="{StaticResource Titulo}" Text="{l:T 'Te damos la bienvenida a Calíope'}" />
+                        <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Calíope convierte textos en voz en tu propio ordenador: puedes crear voces nuevas describiéndolas, clonar una voz a partir de una grabación y narrar guiones completos. No necesita internet ni cuentas una vez instalado.'}" />
+                        <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Para funcionar necesita descargar algunas herramientas y modelos de voz. En los siguientes pasos:'}" />
                         <ui:Card Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Margin="0,2" Text="1. Revisaremos tu equipo para recomendarte qué instalar." />
-                                <TextBlock Margin="0,2" Text="2. Elegirás dónde guardar todo (ocupa varios gigas)." />
-                                <TextBlock Margin="0,2" Text="3. Verás cada componente explicado y elegirás cuáles instalar." />
-                                <TextBlock Margin="0,2" Text="4. Calíope lo descargará e instalará por ti." />
+                                <TextBlock Margin="0,2" Text="{l:T '1. Revisaremos tu equipo para recomendarte qué instalar.'}" />
+                                <TextBlock Margin="0,2" Text="{l:T '2. Elegirás dónde guardar todo (ocupa varios gigas).'}" />
+                                <TextBlock Margin="0,2" Text="{l:T '3. Verás cada componente explicado y elegirás cuáles instalar.'}" />
+                                <TextBlock Margin="0,2" Text="{l:T '4. Calíope lo descargará e instalará por ti.'}" />
                             </StackPanel>
                         </ui:Card>
                         <ui:InfoBar
                             IsClosable="False"
                             IsOpen="True"
-                            Message="No se instalará nada hasta que pulses «Instalar» en el paso 4. Todo queda dentro de una sola carpeta y no toca nada más de tu equipo."
+                            Message="{l:T 'No se instalará nada hasta que pulses «Instalar» en el paso 4. Todo queda dentro de una sola carpeta y no toca nada más de tu equipo.'}"
                             Severity="Informational"
-                            Title="Tú decides" />
+                            Title="{l:T 'Tú decides'}" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -101,10 +102,10 @@
             <TabItem Style="{StaticResource Oculta}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Titulo}" Text="Tu equipo" />
+                        <TextBlock Style="{StaticResource Titulo}" Text="{l:T 'Tu equipo'}" />
                         <StackPanel Orientation="Horizontal" Visibility="{Binding ViewModel.Cargando, Converter={StaticResource BoolAVisibilidad}}">
                             <ui:ProgressRing Width="20" Height="20" IsIndeterminate="True" />
-                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="Analizando el equipo…" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{l:T 'Analizando el equipo…'}" />
                         </StackPanel>
                         <ui:Card Margin="0,0,0,12">
                             <StackPanel>
@@ -133,8 +134,8 @@
             <TabItem Style="{StaticResource Oculta}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Titulo}" Text="¿Dónde lo guardamos?" />
-                        <TextBlock Style="{StaticResource Parrafo}" Text="En esta carpeta irán las herramientas, los modelos de voz y tus voces. Puede ocupar más de 10 GB, así que elige un disco con espacio. No uses una carpeta de OneDrive." />
+                        <TextBlock Style="{StaticResource Titulo}" Text="{l:T '¿Dónde lo guardamos?'}" />
+                        <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En esta carpeta irán las herramientas, los modelos de voz y tus voces. Puede ocupar más de 10 GB, así que elige un disco con espacio. No uses una carpeta de OneDrive.'}" />
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -145,7 +146,7 @@
                                 Grid.Column="1"
                                 Margin="8,0,0,0"
                                 Command="{Binding ViewModel.ExaminarCommand}"
-                                Content="Examinar…"
+                                Content="{l:T 'Examinar…'}"
                                 IsEnabled="{Binding ViewModel.CarpetaBloqueada, Converter={StaticResource NegarBool}}">
                                 <ui:Button.Icon>
                                     <ui:SymbolIcon Symbol="FolderOpen24" />
@@ -159,14 +160,14 @@
                             IsOpen="{Binding ViewModel.ErrorCarpeta, Converter={StaticResource TextoNoVacio}}"
                             Message="{Binding ViewModel.ErrorCarpeta}"
                             Severity="Error"
-                            Title="Esta carpeta no sirve" />
+                            Title="{l:T 'Esta carpeta no sirve'}" />
                         <ui:InfoBar
                             Margin="0,12,0,0"
                             IsClosable="False"
                             IsOpen="{Binding ViewModel.CarpetaBloqueada}"
-                            Message="Ya hay componentes instalados en esta carpeta. Para cambiarla, desinstálalos primero desde Componentes."
+                            Message="{l:T 'Ya hay componentes instalados en esta carpeta. Para cambiarla, desinstálalos primero desde Componentes.'}"
                             Severity="Informational"
-                            Title="Carpeta en uso" />
+                            Title="{l:T 'Carpeta en uso'}" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -180,8 +181,8 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Titulo}" Text="¿Qué quieres instalar?" />
-                        <TextBlock Style="{StaticResource Parrafo}" Text="Hemos marcado lo recomendado para tu equipo. Lo imprescindible no se puede desmarcar; lo demás, a tu gusto. Podrás añadir o quitar componentes más adelante." />
+                        <TextBlock Style="{StaticResource Titulo}" Text="{l:T '¿Qué quieres instalar?'}" />
+                        <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Hemos marcado lo recomendado para tu equipo. Lo imprescindible no se puede desmarcar; lo demás, a tu gusto. Podrás añadir o quitar componentes más adelante.'}" />
                     </StackPanel>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding ViewModel.Opciones}">
@@ -215,7 +216,7 @@
                                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                     TextWrapping="Wrap"
                                                     Visibility="{Binding Consejo, Converter={StaticResource NoNuloAVisibilidad}}">
-                                                    <Run FontWeight="SemiBold" Text="¿Lo necesito? " /><Run Text="{Binding Consejo, Mode=OneWay}" />
+                                                    <Run FontWeight="SemiBold" Text="{l:T '¿Lo necesito? '}" /><Run Text="{Binding Consejo, Mode=OneWay}" />
                                                 </TextBlock>
                                             </StackPanel>
                                             <TextBlock Grid.Column="2" Margin="16,0,0,0" FontWeight="SemiBold" Text="{Binding Tamano}" />
@@ -233,7 +234,7 @@
                             IsOpen="{Binding ViewModel.AvisoSeleccion, Converter={StaticResource TextoNoVacio}}"
                             Message="{Binding ViewModel.AvisoSeleccion}"
                             Severity="Warning"
-                            Title="Atención" />
+                            Title="{l:T 'Atención'}" />
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -242,16 +243,16 @@
             <TabItem Style="{StaticResource Oculta}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Titulo}" Text="Instalando" />
-                        <TextBlock Style="{StaticResource Parrafo}" Text="Puede tardar un buen rato según tu conexión: los modelos ocupan varios gigas. Puedes dejar el ordenador trabajando; si algo falla, podrás reintentarlo sin perder lo ya descargado." />
+                        <TextBlock Style="{StaticResource Titulo}" Text="{l:T 'Instalando'}" />
+                        <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Puede tardar un buen rato según tu conexión: los modelos ocupan varios gigas. Puedes dejar el ordenador trabajando; si algo falla, podrás reintentarlo sin perder lo ya descargado.'}" />
                         <controles:PanelInstalacion DataContext="{Binding ViewModel.Instalacion}" />
                         <StackPanel Margin="0,12,0,0" Orientation="Horizontal" Visibility="{Binding ViewModel.InstalacionFallida, Converter={StaticResource BoolAVisibilidad}}">
-                            <ui:Button Appearance="Primary" Command="{Binding ViewModel.ReintentarCommand}" Content="Reintentar">
+                            <ui:Button Appearance="Primary" Command="{Binding ViewModel.ReintentarCommand}" Content="{l:T 'Reintentar'}">
                                 <ui:Button.Icon>
                                     <ui:SymbolIcon Symbol="ArrowClockwise24" />
                                 </ui:Button.Icon>
                             </ui:Button>
-                            <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.VolverASeleccionCommand}" Content="Cambiar la selección" />
+                            <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.VolverASeleccionCommand}" Content="{l:T 'Cambiar la selección'}" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -261,9 +262,9 @@
             <TabItem Style="{StaticResource Oculta}">
                 <StackPanel>
                     <ui:SymbolIcon HorizontalAlignment="Left" FontSize="48" Foreground="{DynamicResource SystemFillColorSuccessBrush}" Symbol="CheckmarkCircle24" />
-                    <TextBlock Margin="0,12,0,8" Style="{StaticResource Titulo}" Text="¡Todo listo!" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Calíope ya tiene lo necesario. Crea tu primera voz en «Diseñar voz» o «Clonar voz» y narra con ella en «Narrar», desde el menú de la izquierda." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Puedes instalar o quitar componentes cuando quieras desde «Componentes»." />
+                    <TextBlock Margin="0,12,0,8" Style="{StaticResource Titulo}" Text="{l:T '¡Todo listo!'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Calíope ya tiene lo necesario. Crea tu primera voz en «Diseñar voz» o «Clonar voz» y narra con ella en «Narrar», desde el menú de la izquierda.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Puedes instalar o quitar componentes cuando quieras desde «Componentes».'}" />
                 </StackPanel>
             </TabItem>
         </TabControl>
@@ -274,12 +275,12 @@
                 HorizontalAlignment="Left"
                 Appearance="Transparent"
                 Command="{Binding ViewModel.MasTardeCommand}"
-                Content="Configurar más tarde"
+                Content="{l:T 'Configurar más tarde'}"
                 Visibility="{Binding ViewModel.PuedeVolver, Converter={StaticResource BoolInversoAVisibilidad}}" />
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                 <ui:Button
                     Command="{Binding ViewModel.AtrasCommand}"
-                    Content="Atrás"
+                    Content="{l:T 'Atrás'}"
                     Visibility="{Binding ViewModel.PuedeVolver, Converter={StaticResource BoolAVisibilidad}}" />
                 <ui:Button
                     Margin="8,0,0,0"

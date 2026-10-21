@@ -8,6 +8,7 @@ import struct
 import wave
 
 from .servidor import ErrorMotor
+from .textos import t
 
 
 class MotorFalso:
@@ -20,9 +21,9 @@ class MotorFalso:
         return {"torch": None, "dispositivo": "cpu", "modelo": self._cargado}
 
     def op_cargar(self, params, progreso):
-        progreso(None, "Cargando el modelo de voz")
+        progreso(None, t("Cargando el modelo de voz"))
         if params.get("repositorio") == "no/existe":
-            raise ErrorMotor("modelo_no_encontrado", "El modelo no está instalado.")
+            raise ErrorMotor("modelo_no_encontrado", t("El modelo no está instalado."))
         self._cargado = {"repositorio": params["repositorio"], "revision": params["revision"]}
         return {"segundos": 0.0, "ya_cargado": False}
 
@@ -32,31 +33,31 @@ class MotorFalso:
 
     def op_sintetizar(self, params, progreso):
         if self._cargado is None:
-            raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
+            raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))
         if not os.path.isfile(params["referencia_wav"]):
-            raise ErrorMotor("archivo_no_encontrado", "No existe la grabación de referencia.")
+            raise ErrorMotor("archivo_no_encontrado", t("No existe la grabación de referencia."))
         return self._tono(params, progreso)
 
     def op_disenar(self, params, progreso):
         if self._cargado is None:
-            raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
+            raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))
         if not (params.get("instruccion") or "").strip():
-            raise ErrorMotor("sin_descripcion", "Describe la voz que quieres crear.")
+            raise ErrorMotor("sin_descripcion", t("Describe la voz que quieres crear."))
         return self._tono(params, progreso)
 
     def op_transcribir(self, params, progreso):
         if self._cargado is None:
-            raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
+            raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))
         if not os.path.isfile(params["audio"]):
-            raise ErrorMotor("archivo_no_encontrado", "No existe el audio.")
-        progreso(None, "Transcribiendo")
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio."))
+        progreso(None, t("Transcribiendo"))
         return {"texto": f"Texto transcrito en {params.get('idioma', 'Spanish')}.", "segundos": 0.0}
 
     def _tono(self, params, progreso):
         texto = params.get("texto", "")
         if texto == "falla":
             raise RuntimeError("fallo provocado")
-        progreso(None, "Generando la voz")
+        progreso(None, t("Generando la voz"))
         sr = 24000
         duracion = max(0.2, len(texto) / 15)
         n = int(sr * duracion)

@@ -1,5 +1,6 @@
 using Constantino.Core.Catalogo;
 using Constantino.Core.Equipo;
+using Constantino.Core.Motores;
 using Constantino.Core.Recomendaciones;
 
 namespace Constantino.Core.Tests;
@@ -134,5 +135,61 @@ public class RecomendadorTests
             var r = Recomendador.Recomendar(Catalogo, Equipo(gpu));
             Assert.All(Catalogo.Componentes, c => Assert.False(string.IsNullOrWhiteSpace(r.Para(c.Id).Motivo)));
         }
+    }
+
+    [Fact]
+    public void Los_motores_opcionales_se_recomiendan_segun_la_tarjeta()
+    {
+        var con8 = Recomendador.Recomendar(Catalogo, Equipo(Nvidia(8)));
+        Assert.Equal(NivelRecomendacion.Opcional, Nivel(con8, "voxcpm2"));
+        Assert.Contains("justo", con8.Para("voxcpm2").Motivo);
+        Assert.Contains("castellano", con8.Para("chatterbox").Motivo);
+
+        var con6 = Recomendador.Recomendar(Catalogo, Equipo(Nvidia(6)));
+        Assert.Equal(NivelRecomendacion.NoRecomendado, Nivel(con6, "voxcpm2"));
+        Assert.Equal(NivelRecomendacion.Opcional, Nivel(con6, "chatterbox"));
+
+        var con12 = Recomendador.Recomendar(Catalogo, Equipo(Nvidia(12)));
+        Assert.Contains("puede con él", con12.Para("voxcpm2").Motivo);
+
+        // Ninguno de los dos se propone por defecto: el principal basta.
+        Assert.DoesNotContain("voxcpm2", con12.Propuestos);
+        Assert.DoesNotContain("chatterbox", con12.Propuestos);
+
+        var sinGpu = Recomendador.Recomendar(Catalogo, Equipo(gpu: null));
+        Assert.Equal(NivelRecomendacion.NoRecomendado, Nivel(sinGpu, "voxcpm2"));
+    }
+
+    [Fact]
+    public void El_motor_castellano_no_se_recomienda_en_una_rtx_50()
+    {
+        var gpu = new Gpu("NVIDIA GeForce RTX 5070", "NVIDIA", 12, 0.5, "580.10", CompatibleCuda: true);
+
+        var r = Recomendador.Recomendar(Catalogo, Equipo(gpu));
+
+        Assert.Equal(NivelRecomendacion.NoRecomendado, Nivel(r, "chatterbox"));
+        Assert.Contains("RTX 50", r.Para("chatterbox").Motivo);
+        Assert.Equal(NivelRecomendacion.Opcional, Nivel(r, "voxcpm2"));
+        Assert.DoesNotContain("los tres", GuiaMotores.Consejo(Equipo(gpu)));
+    }
+
+    [Theory]
+    [InlineData(0, "Quédate con el motor principal")]
+    [InlineData(4, "los otros no caben")]
+    [InlineData(6, "añade el castellano rápido")]
+    [InlineData(8, "pero justo")]
+    [InlineData(16, "los tres")]
+    public void La_guia_de_motores_aconseja_segun_la_memoria_de_la_tarjeta(double vram, string esperado)
+    {
+        var consejo = GuiaMotores.Consejo(Equipo(vram == 0 ? null : Nvidia(vram)));
+
+        Assert.Contains(esperado, consejo);
+    }
+
+    [Fact]
+    public void La_guia_compara_los_tres_motores()
+    {
+        Assert.Equal(MotoresDeVoz.Todos, GuiaMotores.Fichas.Select(f => f.Motor));
+        Assert.All(MotoresDeVoz.Todos, m => Assert.False(string.IsNullOrWhiteSpace(GuiaMotores.Resumen(m))));
     }
 }

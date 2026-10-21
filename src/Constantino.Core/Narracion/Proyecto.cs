@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Constantino.Core.Motores;
 using Constantino.Core.Voces;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Narracion;
 
@@ -112,10 +113,11 @@ public static class Huellas
             relevantes.Remove(soloCompleto);
         // El motor (y sus ajustes propios) solo cuentan si no es Qwen, el único que había antes.
         if (ajustes.Motor == MotoresDeVoz.Qwen)
-        {
             relevantes.Remove(nameof(AjustesNarracion.Motor));
+        if (!MotoresDeVoz.TieneIntensidad(ajustes.Motor))
             relevantes.Remove(nameof(AjustesNarracion.Intensidad));
-        }
+        if (!MotoresDeVoz.TieneExpresividad(ajustes.Motor))
+            relevantes.Remove(nameof(AjustesNarracion.Temperatura));
         var datos = JsonSerializer.Serialize(new
         {
             bloque.Nombre,
@@ -165,7 +167,10 @@ public sealed class AlmacenProyectos(string carpeta)
     /// <summary>Nombre de la carpeta de audio en versiones anteriores.</summary>
     private const string CarpetaSalidaAntigua = "salida";
 
-    public const string GuionDeEjemplo = """
+    /// <summary>El guion de ejemplo de los proyectos nuevos, en el idioma de la interfaz.</summary>
+    public static string GuionDeEjemplo => T(GuionDeEjemploEspanol.ReplaceLineEndings("\n"));
+
+    private const string GuionDeEjemploEspanol = """
         // Escribe aquí tu guion. Cada párrafo (separado por una línea en blanco) es un bloque y da un archivo de audio.
         // Etiquetas: [pause] pausa corta · [long pause] pausa larga · [whispers] susurra hasta el final de la línea.
         // Las líneas que empiezan por // son comentarios y no se leen.
@@ -201,7 +206,7 @@ public sealed class AlmacenProyectos(string carpeta)
     {
         nombre = nombre.Trim();
         if (nombre.Length == 0)
-            throw new ArgumentException("El proyecto necesita un nombre.", nameof(nombre));
+            throw new ArgumentException(T("El proyecto necesita un nombre."),nameof(nombre));
         var baseId = Textos.Slug(nombre, "proyecto");
         var id = baseId;
         for (var n = 2; Directory.Exists(CarpetaDe(id)); n++)

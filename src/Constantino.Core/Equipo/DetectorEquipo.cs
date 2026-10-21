@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Management;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Equipo;
 
@@ -109,13 +110,13 @@ public static class DetectorEquipo
     {
         var v = Environment.OSVersion.Version;
         var nombre = v.Major == 10 && v.Build >= 22000 ? "Windows 11" : v.Major == 10 ? "Windows 10" : "Windows";
-        return $"{nombre} (compilación {v.Build}, {RuntimeInformation.OSArchitecture})";
+        return T("{0} (compilación {1}, {2})", nombre, v.Build, RuntimeInformation.OSArchitecture);
     }
 
     private static string Procesador()
     {
         using var clave = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
-        return (clave?.GetValue("ProcessorNameString") as string)?.Trim() ?? "Desconocido";
+        return (clave?.GetValue("ProcessorNameString") as string)?.Trim() ?? T("Desconocido");
     }
 
     private static double RamTotalGb()

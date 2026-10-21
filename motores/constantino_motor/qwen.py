@@ -5,6 +5,7 @@ import random
 import time
 
 from .servidor import ErrorMotor
+from .textos import t
 
 GIB = 1024 ** 3
 
@@ -47,7 +48,7 @@ class MotorQwen:
         self._liberar()
 
         # Importar qwen-tts (y transformers) lleva unos segundos: se avisa antes para que no parezca colgado.
-        progreso(None, "Cargando el modelo de transcripción" if tipo == "asr" else "Cargando el modelo de voz")
+        progreso(None, t("Cargando el modelo de transcripción") if tipo == "asr" else t("Cargando el modelo de voz"))
         from huggingface_hub import snapshot_download
 
         ruta = snapshot_download(repo_id=repositorio, revision=revision, local_files_only=True)
@@ -82,10 +83,10 @@ class MotorQwen:
 
     def op_transcribir(self, params, progreso):
         """Transcribe un audio (hasta unos minutos) en el idioma indicado."""
-        self._exigir_modelo("asr", "transcribir")
+        self._exigir_modelo("asr", t("transcribir"))
         audio = params["audio"]
         if not os.path.isfile(audio):
-            raise ErrorMotor("archivo_no_encontrado", f"No existe el audio: {audio}")
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio: {ruta}", ruta=audio))
         import librosa
         import soundfile as sf
 
@@ -93,7 +94,7 @@ class MotorQwen:
         datos = datos.mean(axis=1)
         if sr != 16000:
             datos = librosa.resample(datos, orig_sr=sr, target_sr=16000)
-        progreso(None, "Transcribiendo")
+        progreso(None, t("Transcribiendo"))
         inicio = time.perf_counter()
         idioma = (params.get("idioma") or "Spanish").lower()
         resultado = self._modelo({"array": datos, "sampling_rate": 16000}, chunk_length_s=30,
@@ -106,12 +107,12 @@ class MotorQwen:
 
     def op_sintetizar(self, params, progreso):
         """Clona la voz de la referencia y lee el texto. Escribe un WAV en params['salida']."""
-        self._exigir_modelo("base", "clonar voces")
+        self._exigir_modelo("base", t("clonar voces"))
         referencia = params["referencia_wav"]
         if not os.path.isfile(referencia):
-            raise ErrorMotor("archivo_no_encontrado", f"No existe la grabación de referencia: {referencia}")
+            raise ErrorMotor("archivo_no_encontrado", t("No existe la grabación de referencia: {ruta}", ruta=referencia))
         texto = self._texto(params)
-        progreso(None, "Preparando la voz")
+        progreso(None, t("Preparando la voz"))
         # Sin transcripción se imita solo el timbre (x-vector): algo menos parecido, pero no necesita el texto.
         prompt = self._prompt(referencia, (params.get("referencia_texto") or "").strip() or None)
         return self._generar(params, progreso, lambda ajustes: self._modelo.generate_voice_clone(
@@ -119,25 +120,25 @@ class MotorQwen:
 
     def op_disenar(self, params, progreso):
         """Inventa una voz a partir de una descripción (VoiceDesign) y lee el texto con ella."""
-        self._exigir_modelo("voice_design", "diseñar voces")
+        self._exigir_modelo("voice_design", t("diseñar voces"))
         texto = self._texto(params)
         instruccion = (params.get("instruccion") or "").strip()
         if not instruccion:
-            raise ErrorMotor("sin_descripcion", "Describe la voz que quieres crear.")
+            raise ErrorMotor("sin_descripcion", t("Describe la voz que quieres crear."))
         return self._generar(params, progreso, lambda ajustes: self._modelo.generate_voice_design(
             text=texto, language=params.get("idioma", "Spanish"), instruct=instruccion, **ajustes))
 
     def _exigir_modelo(self, tipo, para):
         if self._modelo is None:
-            raise ErrorMotor("sin_modelo", "No hay ningún modelo cargado.")
+            raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))
         if self._tipo != tipo:
-            raise ErrorMotor("modelo_incorrecto", f"El modelo cargado no sirve para {para}.")
+            raise ErrorMotor("modelo_incorrecto", t("El modelo cargado no sirve para {para}.", para=para))
 
     @staticmethod
     def _texto(params):
         texto = (params.get("texto") or "").strip()
         if not texto:
-            raise ErrorMotor("texto_vacio", "No hay texto que leer.")
+            raise ErrorMotor("texto_vacio", t("No hay texto que leer."))
         return texto
 
     def _generar(self, params, progreso, generar):
@@ -158,7 +159,7 @@ class MotorQwen:
             if params.get(clave_app) is not None:
                 ajustes[clave_qwen] = params[clave_app]
 
-        progreso(None, "Generando la voz")
+        progreso(None, t("Generando la voz"))
         inicio = time.perf_counter()
         wavs, sr = generar(ajustes)
         segundos = time.perf_counter() - inicio

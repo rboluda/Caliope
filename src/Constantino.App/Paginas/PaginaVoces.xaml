@@ -2,21 +2,22 @@
     x:Class="Constantino.App.Paginas.PaginaVoces"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Constantino.App.ViewModels"
     x:Name="Raiz"
     ScrollViewer.CanContentScroll="False"
-    Title="Voces">
+    Title="{l:T 'Voces'}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="32,24,32,32" MaxWidth="1040">
             <Grid>
-                <TextBlock FontSize="28" FontWeight="SemiBold" Text="Voces" />
+                <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Voces'}" />
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                     <ui:Button
                         Margin="0,0,8,0"
                         Command="{Binding ViewModel.AbrirPaqueteCommand}"
-                        Content="Abrir una voz compartida…"
-                        ToolTip="Añade una voz que alguien exportó desde Calíope (un archivo .zip)">
+                        Content="{l:T 'Abrir una voz compartida…'}"
+                        ToolTip="{l:T 'Añade una voz que alguien exportó desde Calíope (un archivo .zip)'}">
                         <ui:Button.Icon>
                             <ui:SymbolIcon Symbol="FolderZip24" />
                         </ui:Button.Icon>
@@ -24,7 +25,7 @@
                     <ui:Button
                         Appearance="Primary"
                         Command="{Binding ViewModel.AbrirImportarCommand}"
-                        Content="Importar una voz">
+                        Content="{l:T 'Importar una voz'}">
                         <ui:Button.Icon>
                             <ui:SymbolIcon Symbol="Add24" />
                         </ui:Button.Icon>
@@ -34,7 +35,7 @@
             <TextBlock
                 Margin="0,4,0,12"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="Tu biblioteca de voces. Cada voz es una grabación corta con su transcripción: el motor la imita para leer cualquier texto."
+                Text="{l:T 'Tu biblioteca de voces. Cada voz es una grabación corta con su transcripción: el motor la imita para leer cualquier texto.'}"
                 TextWrapping="Wrap" />
 
             <!--  Estado del motor  -->
@@ -51,13 +52,13 @@
                         Margin="10,0,0,0"
                         VerticalAlignment="Center"
                         TextWrapping="Wrap">
-                        <Run FontWeight="SemiBold" Text="Motor de voz: " /><Run Text="{Binding ViewModel.Motor.Descripcion, Mode=OneWay}" />
+                        <Run FontWeight="SemiBold" Text="{l:T 'Motor de voz: '}" /><Run Text="{Binding ViewModel.Motor.Descripcion, Mode=OneWay}" />
                     </TextBlock>
                     <ui:Button
                         Grid.Column="2"
                         Margin="12,0,0,0"
                         Command="{Binding ViewModel.ApagarMotorCommand}"
-                        Content="Apagar y liberar memoria"
+                        Content="{l:T 'Apagar y liberar memoria'}"
                         Visibility="{Binding ViewModel.Motor.Encendido, Converter={StaticResource BoolAVisibilidad}}" />
                 </Grid>
             </ui:Card>
@@ -68,33 +69,33 @@
                 IsOpen="{Binding ViewModel.AvisoImportar, Converter={StaticResource TextoNoVacio}}"
                 Message="{Binding ViewModel.AvisoImportar}"
                 Severity="Success"
-                Title="Listo" />
+                Title="{l:T 'Listo'}" />
             <ui:InfoBar
                 Margin="0,0,0,8"
                 IsClosable="False"
                 IsOpen="{Binding ViewModel.ErrorGeneral, Converter={StaticResource TextoNoVacio}}"
                 Message="{Binding ViewModel.ErrorGeneral}"
                 Severity="Error"
-                Title="Algo ha fallado" />
+                Title="{l:T 'Algo ha fallado'}" />
 
             <!--  Formulario de importación  -->
             <ui:Card Margin="0,0,0,12" Visibility="{Binding ViewModel.MostrarImportar, Converter={StaticResource BoolAVisibilidad}}">
                 <StackPanel>
-                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Importar una voz" />
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T 'Importar una voz'}" />
                     <TextBlock
                         Margin="0,4,0,12"
                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                        Text="Una grabación limpia de 10–20 segundos, de una sola persona, sin música ni ruido de fondo. Sirven WAV, MP3, FLAC, OGG o M4A."
+                        Text="{l:T 'Una grabación limpia de 10–20 segundos, de una sola persona, sin música ni ruido de fondo. Sirven WAV, MP3, FLAC, OGG o M4A.'}"
                         TextWrapping="Wrap" />
 
-                    <TextBlock Margin="0,0,0,4" Text="Grabación" />
+                    <TextBlock Margin="0,0,0,4" Text="{l:T 'Grabación'}" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <ui:TextBox PlaceholderText="Elige un archivo de audio" Text="{Binding ViewModel.ArchivoImportar, UpdateSourceTrigger=PropertyChanged}" />
-                        <ui:Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding ViewModel.ExaminarCommand}" Content="Examinar…">
+                        <ui:TextBox PlaceholderText="{l:T 'Elige un archivo de audio'}" Text="{Binding ViewModel.ArchivoImportar, UpdateSourceTrigger=PropertyChanged}" />
+                        <ui:Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding ViewModel.ExaminarCommand}" Content="{l:T 'Examinar…'}">
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="FolderOpen24" />
                             </ui:Button.Icon>
@@ -108,11 +109,11 @@
                             <ColumnDefinition Width="220" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Margin="0,0,0,4" Text="Nombre" />
-                            <ui:TextBox PlaceholderText="Por ejemplo: Narrador de la hoguera" Text="{Binding ViewModel.NombreImportar, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,0,0,4" Text="{l:T 'Nombre'}" />
+                            <ui:TextBox PlaceholderText="{l:T 'Por ejemplo: Narrador de la hoguera'}" Text="{Binding ViewModel.NombreImportar, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Margin="0,0,0,4" Text="Idioma" />
+                            <TextBlock Margin="0,0,0,4" Text="{l:T 'Idioma'}" />
                             <ComboBox
                                 DisplayMemberPath="Nombre"
                                 ItemsSource="{Binding ViewModel.IdiomasDisponibles}"
@@ -121,20 +122,20 @@
                         </StackPanel>
                     </Grid>
 
-                    <TextBlock Margin="0,12,0,4" Text="Transcripción exacta de la grabación" />
+                    <TextBlock Margin="0,12,0,4" Text="{l:T 'Transcripción exacta de la grabación'}" />
                     <ui:TextBox
                         MinHeight="80"
                         AcceptsReturn="True"
                         IsEnabled="{Binding ViewModel.SinTranscripcionImportar, Converter={StaticResource NegarBool}}"
-                        PlaceholderText="Escribe palabra por palabra todo lo que se dice en la grabación. Si hay un .txt con el mismo nombre que el audio, se rellena solo."
+                        PlaceholderText="{l:T 'Escribe palabra por palabra todo lo que se dice en la grabación. Si hay un .txt con el mismo nombre que el audio, se rellena solo.'}"
                         Text="{Binding ViewModel.TranscripcionImportar, UpdateSourceTrigger=PropertyChanged}"
                         TextWrapping="Wrap" />
                     <CheckBox Margin="0,8,0,0" IsChecked="{Binding ViewModel.SinTranscripcionImportar}">
-                        <TextBlock Text="No tengo la transcripción: imitar solo el timbre de la voz (se parece algo menos, pero funciona)." TextWrapping="Wrap" />
+                        <TextBlock Text="{l:T 'No tengo la transcripción: imitar solo el timbre de la voz (se parece algo menos, pero funciona).'}" TextWrapping="Wrap" />
                     </CheckBox>
 
                     <CheckBox Margin="0,12,0,0" IsChecked="{Binding ViewModel.ConsentimientoImportar}">
-                        <TextBlock Text="Esta voz es mía, la he creado yo, o tengo permiso de su dueño para usarla." TextWrapping="Wrap" />
+                        <TextBlock Text="{l:T 'Esta voz es mía, la he creado yo, o tengo permiso de su dueño para usarla.'}" TextWrapping="Wrap" />
                     </CheckBox>
 
                     <ui:InfoBar
@@ -143,15 +144,15 @@
                         IsOpen="{Binding ViewModel.ErrorImportar, Converter={StaticResource TextoNoVacio}}"
                         Message="{Binding ViewModel.ErrorImportar}"
                         Severity="Warning"
-                        Title="No se puede importar" />
+                        Title="{l:T 'No se puede importar'}" />
 
                     <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
                         <ui:Button
                             Appearance="Primary"
                             Command="{Binding ViewModel.ImportarCommand}"
-                            Content="Importar"
+                            Content="{l:T 'Importar'}"
                             IsEnabled="{Binding ViewModel.Importando, Converter={StaticResource NegarBool}}" />
-                        <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.CancelarImportarCommand}" Content="Cancelar" />
+                        <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.CancelarImportarCommand}" Content="{l:T 'Cancelar'}" />
                         <ui:ProgressRing
                             Width="18"
                             Height="18"
@@ -165,10 +166,10 @@
             <!--  Biblioteca vacía  -->
             <ui:Card Visibility="{Binding ViewModel.SinVoces, Converter={StaticResource BoolAVisibilidad}}">
                 <StackPanel>
-                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Todavía no tienes voces" />
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T 'Todavía no tienes voces'}" />
                     <TextBlock
                         Margin="0,6,0,0"
-                        Text="Importa una grabación de 10–20 segundos con su transcripción. Más adelante podrás también diseñar voces describiéndolas o clonarlas grabando con el micrófono."
+                        Text="{l:T 'Importa una grabación de 10–20 segundos con su transcripción. Más adelante podrás también diseñar voces describiéndolas o clonarlas grabando con el micrófono.'}"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
@@ -190,7 +191,7 @@
                                             <ui:Badge
                                                 Margin="10,0,0,0"
                                                 Appearance="Primary"
-                                                Content="Predeterminada"
+                                                Content="{l:T 'Predeterminada'}"
                                                 Visibility="{Binding EsPredeterminada, Converter={StaticResource BoolAVisibilidad}}" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Visibility="{Binding Editando, Converter={StaticResource BoolAVisibilidad}}">
@@ -200,12 +201,12 @@
                                                 Appearance="Primary"
                                                 Command="{Binding DataContext.ViewModel.GuardarNombreCommand, ElementName=Raiz}"
                                                 CommandParameter="{Binding}"
-                                                Content="Guardar" />
+                                                Content="{l:T 'Guardar'}" />
                                             <ui:Button
                                                 Margin="8,0,0,0"
                                                 Command="{Binding DataContext.ViewModel.CancelarNombreCommand, ElementName=Raiz}"
                                                 CommandParameter="{Binding}"
-                                                Content="Cancelar" />
+                                                Content="{l:T 'Cancelar'}" />
                                         </StackPanel>
                                         <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Detalle}" />
                                         <TextBlock
@@ -221,8 +222,8 @@
                                         <ui:Button
                                             Command="{Binding DataContext.ViewModel.EscucharCommand, ElementName=Raiz}"
                                             CommandParameter="{Binding}"
-                                            Content="Escuchar"
-                                            ToolTip="Escuchar la grabación de referencia">
+                                            Content="{l:T 'Escuchar'}"
+                                            ToolTip="{l:T 'Escuchar la grabación de referencia'}">
                                             <ui:Button.Icon>
                                                 <ui:SymbolIcon Symbol="Play24" />
                                             </ui:Button.Icon>
@@ -232,7 +233,7 @@
                                             Appearance="Primary"
                                             Command="{Binding DataContext.ViewModel.AlternarPruebaCommand, ElementName=Raiz}"
                                             CommandParameter="{Binding}"
-                                            Content="Probar">
+                                            Content="{l:T 'Probar'}">
                                             <ui:Button.Icon>
                                                 <ui:SymbolIcon Symbol="PersonVoice24" />
                                             </ui:Button.Icon>
@@ -246,11 +247,11 @@
                                     IsOpen="{Binding AvisoTranscripcion, Converter={StaticResource TextoNoVacio}}"
                                     Message="{Binding AvisoTranscripcion}"
                                     Severity="Warning"
-                                    Title="Esta voz saldrá cortada" />
+                                    Title="{l:T 'Esta voz saldrá cortada'}" />
 
                                 <!--  Edición de la transcripción  -->
                                 <StackPanel Margin="0,10,0,0" Visibility="{Binding EditandoTranscripcion, Converter={StaticResource BoolAVisibilidad}}">
-                                    <TextBlock Margin="0,0,0,4" Text="Transcripción exacta de la grabación (vacía para imitar solo el timbre):" />
+                                    <TextBlock Margin="0,0,0,4" Text="{l:T 'Transcripción exacta de la grabación (vacía para imitar solo el timbre):'}" />
                                     <ui:TextBox AcceptsReturn="True" MinHeight="70" Text="{Binding TranscripcionEditada, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" />
                                     <ui:InfoBar
                                         Margin="0,8,0,0"
@@ -258,18 +259,18 @@
                                         IsOpen="{Binding ErrorTranscripcion, Converter={StaticResource TextoNoVacio}}"
                                         Message="{Binding ErrorTranscripcion}"
                                         Severity="Warning"
-                                        Title="No encaja" />
+                                        Title="{l:T 'No encaja'}" />
                                     <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
                                         <ui:Button
                                             Appearance="Primary"
                                             Command="{Binding DataContext.ViewModel.GuardarTranscripcionCommand, ElementName=Raiz}"
                                             CommandParameter="{Binding}"
-                                            Content="Guardar" />
+                                            Content="{l:T 'Guardar'}" />
                                         <ui:Button
                                             Margin="8,0,0,0"
                                             Command="{Binding DataContext.ViewModel.CancelarTranscripcionCommand, ElementName=Raiz}"
                                             CommandParameter="{Binding}"
-                                            Content="Cancelar" />
+                                            Content="{l:T 'Cancelar'}" />
                                     </StackPanel>
                                 </StackPanel>
 
@@ -281,7 +282,7 @@
                                     CornerRadius="6"
                                     Visibility="{Binding MostrarPrueba, Converter={StaticResource BoolAVisibilidad}}">
                                     <StackPanel>
-                                        <TextBlock Margin="0,0,0,6" Text="Escribe un texto y escúchalo con esta voz:" />
+                                        <TextBlock Margin="0,0,0,6" Text="{l:T 'Escribe un texto y escúchalo con esta voz:'}" />
                                         <ui:TextBox AcceptsReturn="True" MinHeight="60" Text="{Binding TextoPrueba, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" />
                                         <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
                                             <ComboBox
@@ -291,19 +292,19 @@
                                                 ItemsSource="{Binding DataContext.ViewModel.Motores, ElementName=Raiz}"
                                                 SelectedValue="{Binding DataContext.ViewModel.MotorPrueba, ElementName=Raiz}"
                                                 SelectedValuePath="Id"
-                                                ToolTip="Motor con el que se lee la prueba: escucha el mismo texto con los dos para compararlos"
+                                                ToolTip="{l:T 'Motor con el que se lee la prueba: escucha el mismo texto con los dos para compararlos'}"
                                                 Visibility="{Binding DataContext.ViewModel.HayVariosMotores, ElementName=Raiz, Converter={StaticResource BoolAVisibilidad}}" />
                                             <ui:Button
                                                 Appearance="Primary"
                                                 Command="{Binding DataContext.ViewModel.ProbarCommand, ElementName=Raiz}"
                                                 CommandParameter="{Binding}"
-                                                Content="Generar y escuchar"
+                                                Content="{l:T 'Generar y escuchar'}"
                                                 IsEnabled="{Binding Generando, Converter={StaticResource NegarBool}}" />
                                             <ui:Button
                                                 Margin="8,0,0,0"
                                                 Command="{Binding DataContext.ViewModel.EscucharPruebaCommand, ElementName=Raiz}"
                                                 CommandParameter="{Binding}"
-                                                Content="Volver a escuchar"
+                                                Content="{l:T 'Volver a escuchar'}"
                                                 Visibility="{Binding UltimaPrueba, Converter={StaticResource NoNuloAVisibilidad}}" />
                                             <ui:ProgressRing
                                                 Width="18"
@@ -323,13 +324,13 @@
                                             IsOpen="{Binding ErrorPrueba, Converter={StaticResource TextoNoVacio}}"
                                             Message="{Binding ErrorPrueba}"
                                             Severity="Error"
-                                            Title="No se ha podido generar" />
+                                            Title="{l:T 'No se ha podido generar'}" />
                                     </StackPanel>
                                 </Border>
 
                                 <!--  Variantes: la misma voz susurrando, asustada…  -->
                                 <StackPanel Margin="0,12,0,0" Visibility="{Binding TieneVariantes, Converter={StaticResource BoolAVisibilidad}}">
-                                    <TextBlock FontWeight="SemiBold" Text="Variantes" />
+                                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Variantes'}" />
                                     <ItemsControl Margin="0,4,0,0" ItemsSource="{Binding Variantes}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate DataType="{x:Type vm:FilaVariante}">
@@ -350,7 +351,7 @@
                                                             Appearance="Transparent"
                                                             Command="{Binding DataContext.ViewModel.EscucharVarianteCommand, ElementName=Raiz}"
                                                             CommandParameter="{Binding}"
-                                                            ToolTip="Escuchar la grabación de esta variante">
+                                                            ToolTip="{l:T 'Escuchar la grabación de esta variante'}">
                                                             <ui:Button.Icon>
                                                                 <ui:SymbolIcon Symbol="Play24" />
                                                             </ui:Button.Icon>
@@ -359,7 +360,7 @@
                                                             Appearance="Transparent"
                                                             Command="{Binding DataContext.ViewModel.BorrarVarianteCommand, ElementName=Raiz}"
                                                             CommandParameter="{Binding}"
-                                                            ToolTip="Borrar esta variante">
+                                                            ToolTip="{l:T 'Borrar esta variante'}">
                                                             <ui:Button.Icon>
                                                                 <ui:SymbolIcon Symbol="Delete24" />
                                                             </ui:Button.Icon>
@@ -381,10 +382,10 @@
                                     <StackPanel>
                                         <TextBlock
                                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                            Text="Una variante es la misma voz con otra forma de hablar. En el guion de Narrar se usa con su etiqueta, por ejemplo [whispers] o [asustado], y dura hasta el final de la línea o hasta [normal]."
+                                            Text="{l:T 'Una variante es la misma voz con otra forma de hablar. En el guion de Narrar se usa con su etiqueta, por ejemplo [whispers] o [asustado], y dura hasta el final de la línea o hasta [normal].'}"
                                             TextWrapping="Wrap" />
                                         <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
-                                            <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Text="Tipo:" />
+                                            <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Text="{l:T 'Tipo:'}" />
                                             <ComboBox
                                                 MinWidth="180"
                                                 DisplayMemberPath="Nombre"
@@ -395,20 +396,20 @@
                                         <!--  Generar (solo voces diseñadas)  -->
                                         <StackPanel Margin="0,12,0,0" Visibility="{Binding PuedeGenerarVariante, Converter={StaticResource BoolAVisibilidad}}">
                                             <TextBlock
-                                                Text="Esta voz es diseñada: Calíope puede generar la variante con su misma descripción y semilla (necesita el modelo VoiceDesign)."
+                                                Text="{l:T 'Esta voz es diseñada: Calíope puede generar la variante con su misma descripción y semilla (necesita el modelo VoiceDesign).'}"
                                                 TextWrapping="Wrap" />
                                             <ui:Button
                                                 Margin="0,8,0,0"
                                                 Appearance="Primary"
                                                 Command="{Binding DataContext.ViewModel.GenerarVarianteCommand, ElementName=Raiz}"
                                                 CommandParameter="{Binding}"
-                                                Content="Generar con VoiceDesign"
+                                                Content="{l:T 'Generar con VoiceDesign'}"
                                                 IsEnabled="{Binding TrabajandoVariante, Converter={StaticResource NegarBool}}">
                                                 <ui:Button.Icon>
                                                     <ui:SymbolIcon Symbol="Sparkle24" />
                                                 </ui:Button.Icon>
                                             </ui:Button>
-                                            <TextBlock Margin="0,12,0,0" Text="O añádela desde una grabación:" />
+                                            <TextBlock Margin="0,12,0,0" Text="{l:T 'O añádela desde una grabación:'}" />
                                         </StackPanel>
 
                                         <!--  Desde una grabación  -->
@@ -417,34 +418,34 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <ui:TextBox PlaceholderText="Grabación de la misma persona hablando así (5–20 s)" Text="{Binding ArchivoVariante, UpdateSourceTrigger=PropertyChanged}" />
+                                            <ui:TextBox PlaceholderText="{l:T 'Grabación de la misma persona hablando así (5–20 s)'}" Text="{Binding ArchivoVariante, UpdateSourceTrigger=PropertyChanged}" />
                                             <ui:Button
                                                 Grid.Column="1"
                                                 Margin="8,0,0,0"
                                                 Command="{Binding DataContext.ViewModel.ExaminarVarianteCommand, ElementName=Raiz}"
                                                 CommandParameter="{Binding}"
-                                                Content="Examinar…" />
+                                                Content="{l:T 'Examinar…'}" />
                                         </Grid>
                                         <ui:TextBox
                                             Margin="0,8,0,0"
                                             AcceptsReturn="True"
                                             IsEnabled="{Binding SinTranscripcionVariante, Converter={StaticResource NegarBool}}"
                                             MinHeight="50"
-                                            PlaceholderText="Transcripción exacta de la grabación"
+                                            PlaceholderText="{l:T 'Transcripción exacta de la grabación'}"
                                             Text="{Binding TranscripcionVariante, UpdateSourceTrigger=PropertyChanged}"
                                             TextWrapping="Wrap" />
-                                        <CheckBox Margin="0,6,0,0" Content="No tengo la transcripción (se imita solo el timbre)" IsChecked="{Binding SinTranscripcionVariante}" />
+                                        <CheckBox Margin="0,6,0,0" Content="{l:T 'No tengo la transcripción (se imita solo el timbre)'}" IsChecked="{Binding SinTranscripcionVariante}" />
                                         <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
                                             <ui:Button
                                                 Command="{Binding DataContext.ViewModel.ImportarVarianteCommand, ElementName=Raiz}"
                                                 CommandParameter="{Binding}"
-                                                Content="Añadir desde la grabación"
+                                                Content="{l:T 'Añadir desde la grabación'}"
                                                 IsEnabled="{Binding TrabajandoVariante, Converter={StaticResource NegarBool}}" />
                                             <ui:Button
                                                 Margin="8,0,0,0"
                                                 Command="{Binding DataContext.ViewModel.AlternarVarianteCommand, ElementName=Raiz}"
                                                 CommandParameter="{Binding}"
-                                                Content="Cancelar" />
+                                                Content="{l:T 'Cancelar'}" />
                                             <ui:ProgressRing
                                                 Width="18"
                                                 Height="18"
@@ -458,7 +459,7 @@
                                             IsOpen="{Binding ErrorVariante, Converter={StaticResource TextoNoVacio}}"
                                             Message="{Binding ErrorVariante}"
                                             Severity="Warning"
-                                            Title="No se ha podido añadir" />
+                                            Title="{l:T 'No se ha podido añadir'}" />
                                     </StackPanel>
                                 </Border>
 
@@ -468,34 +469,34 @@
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.PredeterminadaCommand, ElementName=Raiz}"
                                         CommandParameter="{Binding}"
-                                        Content="Usar por defecto"
+                                        Content="{l:T 'Usar por defecto'}"
                                         Visibility="{Binding EsPredeterminada, Converter={StaticResource BoolInversoAVisibilidad}}" />
                                     <ui:Button
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.EditarNombreCommand, ElementName=Raiz}"
                                         CommandParameter="{Binding}"
-                                        Content="Renombrar" />
+                                        Content="{l:T 'Renombrar'}" />
                                     <ui:Button
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.EditarTranscripcionCommand, ElementName=Raiz}"
                                         CommandParameter="{Binding}"
-                                        Content="Editar transcripción" />
+                                        Content="{l:T 'Editar transcripción'}" />
                                     <ui:Button
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.ExportarCommand, ElementName=Raiz}"
                                         CommandParameter="{Binding}"
-                                        Content="Exportar…"
-                                        ToolTip="Guarda la voz y sus variantes en un .zip para llevarla a otro equipo o compartirla" />
+                                        Content="{l:T 'Exportar…'}"
+                                        ToolTip="{l:T 'Guarda la voz y sus variantes en un .zip para llevarla a otro equipo o compartirla'}" />
                                     <ui:Button
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.AlternarVarianteCommand, ElementName=Raiz}"
                                         CommandParameter="{Binding}"
-                                        Content="Añadir variante" />
+                                        Content="{l:T 'Añadir variante'}" />
                                     <ui:Button
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.BorrarCommand, ElementName=Raiz}"
                                         CommandParameter="{Binding}"
-                                        Content="Borrar">
+                                        Content="{l:T 'Borrar'}">
                                         <ui:Button.Icon>
                                             <ui:SymbolIcon Symbol="Delete24" />
                                         </ui:Button.Icon>

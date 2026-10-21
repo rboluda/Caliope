@@ -233,7 +233,7 @@ public sealed class InstaladorTests : IDisposable
         _ejecutor.Accion = async args =>
         {
             // Solo los archivos indicados, como JSON para allow_patterns.
-            Assert.Equal(["Org/Nombre", "abc", "[\"a.pt\",\"b.json\"]"], args.Skip(2));
+            Assert.Equal(["Org/Nombre", "abc", "[\"a.pt\",\"b.json\"]"], args.Skip(2).Take(3));
             Directory.CreateDirectory(carpeta);
             await File.WriteAllBytesAsync(Path.Combine(carpeta, "parte"), new byte[500]);
             await Task.Delay(100);

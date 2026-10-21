@@ -19,7 +19,8 @@ public sealed record AjustesApp(
     bool AsistenteCompletado = false,
     string? VozPredeterminada = null,
     bool BuscarActualizaciones = true,
-    DateTimeOffset? UltimaComprobacion = null);
+    DateTimeOffset? UltimaComprobacion = null,
+    string? Idioma = null);
 
 /// <summary>Preferencias del usuario, en %LOCALAPPDATA%\Caliope\ajustes.json (fuera de la carpeta de datos, que puede cambiar).</summary>
 public sealed class ServicioAjustes

@@ -1,4 +1,5 @@
 using System.Globalization;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Audio;
 
@@ -29,7 +30,6 @@ public static class AnalisisGrabacion
     private const double Ventana = 0.02, Margen = 0.15;
     public const double IdealMinima = 8, IdealMaxima = 25;
 
-    private static readonly CultureInfo Es = CultureInfo.GetCultureInfo("es-ES");
 
     public static InformeGrabacion Analizar(Pcm audio)
     {
@@ -38,7 +38,7 @@ public static class AnalisisGrabacion
         var ventanas = m.Length / n;
         var avisos = new List<string>();
         if (ventanas == 0)
-            return new InformeGrabacion(audio.Segundos, 0, 0, -120, -120, 0, ["La grabación está vacía."]);
+            return new InformeGrabacion(audio.Segundos, 0, 0, -120, -120, 0, [T("La grabación está vacía.")]);
 
         var niveles = new double[ventanas];
         for (var v = 0; v < ventanas; v++)
@@ -69,26 +69,26 @@ public static class AnalisisGrabacion
         }
 
         if (primera < 0)
-            avisos.Add("No se oye voz: comprueba el micrófono o elige otro audio.");
+            avisos.Add(T("No se oye voz: comprueba el micrófono o elige otro audio."));
         if (saturadas > 0.1)
-            avisos.Add("La grabación satura (se distorsiona en los momentos fuertes). Baja el volumen del micrófono o aléjate un poco.");
+            avisos.Add(T("La grabación satura (se distorsiona en los momentos fuertes). Baja el volumen del micrófono o aléjate un poco."));
         else if (pico < -20 && primera >= 0)
-            avisos.Add("La grabación está muy baja. Acércate al micrófono o sube su volumen.");
+            avisos.Add(T("La grabación está muy baja. Acércate al micrófono o sube su volumen."));
         if (fondoMedible && ruido > -45 && primera >= 0)
-            avisos.Add($"Hay ruido de fondo (unos {ruido.ToString("0", Es)} dB). Graba en un sitio más silencioso para que la voz salga limpia.");
+            avisos.Add(T("Hay ruido de fondo (unos {0:0} dB). Graba en un sitio más silencioso para que la voz salga limpia.", ruido));
 
         var voz = fin - inicio;
         if (primera >= 0 && voz < 3)
-            avisos.Add("Hay muy poca voz: hacen falta al menos 3 segundos (lo ideal, 10–20).");
+            avisos.Add(T("Hay muy poca voz: hacen falta al menos 3 segundos (lo ideal, 10–20)."));
         else if (primera >= 0 && voz < IdealMinima)
-            avisos.Add($"Hay {Segundos(voz)} de voz. Funciona, pero con 10–20 s el parecido es mejor.");
+            avisos.Add(T("Hay {0} de voz. Funciona, pero con 10–20 s el parecido es mejor.", Segundos(voz)));
         else if (voz > IdealMaxima)
-            avisos.Add($"Hay {Segundos(voz)} de voz: selecciona un tramo de 10–20 s con buena calidad.");
+            avisos.Add(T("Hay {0} de voz: selecciona un tramo de 10–20 s con buena calidad.", Segundos(voz)));
 
         return new InformeGrabacion(audio.Segundos, inicio, fin, pico, ruido, saturadas, avisos);
     }
 
     private static double Db(double amplitud) => 20 * Math.Log10(amplitud + 1e-9);
 
-    private static string Segundos(double s) => $"{s.ToString("0.#", Es)} s";
+    private static string Segundos(double s) => $"{s.ToString("0.#", Idioma.Cultura)} s";
 }

@@ -1,6 +1,7 @@
 using Constantino.Core;
 using Constantino.Core.Recomendaciones;
 using Wpf.Ui.Controls;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
@@ -11,10 +12,10 @@ public static class Presentacion
 
     public static string Etiqueta(NivelRecomendacion nivel) => nivel switch
     {
-        NivelRecomendacion.Imprescindible => "Imprescindible",
-        NivelRecomendacion.Recomendado => "Recomendado",
-        NivelRecomendacion.Opcional => "Opcional",
-        _ => "No recomendado",
+        NivelRecomendacion.Imprescindible => T("Imprescindible"),
+        NivelRecomendacion.Recomendado => T("Recomendado"),
+        NivelRecomendacion.Opcional => T("Opcional"),
+        _ => T("No recomendado"),
     };
 
     public static ControlAppearance Apariencia(NivelRecomendacion nivel) => nivel switch

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Constantino.Core.Instalaciones;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Voces;
 
@@ -76,20 +77,20 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
         var nombre = s.Nombre.Trim();
         var transcripcion = s.SinTranscripcion ? "" : NormalizarTexto(s.Transcripcion);
         if (nombre.Length == 0)
-            throw new VozInvalidaException("Ponle un nombre a la voz.");
+            throw new VozInvalidaException(T("Ponle un nombre a la voz."));
         if (!File.Exists(s.Archivo))
-            throw new VozInvalidaException("No se encuentra el archivo de audio.");
+            throw new VozInvalidaException(T("No se encuentra el archivo de audio."));
         if (!s.SinTranscripcion && transcripcion.Length < LongitudMinimaTranscripcion)
         {
             throw new VozInvalidaException(
-                "Escribe la transcripción exacta de lo que se dice en la grabación, o marca «No tengo la transcripción».");
+                T("Escribe la transcripción exacta de lo que se dice en la grabación, o marca «No tengo la transcripción»."));
         }
         if (!Idiomas.Existe(s.Idioma))
-            throw new VozInvalidaException($"Idioma no admitido: {s.Idioma}.");
+            throw new VozInvalidaException(T("Idioma no admitido: {0}.", s.Idioma));
         if (!s.Consentimiento)
-            throw new VozInvalidaException("Confirma que la voz es tuya o que tienes permiso de su dueño para usarla.");
+            throw new VozInvalidaException(T("Confirma que la voz es tuya o que tienes permiso de su dueño para usarla."));
         if (!File.Exists(ffmpeg))
-            throw new VozInvalidaException("Faltan las herramientas básicas: instálalas desde Componentes.");
+            throw new VozInvalidaException(T("Faltan las herramientas básicas: instálalas desde Componentes."));
 
         var id = IdLibre(nombre);
         var destino = CarpetaDe(id);
@@ -146,17 +147,17 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
         string transcripcion, bool sinTranscripcion, string? descripcion = null, CancellationToken ct = default)
     {
         if (Leer(vozId) is null)
-            throw new VozInvalidaException("La voz ya no existe.");
+            throw new VozInvalidaException(T("La voz ya no existe."));
         var id = Textos.Slug(varianteId, "");
         if (id.Length == 0)
-            throw new VozInvalidaException("La variante necesita un nombre corto (será su etiqueta en el guion).");
+            throw new VozInvalidaException(T("La variante necesita un nombre corto (será su etiqueta en el guion)."));
         if (!File.Exists(archivo))
-            throw new VozInvalidaException("No se encuentra el archivo de audio.");
+            throw new VozInvalidaException(T("No se encuentra el archivo de audio."));
         var texto = sinTranscripcion ? "" : NormalizarTexto(transcripcion);
         if (!sinTranscripcion && texto.Length < LongitudMinimaTranscripcion)
-            throw new VozInvalidaException("Escribe la transcripción exacta de la grabación de la variante, o marca «No tengo la transcripción».");
+            throw new VozInvalidaException(T("Escribe la transcripción exacta de la grabación de la variante, o marca «No tengo la transcripción»."));
         if (!File.Exists(ffmpeg))
-            throw new VozInvalidaException("Faltan las herramientas básicas: instálalas desde Componentes.");
+            throw new VozInvalidaException(T("Faltan las herramientas básicas: instálalas desde Componentes."));
 
         var destino = Path.Combine(CarpetaDe(vozId), CarpetaVariantes, id);
         var temporal = destino + ".nueva";
@@ -198,13 +199,13 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
             ["-hide_banner", "-nostdin", "-y", "-i", origen, "-vn", "-ac", "1", "-ar", "24000", "-sample_fmt", "s16", referencia],
             new Dictionary<string, string>(), _ => { }, ct).ConfigureAwait(false);
         if (r.CodigoSalida != 0 || !File.Exists(referencia))
-            throw new VozInvalidaException("No se ha podido leer el audio. Prueba con un WAV o un MP3.");
+            throw new VozInvalidaException(T("No se ha podido leer el audio. Prueba con un WAV o un MP3."));
 
         var duracion = DuracionWav(referencia);
         if (duracion is < DuracionMinima or > DuracionMaxima)
         {
             throw new VozInvalidaException(
-                $"La grabación dura {Segundos(duracion)}; tiene que durar entre {DuracionMinima:0} y {DuracionMaxima:0} s (lo ideal, {IdealMinima:0}–{IdealMaxima:0} s).");
+                T("La grabación dura {0}; tiene que durar entre {1:0} y {2:0} s (lo ideal, {3:0}–{4:0} s).", Segundos(duracion), DuracionMinima, DuracionMaxima, IdealMinima, IdealMaxima));
         }
         if (!sinTranscripcion)
             ComprobarTranscripcion(transcripcion, duracion);
@@ -212,15 +213,15 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
     }
 
     private static string? AvisoDuracion(double duracion) => duracion is < IdealMinima or > IdealMaxima
-        ? $"La grabación dura {Segundos(duracion)}. Funciona, pero el resultado suele ser mejor con {IdealMinima:0}–{IdealMaxima:0} s."
+        ? T("La grabación dura {0}. Funciona, pero el resultado suele ser mejor con {1:0}–{2:0} s.", Segundos(duracion), IdealMinima, IdealMaxima)
         : null;
 
     /// <summary>Cambia el nombre visible; la carpeta (id) se mantiene para no romper proyectos que la usen.</summary>
     public Voz Renombrar(string id, string nombre)
     {
-        var voz = Leer(id) ?? throw new VozInvalidaException("La voz ya no existe.");
+        var voz = Leer(id) ?? throw new VozInvalidaException(T("La voz ya no existe."));
         if (string.IsNullOrWhiteSpace(nombre))
-            throw new VozInvalidaException("El nombre no puede quedar vacío.");
+            throw new VozInvalidaException(T("El nombre no puede quedar vacío."));
         var nueva = voz with { Nombre = nombre.Trim() };
         Escribir(nueva);
         return nueva;
@@ -229,7 +230,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
     /// <summary>Corrige la transcripción. Vacía, la voz pasa a imitar solo el timbre.</summary>
     public Voz CambiarTranscripcion(string id, string transcripcion)
     {
-        var voz = Leer(id) ?? throw new VozInvalidaException("La voz ya no existe.");
+        var voz = Leer(id) ?? throw new VozInvalidaException(T("La voz ya no existe."));
         var texto = NormalizarTexto(transcripcion);
         if (texto.Length > 0)
             ComprobarTranscripcion(texto, voz.DuracionSegundos);
@@ -256,14 +257,14 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
         if (letras < LongitudMinimaTranscripcion || letras < duracion * LetrasPorSegundoMinimas)
         {
             throw new VozInvalidaException(
-                $"La transcripción no parece corresponder con la grabación: en {Segundos(duracion)} de habla suele haber unas " +
-                $"{duracion * LetrasPorSegundoHabituales:0} letras y has escrito {letras}. Escribe todo lo que se dice, palabra por palabra, " +
-                "o marca «No tengo la transcripción».");
+                T("La transcripción no parece corresponder con la grabación: en {0} de habla suele haber unas {1:0} letras y has escrito {2}. " +
+                  "Escribe todo lo que se dice, palabra por palabra, o marca «No tengo la transcripción».",
+                  Segundos(duracion), duracion * LetrasPorSegundoHabituales, letras));
         }
         if (letras > duracion * LetrasPorSegundoMaximas)
         {
             throw new VozInvalidaException(
-                $"La transcripción es demasiado larga para una grabación de {Segundos(duracion)} ({letras} letras): ¿seguro que es la de este audio?");
+                T("La transcripción es demasiado larga para una grabación de {0} ({1} letras): ¿seguro que es la de este audio?", Segundos(duracion), letras));
         }
     }
 
@@ -277,10 +278,10 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
     {
         using var lector = new BinaryReader(File.OpenRead(ruta));
         if (Encoding.ASCII.GetString(lector.ReadBytes(4)) != "RIFF")
-            throw new VozInvalidaException("El archivo de referencia no es un WAV válido.");
+            throw new VozInvalidaException(T("El archivo de referencia no es un WAV válido."));
         lector.ReadUInt32();
         if (Encoding.ASCII.GetString(lector.ReadBytes(4)) != "WAVE")
-            throw new VozInvalidaException("El archivo de referencia no es un WAV válido.");
+            throw new VozInvalidaException(T("El archivo de referencia no es un WAV válido."));
         int? bytesPorSegundo = null;
         while (lector.BaseStream.Position + 8 <= lector.BaseStream.Length)
         {
@@ -305,7 +306,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
                 lector.BaseStream.Seek(tamano + (tamano & 1), SeekOrigin.Current);
             }
         }
-        throw new VozInvalidaException("El archivo de referencia no tiene audio.");
+        throw new VozInvalidaException(T("El archivo de referencia no tiene audio."));
     }
 
     // --- Paquetes de voz: exportar e importar ---------------------------------------------------
@@ -314,7 +315,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
     public void Exportar(string id, string destinoZip)
     {
         if (Obtener(id) is null)
-            throw new VozInvalidaException("Esa voz ya no está en tu biblioteca.");
+            throw new VozInvalidaException(T("Esa voz ya no está en tu biblioteca."));
         var temporal = destinoZip + ".tmp";
         if (File.Exists(temporal))
             File.Delete(temporal);
@@ -329,7 +330,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
     public Voz ImportarPaquete(string zip, bool consentimiento)
     {
         if (!consentimiento)
-            throw new VozInvalidaException("Confirma que la voz es tuya o que tienes permiso de su dueño para usarla.");
+            throw new VozInvalidaException(T("Confirma que la voz es tuya o que tienes permiso de su dueño para usarla."));
         ZipArchive archivo;
         try
         {
@@ -337,12 +338,12 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
         }
         catch (InvalidDataException)
         {
-            throw new VozInvalidaException("Este archivo no es una voz de Calíope (no es un .zip válido).");
+            throw new VozInvalidaException(T("Este archivo no es una voz de Calíope (no es un .zip válido)."));
         }
         using (archivo)
         {
             if (archivo.GetEntry(ArchivoFicha) is not { } ficha || archivo.GetEntry(ArchivoReferencia) is null)
-                throw new VozInvalidaException("Este archivo no es una voz de Calíope: le falta la grabación o su ficha.");
+                throw new VozInvalidaException(T("Este archivo no es una voz de Calíope: le falta la grabación o su ficha."));
             Voz? voz;
             using (var lector = new StreamReader(ficha.Open()))
             {
@@ -350,11 +351,11 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
                 catch (JsonException) { voz = null; }
             }
             if (voz is null || string.IsNullOrWhiteSpace(voz.Nombre))
-                throw new VozInvalidaException("La ficha de la voz está dañada.");
+                throw new VozInvalidaException(T("La ficha de la voz está dañada."));
 
             Directory.CreateDirectory(carpeta);
             var nombre = Listar().Any(v => string.Equals(v.Nombre, voz.Nombre, StringComparison.CurrentCultureIgnoreCase))
-                ? $"{voz.Nombre} (importada)"
+                ? T("{0} (importada)", voz.Nombre)
                 : voz.Nombre;
             var id = IdLibre(nombre);
             var temporal = Path.Combine(carpeta, id + ".importando");
@@ -368,7 +369,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
                     // Nada puede escribirse fuera de la carpeta de la voz («..\» en el zip).
                     var destino = Path.GetFullPath(Path.Combine(temporal, entrada.FullName));
                     if (!destino.StartsWith(raizTemporal, StringComparison.OrdinalIgnoreCase))
-                        throw new VozInvalidaException("Este archivo no es una voz de Calíope válida.");
+                        throw new VozInvalidaException(T("Este archivo no es una voz de Calíope válida."));
                     Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
                     entrada.ExtractToFile(destino, overwrite: true);
                 }
@@ -422,5 +423,5 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
 
     private static string NormalizarTexto(string texto) => string.Join(' ', texto.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
-    private static string Segundos(double s) => $"{s.ToString("0.#", CultureInfo.GetCultureInfo("es-ES"))} s";
+    private static string Segundos(double s) => $"{s.ToString("0.#", Idioma.Cultura)} s";
 }

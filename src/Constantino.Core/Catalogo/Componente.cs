@@ -13,7 +13,8 @@ public sealed record TamanoDescarga(double ConGpuGb, double SinGpuGb)
     public double Para(bool conGpu) => conGpu ? ConGpuGb : SinGpuGb;
 }
 
-public sealed record Requisitos(double? VramMinimaGb = null, double? VramRecomendadaGb = null, bool FuncionaEnCpu = true);
+/// <param name="SinRtx50">No funciona con las tarjetas RTX 50 (su PyTorch es anterior a esa generación).</param>
+public sealed record Requisitos(double? VramMinimaGb = null, double? VramRecomendadaGb = null, bool FuncionaEnCpu = true, bool SinRtx50 = false);
 
 public sealed record Licencia(string Nombre, string Url);
 

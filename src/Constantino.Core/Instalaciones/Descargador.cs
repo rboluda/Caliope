@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Instalaciones;
 
@@ -88,7 +89,7 @@ public sealed class Descargador(HttpClient http, int intentos = 5, TimeSpan? esp
         {
             File.Delete(parcial);
             throw new DescargaCorruptaException(
-                $"El archivo descargado de {url} no coincide con el esperado (SHA-256 {hash}). Se ha borrado; vuelve a intentarlo.");
+                T("El archivo descargado de {0} no coincide con el esperado (SHA-256 {1}). Se ha borrado; vuelve a intentarlo.", url, hash));
         }
         File.Move(parcial, destino, overwrite: true);
     }

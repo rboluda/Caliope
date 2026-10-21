@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using Constantino.Core.Catalogo;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Instalaciones;
 
@@ -65,7 +66,7 @@ public sealed class Instalador
                 if (plan.Contains(dep))
                     continue;
                 if (!dep.SePuedeInstalar)
-                    throw new InvalidOperationException($"«{dep.Nombre}» todavía no se puede instalar con esta versión.");
+                    throw new InvalidOperationException(T("«{0}» todavía no se puede instalar con esta versión.", dep.Nombre));
                 var pedido = dep.Id == id;
                 if (EstadoDe(dep.Id) != EstadoComponente.Instalado || (pedido && forzar))
                     plan.Add(dep);
@@ -115,7 +116,7 @@ public sealed class Instalador
         if (dependientes.Count > 0)
         {
             throw new ComponenteEnUsoException(
-                $"Antes hay que desinstalar lo que depende de «{c.Nombre}»: {string.Join(", ", dependientes.Select(d => d.Nombre))}.");
+                T("Antes hay que desinstalar lo que depende de «{0}»: {1}.", c.Nombre, string.Join(", ", dependientes.Select(d => d.Nombre))));
         }
         Registrar($"=== Desinstalando {id}");
         foreach (var ruta in inst.Rutas.Select(_rutas.Ruta))
@@ -130,7 +131,7 @@ public sealed class Instalador
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
                 throw new ComponenteEnUsoException(
-                    $"No se ha podido borrar {ruta}. Cierra los programas que lo estén usando y vuelve a intentarlo. ({e.Message})");
+                    T("No se ha podido borrar {0}. Cierra los programas que lo estén usando y vuelve a intentarlo. ({1})", ruta, e.Message));
             }
         }
         Estado.Quitar(id);
@@ -140,7 +141,7 @@ public sealed class Instalador
     {
         var inst = c.Instalacion!;
         var total = inst.Pasos.Count;
-        progreso.Report(new EventoInstalacion(TipoEvento.InicioComponente, c.Id, $"Instalando {c.Nombre}", TotalPasos: total));
+        progreso.Report(new EventoInstalacion(TipoEvento.InicioComponente, c.Id, T("Instalando {0}", c.Nombre), TotalPasos: total));
 
         for (var i = 0; i < total; i++)
         {
@@ -182,11 +183,11 @@ public sealed class Instalador
         var faltan = inst.Comprobar.Select(_rutas.Ruta).Where(r => !File.Exists(r) && !Directory.Exists(r)).ToList();
         if (faltan.Count > 0)
         {
-            throw new InstalacionFallidaException(c.Id, "Comprobación final",
-                $"La instalación de «{c.Nombre}» terminó, pero faltan archivos: {string.Join(", ", faltan)}");
+            throw new InstalacionFallidaException(c.Id, T("Comprobación final"),
+                T("La instalación de «{0}» terminó, pero faltan archivos: {1}", c.Nombre, string.Join(", ", faltan)));
         }
         Estado.Registrar(c.Id, new RegistroInstalacion(inst.Version, DateTimeOffset.Now, _rutas.Variables["dispositivo"]));
-        progreso.Report(new EventoInstalacion(TipoEvento.ComponenteCompletado, c.Id, $"{c.Nombre} instalado", 1, total, total));
+        progreso.Report(new EventoInstalacion(TipoEvento.ComponenteCompletado, c.Id, T("{0} instalado", c.Nombre), 1, total, total));
     }
 
     private async Task DescargarAsync(PasoDescargar d, Action<double?, string> avance, CancellationToken ct)
@@ -230,7 +231,7 @@ public sealed class Instalador
                 var ruta = Path.GetFullPath(Path.Combine(destino, relativa));
                 // Protección contra rutas maliciosas en el zip («../»).
                 if (!ruta.StartsWith(raizDestino, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidDataException($"El archivo comprimido contiene una ruta no válida: {entrada.FullName}");
+                    throw new InvalidDataException(T("El archivo comprimido contiene una ruta no válida: {0}", entrada.FullName));
                 Directory.CreateDirectory(Path.GetDirectoryName(ruta)!);
                 entrada.ExtractToFile(ruta, overwrite: true);
                 avance((double)++hechas / entradas.Count, $"{x.Descripcion} · {relativa}");
@@ -239,7 +240,7 @@ public sealed class Instalador
             {
                 var falta = incluir.Where(r => !File.Exists(Path.Combine(destino, r))).ToList();
                 if (falta.Count > 0)
-                    throw new InvalidDataException($"No están en el archivo comprimido: {string.Join(", ", falta)}");
+                    throw new InvalidDataException(T("No están en el archivo comprimido: {0}", string.Join(", ", falta)));
             }
         }
         if (x.BorrarArchivo)
@@ -308,11 +309,11 @@ public sealed class Instalador
         {
             var explicacion = esperado.Contains("{dispositivo}", StringComparison.Ordinal)
                 ? DiagnosticoErrores.Explicar(r.Salida)
-                : $"no se obtuvo el resultado esperado («{_rutas.Expandir(esperado)}»).";
+                : T("no se obtuvo el resultado esperado («{0}»).", _rutas.Expandir(esperado));
             throw new InstalacionFallidaException(c.Id, e.Descripcion, $"{e.Descripcion}: {explicacion}", UltimasLineas(r.Salida));
         }
         if (medicion is not null)
-            avance(1, $"{e.Descripcion} · completado");
+            avance(1, T("{0} · completado", e.Descripcion));
     }
 
     /// <summary>Informa del avance cada cierto tiempo midiendo bytes, hasta que se cancela <paramref name="ct"/>.</summary>
@@ -352,12 +353,12 @@ public sealed class Instalador
                     if intento == INTENTOS:
                         raise
                     print(f"{type(e).__name__}: {e}", flush=True)
-                    print(f"AVISO: se cortó la conexión; reintentando ({intento + 1} de {INTENTOS})", flush=True)
+                    print("AVISO: " + sys.argv[4].format(intento + 1, INTENTOS), flush=True)
                     time.sleep(min(30, 2 ** intento))
             print("descargado=" + ruta, flush=True)
             """;
         var archivos = m.Archivos is { Count: > 0 } a ? JsonSerializer.Serialize(a) : "null";
-        var paso = new PasoEjecutar(m.Descripcion, m.Python, ["-c", script, m.Repositorio, m.Revision, archivos], "descargado=");
+        var paso = new PasoEjecutar(m.Descripcion, m.Python, ["-c", script, m.Repositorio, m.Revision, archivos, T("se cortó la conexión; reintentando ({0} de {1})")], "descargado=");
         // huggingface_hub no informa del avance de forma fiable: se mide lo que ocupa la carpeta del modelo
         // (en total, no lo que crece: si se reanuda una descarga, lo ya bajado cuenta).
         await EjecutarAsync(c, paso, avance, linea, ct, new Medicion(() => TamanoCarpeta(carpeta), m.TamanoBytes, Aproximado: false),

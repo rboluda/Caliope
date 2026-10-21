@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Instalaciones;
 
@@ -9,7 +10,6 @@ namespace Constantino.Core.Instalaciones;
 /// </summary>
 public sealed class Medidor
 {
-    private static readonly CultureInfo Es = CultureInfo.GetCultureInfo("es-ES");
     private static readonly TimeSpan Ventana = TimeSpan.FromSeconds(10);
 
     private readonly Queue<(TimeSpan Momento, long Bytes)> _muestras = new();
@@ -38,7 +38,7 @@ public sealed class Medidor
     public string Texto(string descripcion, long bytes, long? total, bool aproximado = false)
     {
         var partes = new List<string> { descripcion };
-        partes.Add(total is { } t and > 0 ? $"{Tamano(bytes)} de {(aproximado ? "~" : "")}{Tamano(t)}" : Tamano(bytes));
+        partes.Add(total is { } t and > 0 ? T("{0} de {1}", Tamano(bytes), (aproximado ? "~" : "") + Tamano(t)) : Tamano(bytes));
         if (BytesPorSegundo is { } v)
             partes.Add($"{Tamano((long)v)}/s");
         if (Restante is { } r)
@@ -48,16 +48,16 @@ public sealed class Medidor
 
     public static string Tamano(long bytes) => bytes switch
     {
-        >= 1L << 30 => $"{(bytes / (double)(1L << 30)).ToString("0.0", Es)} GB",
-        >= 1L << 20 => $"{(bytes / (double)(1L << 20)).ToString(bytes < 10L << 20 ? "0.0" : "0", Es)} MB",
+        >= 1L << 30 => $"{(bytes / (double)(1L << 30)).ToString("0.0", Idioma.Cultura)} GB",
+        >= 1L << 20 => $"{(bytes / (double)(1L << 20)).ToString(bytes < 10L << 20 ? "0.0" : "0", Idioma.Cultura)} MB",
         _ => $"{bytes / 1024} KB",
     };
 
     public static string TiempoRestante(TimeSpan r) => r.TotalSeconds switch
     {
-        < 10 => "casi listo",
-        < 60 => $"quedan ~{Math.Ceiling(r.TotalSeconds / 10) * 10:0} s",
-        < 3600 => $"quedan ~{Math.Ceiling(r.TotalMinutes):0} min",
-        _ => $"quedan ~{(int)r.TotalHours} h {r.Minutes} min",
+        < 10 => T("casi listo"),
+        < 60 => T("quedan ~{0:0} s", Math.Ceiling(r.TotalSeconds / 10) * 10),
+        < 3600 => T("quedan ~{0:0} min", Math.Ceiling(r.TotalMinutes)),
+        _ => T("quedan ~{0} h {1} min", (int)r.TotalHours, r.Minutes),
     };
 }

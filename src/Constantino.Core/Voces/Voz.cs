@@ -1,3 +1,5 @@
+using static Constantino.Core.Idioma;
+
 namespace Constantino.Core.Voces;
 
 public enum OrigenVoz
@@ -38,16 +40,16 @@ public static class Idiomas
 {
     public static IReadOnlyList<(string Clave, string Nombre)> Todos { get; } =
     [
-        ("Spanish", "Español"),
-        ("English", "Inglés"),
-        ("French", "Francés"),
-        ("German", "Alemán"),
-        ("Italian", "Italiano"),
-        ("Portuguese", "Portugués"),
-        ("Russian", "Ruso"),
-        ("Chinese", "Chino"),
-        ("Japanese", "Japonés"),
-        ("Korean", "Coreano"),
+        ("Spanish", T("Español")),
+        ("English", T("Inglés")),
+        ("French", T("Francés")),
+        ("German", T("Alemán")),
+        ("Italian", T("Italiano")),
+        ("Portuguese", T("Portugués")),
+        ("Russian", T("Ruso")),
+        ("Chinese", T("Chino")),
+        ("Japanese", T("Japonés")),
+        ("Korean", T("Coreano")),
     ];
 
     public static bool Existe(string clave) => Todos.Any(i => i.Clave == clave);

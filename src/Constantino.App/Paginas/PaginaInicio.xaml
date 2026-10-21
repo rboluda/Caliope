@@ -2,21 +2,22 @@
     x:Class="Constantino.App.Paginas.PaginaInicio"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     ScrollViewer.CanContentScroll="False"
-    Title="Inicio">
+    Title="{l:T 'Inicio'}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="32,24,32,32" MaxWidth="1040" HorizontalAlignment="Stretch">
-            <TextBlock FontSize="28" FontWeight="SemiBold" Text="Tu equipo" />
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Tu equipo'}" />
             <TextBlock
                 Margin="0,4,0,16"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="Calíope ha revisado tu ordenador para recomendarte qué instalar. No se ha cambiado nada."
+                Text="{l:T 'Calíope ha revisado tu ordenador para recomendarte qué instalar. No se ha cambiado nada.'}"
                 TextWrapping="Wrap" />
 
             <StackPanel Orientation="Horizontal" Visibility="{Binding ViewModel.Cargando, Converter={StaticResource BoolAVisibilidad}}">
                 <ui:ProgressRing Width="20" Height="20" IsIndeterminate="True" />
-                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="Analizando el equipo…" />
+                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{l:T 'Analizando el equipo…'}" />
             </StackPanel>
 
             <ItemsControl ItemsSource="{Binding ViewModel.Avisos}">
@@ -44,7 +45,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Desktop24" FontSize="20" />
-                            <TextBlock Margin="8,0,0,0" FontSize="16" FontWeight="SemiBold" Text="Sistema" />
+                            <TextBlock Margin="8,0,0,0" FontSize="16" FontWeight="SemiBold" Text="{l:T 'Sistema'}" />
                         </StackPanel>
                         <TextBlock Margin="0,12,0,0" Text="{Binding ViewModel.SistemaOperativo}" TextWrapping="Wrap" />
                         <TextBlock Margin="0,4,0,0" Text="{Binding ViewModel.Procesador}" TextWrapping="Wrap" />
@@ -56,14 +57,14 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Folder24" FontSize="20" />
-                            <TextBlock Margin="8,0,0,0" FontSize="16" FontWeight="SemiBold" Text="Carpeta de datos" />
+                            <TextBlock Margin="8,0,0,0" FontSize="16" FontWeight="SemiBold" Text="{l:T 'Carpeta de datos'}" />
                         </StackPanel>
                         <TextBlock Margin="0,12,0,0" Text="{Binding ViewModel.CarpetaDatos}" TextWrapping="Wrap" />
                         <TextBlock Margin="0,4,0,0" Text="{Binding ViewModel.EspacioDisco}" TextWrapping="Wrap" />
                         <TextBlock
                             Margin="0,4,0,0"
                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                            Text="Aquí irán las herramientas, los modelos y tus voces. Podrás cambiarla al instalar."
+                            Text="{l:T 'Aquí irán las herramientas, los modelos y tus voces. Podrás cambiarla al instalar.'}"
                             TextWrapping="Wrap" />
                     </StackPanel>
                 </ui:Card>
@@ -73,11 +74,11 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="DeveloperBoard24" FontSize="20" />
-                        <TextBlock Margin="8,0,0,0" FontSize="16" FontWeight="SemiBold" Text="Tarjeta gráfica" />
+                        <TextBlock Margin="8,0,0,0" FontSize="16" FontWeight="SemiBold" Text="{l:T 'Tarjeta gráfica'}" />
                     </StackPanel>
                     <TextBlock
                         Margin="0,12,0,0"
-                        Text="No se ha encontrado ninguna tarjeta gráfica."
+                        Text="{l:T 'No se ha encontrado ninguna tarjeta gráfica.'}"
                         Visibility="{Binding ViewModel.SinGpus, Converter={StaticResource BoolAVisibilidad}}" />
                     <ItemsControl ItemsSource="{Binding ViewModel.Gpus}">
                         <ItemsControl.ItemTemplate>
@@ -93,7 +94,7 @@
                                         Height="6"
                                         Margin="0,8,0,0"
                                         Maximum="100"
-                                        ToolTip="Memoria de la tarjeta en uso ahora mismo"
+                                        ToolTip="{l:T 'Memoria de la tarjeta en uso ahora mismo'}"
                                         Value="{Binding PorcentajeUso, Mode=OneWay}"
                                         Visibility="{Binding TieneMemoria, Converter={StaticResource BoolAVisibilidad}}" />
                                 </StackPanel>
@@ -107,7 +108,7 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="CheckmarkCircle24" FontSize="20" />
-                        <TextBlock Margin="8,0,0,0" FontSize="16" FontWeight="SemiBold" Text="Qué te recomendamos instalar" />
+                        <TextBlock Margin="8,0,0,0" FontSize="16" FontWeight="SemiBold" Text="{l:T 'Qué te recomendamos instalar'}" />
                     </StackPanel>
                     <TextBlock Margin="0,12,0,8" Text="{Binding ViewModel.ResumenDispositivo}" TextWrapping="Wrap" />
                     <ItemsControl ItemsSource="{Binding ViewModel.Propuesta}">
@@ -133,8 +134,8 @@
                     </ItemsControl>
                     <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="{Binding ViewModel.DescargaPropuesta}" />
                     <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
-                        <ui:Button Appearance="Primary" Command="{Binding ViewModel.IrAComponentesCommand}" Content="Ver todos los componentes" />
-                        <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.ReanalizarCommand}" Content="Volver a analizar" />
+                        <ui:Button Appearance="Primary" Command="{Binding ViewModel.IrAComponentesCommand}" Content="{l:T 'Ver todos los componentes'}" />
+                        <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.ReanalizarCommand}" Content="{l:T 'Volver a analizar'}" />
                     </StackPanel>
                 </StackPanel>
             </ui:Card>

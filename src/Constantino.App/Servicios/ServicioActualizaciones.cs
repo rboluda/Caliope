@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using Constantino.Core;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.Servicios;
 
@@ -15,10 +16,11 @@ public sealed class ServicioActualizaciones(ServicioAjustes ajustes)
     /// <summary>Como mucho una comprobación automática al día.</summary>
     private static readonly TimeSpan Intervalo = TimeSpan.FromHours(20);
 
-    private static readonly HttpClient Http = CrearHttp();
-
+    // Antes que Http: los campos estáticos se inicializan en orden y CrearHttp necesita la versión.
     public static Version VersionActual { get; } =
         Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0);
+
+    private static readonly HttpClient Http = CrearHttp();
 
     /// <summary>
     /// Solo una copia instalada con el instalador puede actualizarse sola (una compilada a mano no tiene desinstalador
@@ -49,7 +51,7 @@ public sealed class ServicioActualizaciones(ServicioAjustes ajustes)
     /// <summary>Descarga el instalador a una carpeta temporal y devuelve su ruta.</summary>
     public async Task<string> DescargarAsync(VersionPublicada version, IProgress<double> progreso, CancellationToken ct = default)
     {
-        var url = version.Instalador ?? throw new InvalidOperationException("Esta versión no trae instalador.");
+        var url = version.Instalador ?? throw new InvalidOperationException(T("Esta versión no trae instalador."));
         var carpeta = Path.Combine(Path.GetTempPath(), "Caliope-actualizacion");
         Directory.CreateDirectory(carpeta);
         var destino = Path.Combine(carpeta, Path.GetFileName(new Uri(url).LocalPath));

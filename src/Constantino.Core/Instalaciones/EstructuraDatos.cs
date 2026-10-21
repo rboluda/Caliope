@@ -1,4 +1,5 @@
 using System.Text;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Instalaciones;
 
@@ -151,7 +152,7 @@ public static class EstructuraDatos
         })!;
         p.WaitForExit();
         if (p.ExitCode != 0 || !Directory.Exists(enlace))
-            throw new IOException($"No se ha podido recrear el enlace {enlace}: {p.StandardError.ReadToEnd().Trim()}");
+            throw new IOException(T("No se ha podido recrear el enlace {0}: {1}", enlace, p.StandardError.ReadToEnd().Trim()));
     }
 
     /// <summary>
@@ -227,7 +228,7 @@ public static class EstructuraDatos
                 var error = p.StandardError.ReadToEnd();
                 p.WaitForExit();
                 if (p.ExitCode != 0)
-                    throw new IOException($"uv no ha podido crear el lanzador: {error.Trim()}");
+                    throw new IOException(T("uv no ha podido crear el lanzador: {0}", error.Trim()));
             }
             foreach (var entorno in rotos)
             {
@@ -263,29 +264,29 @@ public static class EstructuraDatos
     public static void EscribirLeeme(string raiz)
     {
         Directory.CreateDirectory(raiz);
+        // Cada párrafo se traduce entero; sus saltos de línea se sangran como el resto del texto.
+        static string Sangrar(string parrafo) => "    " + parrafo.Replace("\n", Environment.NewLine + "    ");
+        var titulo = T("CARPETA DE CALÍOPE");
         var texto = new StringBuilder()
-            .AppendLine("CARPETA DE CALÍOPE")
-            .AppendLine("==================")
+            .AppendLine(titulo)
+            .AppendLine(new string('=', titulo.Length))
             .AppendLine()
             .AppendLine($"{Narraciones}\\")
-            .AppendLine("    Tus proyectos de narración. Dentro de cada uno, la carpeta «Audio» tiene la narración")
-            .AppendLine("    completa y un archivo por bloque, listos para usar.")
+            .AppendLine(Sangrar(T("Tus proyectos de narración. Dentro de cada uno, la carpeta «Audio» tiene la narración\ncompleta y un archivo por bloque, listos para usar.")))
             .AppendLine()
             .AppendLine($"{Voces}\\")
-            .AppendLine("    Las voces de tu biblioteca: la grabación de cada una y sus variantes.")
+            .AppendLine(Sangrar(T("Las voces de tu biblioteca: la grabación de cada una y sus variantes.")))
             .AppendLine()
             .AppendLine($"{Sonidos}\\")
-            .AppendLine("    Efectos, ambientes y música para tus narraciones. Puedes añadir tus propios audios a cada carpeta.")
+            .AppendLine(Sangrar(T("Efectos, ambientes y música para tus narraciones. Puedes añadir tus propios audios a cada carpeta.")))
             .AppendLine()
             .AppendLine($"{Modelos}\\")
-            .AppendLine("    Los modelos que generan la voz. Es lo que más ocupa. Se instalan y se quitan desde")
-            .AppendLine("    Calíope → Componentes.")
+            .AppendLine(Sangrar(T("Los modelos que generan la voz. Es lo que más ocupa. Se instalan y se quitan desde\nCalíope → Componentes.")))
             .AppendLine()
             .AppendLine($"{Interno}\\")
-            .AppendLine("    Los motores y herramientas que usa Calíope por dentro. No borres ni muevas nada de aquí:")
-            .AppendLine("    si algo falla, usa «Reparar» en Calíope → Componentes.")
+            .AppendLine(Sangrar(T("Los motores y herramientas que usa Calíope por dentro. No borres ni muevas nada de aquí:\nsi algo falla, usa «Reparar» en Calíope → Componentes.")))
             .AppendLine()
-            .AppendLine("Puedes copiar «Mis narraciones», «Mis voces» y «Mis sonidos» para hacer una copia de seguridad.")
+            .AppendLine(T("Puedes copiar «Mis narraciones», «Mis voces» y «Mis sonidos» para hacer una copia de seguridad."))
             .ToString();
         var ruta = Path.Combine(raiz, Leeme);
         if (!File.Exists(ruta) || File.ReadAllText(ruta) != texto)

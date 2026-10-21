@@ -6,6 +6,7 @@ using Constantino.Core.Voces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Wpf.Ui;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
@@ -17,16 +18,14 @@ public sealed record EjemploDiseno(string Nombre, DescripcionGuiada Descripcion)
 public sealed partial class VarianteVoz(int numero, int semilla, string ruta, double duracion, string instruccion, string idioma, string texto)
     : ObservableObject
 {
-    private static readonly CultureInfo Es = CultureInfo.GetCultureInfo("es-ES");
-
     public int Numero { get; } = numero;
     public int Semilla { get; } = semilla;
     public string Ruta { get; } = ruta;
     public string Instruccion { get; } = instruccion;
     public string Idioma { get; } = idioma;
     public string Texto { get; } = texto;
-    public string Titulo => $"Variante {Numero}";
-    public string Detalle => $"Semilla {Semilla} · {duracion.ToString("0.0", Es)} s";
+    public string Titulo => T("Variante {0}", Numero);
+    public string Detalle => T("Semilla {0} · {1:0.0} s", Semilla, duracion);
 
     [ObservableProperty] public partial bool Guardando { get; set; }
     [ObservableProperty] public partial string Nombre { get; set; } = "";
@@ -59,7 +58,7 @@ public sealed partial class DisenarViewModel : ObservableObject
     public ServicioMotor Motor => _motor;
 
     public IReadOnlyList<EjemploDiseno> Ejemplos { get; } = CatalogoDiseno.Ejemplos.Select(e => new EjemploDiseno(e.Nombre, e.Descripcion)).ToList();
-    public IReadOnlyList<OpcionSexo> Sexos { get; } = [new(SexoVoz.Hombre, "Hombre"), new(SexoVoz.Mujer, "Mujer"), new(SexoVoz.Indiferente, "Indiferente")];
+    public IReadOnlyList<OpcionSexo> Sexos { get; } = [new(SexoVoz.Hombre, T("Hombre")), new(SexoVoz.Mujer, T("Mujer")), new(SexoVoz.Indiferente, T("Indiferente"))];
     public IReadOnlyList<OpcionDiseno> Timbres => CatalogoDiseno.Timbres;
     public IReadOnlyList<OpcionDiseno> Texturas => CatalogoDiseno.Texturas;
     public IReadOnlyList<OpcionDiseno> Ritmos => CatalogoDiseno.Ritmos;
@@ -165,7 +164,7 @@ public sealed partial class DisenarViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(Instruccion) || string.IsNullOrWhiteSpace(TextoMuestra))
         {
-            Error = "Hace falta una descripción y un texto de muestra.";
+            Error = T("Hace falta una descripción y un texto de muestra.");
             return;
         }
         Error = null;
@@ -179,23 +178,23 @@ public sealed partial class DisenarViewModel : ObservableObject
         {
             for (var i = 1; i <= total; i++)
             {
-                Mensaje = $"Creando la variante {i} de {total}…";
+                Mensaje = T("Creando la variante {0} de {1}…", i, total);
                 var semilla = aleatorio.Next(1, 1_000_000);
                 var salida = await _voces.ArchivoTemporalAsync($"diseno-{i}");
                 var r = await _motor.DisenarAsync(Instruccion, Idioma, TextoMuestra.Trim(), salida, semilla, ct: _cancelacion.Token);
                 var variante = new VarianteVoz(i, semilla, r.Salida, r.Duracion, Instruccion, Idioma, TextoMuestra.Trim())
                 {
-                    Nombre = Ejemplo?.Nombre ?? "Voz diseñada",
+                    Nombre = Ejemplo?.Nombre ?? T("Voz diseñada"),
                 };
                 Variantes.Add(variante);
                 if (i == 1)
                     Reproductor.Reproducir(r.Salida);
             }
-            Mensaje = "Escucha las variantes y guarda la que más te guste.";
+            Mensaje = T("Escucha las variantes y guarda la que más te guste.");
         }
         catch (OperationCanceledException)
         {
-            Mensaje = "Cancelado.";
+            Mensaje = T("Cancelado.");
         }
         catch (Exception e)
         {
@@ -236,7 +235,7 @@ public sealed partial class DisenarViewModel : ObservableObject
                 _voces.MarcarPredeterminada(r.Voz.Id);
             else
                 _voces.Notificar();
-            v.Guardada = $"Guardada como «{r.Voz.Nombre}»." + (r.Aviso is null ? "" : " " + r.Aviso);
+            v.Guardada = T("Guardada como «{0}».", r.Voz.Nombre) + (r.Aviso is null ? "" : " " + r.Aviso);
         }
         catch (VozInvalidaException e)
         {

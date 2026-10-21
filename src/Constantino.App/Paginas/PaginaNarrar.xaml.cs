@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using Constantino.App.ViewModels;
 using Wpf.Ui.Abstractions.Controls;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.Paginas;
 
@@ -29,7 +30,7 @@ public partial class PaginaNarrar : Page, INavigableView<NarrarViewModel>
             Insertar(etiqueta);
     }
 
-    private void AlInsertarBloque(object sender, RoutedEventArgs e) => Insertar("\n\n# nuevo bloque\n");
+    private void AlInsertarBloque(object sender, RoutedEventArgs e) => Insertar("\n\n" + T("# nuevo bloque") + "\n");
 
     // --- Menú contextual de cada bloque (hereda la fila como DataContext) ---------------------
 

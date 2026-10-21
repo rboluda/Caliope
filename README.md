@@ -1,3 +1,5 @@
+**Español** · [English](README.en.md)
+
 <p align="center">
   <img src="recursos/caliope.png" width="140" alt="Logotipo de Calíope">
 </p>
@@ -19,7 +21,7 @@
 
 ## ¿Para qué sirve?
 
-> **Calíope es una suite que reúne herramientas de código abierto de terceros** —[Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS), [Chatterbox](https://github.com/resemble-ai/chatterbox), [Whisper](https://github.com/openai/whisper), [PyTorch](https://pytorch.org), [FFmpeg](https://ffmpeg.org) y otras— y las hace fáciles de usar: las instala, las coordina y les pone una interfaz sencilla. Los motores y modelos de voz son obra de sus autores; Calíope no los incluye, los descarga de sus fuentes oficiales cuando lo pides. Ver [créditos](#créditos-y-licencias).
+> **Calíope es una suite que reúne herramientas de código abierto de terceros** —[Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS), [Chatterbox](https://github.com/resemble-ai/chatterbox), [VoxCPM2](https://github.com/OpenBMB/VoxCPM), [Whisper](https://github.com/openai/whisper), [PyTorch](https://pytorch.org), [FFmpeg](https://ffmpeg.org) y otras— y las hace fáciles de usar: las instala, las coordina y les pone una interfaz sencilla. Los motores y modelos de voz son obra de sus autores; Calíope no los incluye, los descarga de sus fuentes oficiales cuando lo pides. Ver [créditos](#créditos-y-licencias).
 
 Calíope convierte texto en voz con modelos de inteligencia artificial que **se ejecutan en tu propio equipo**. Está pensado para quien necesita locuciones a menudo: vídeos de YouTube o TikTok, pódcast, audiolibros, cuentos, cursos, presentaciones o videojuegos. Es una alternativa local a servicios como ElevenLabs.
 
@@ -29,7 +31,7 @@ Calíope convierte texto en voz con modelos de inteligencia artificial que **se 
 - 🎭 **Variantes de una misma voz**: susurrando, tensa, asustada, triste, alegre o gritando.
 - 🎚️ **Afina el resultado**: expresividad, velocidad y tono (independientes entre sí), pausas y volumen normalizado para vídeo o pódcast.
 - 📤 **Saca el audio en MP3 o WAV** o arrástralo directamente a tu editor de vídeo.
-- 🔒 **Todo es privado**: ni tus textos ni tus voces salen del ordenador. Internet solo se usa para descargar los componentes.
+- 🔒 **Todo es privado**: ni tus textos ni tus voces salen del ordenador. Internet solo se usa para descargar los componentes y para ver si hay una versión nueva de Calíope (puedes desactivarlo en Ajustes).
 - 🧩 **Instalación con botones**: un asistente mira qué equipo tienes y te propone qué descargar. No hace falta tocar Python ni la línea de comandos.
 
 <p align="center">
@@ -43,9 +45,11 @@ Calíope convierte texto en voz con modelos de inteligencia artificial que **se 
 | Sistema | Windows 10 (1809) o 11, 64 bits | Windows 11 |
 | Tarjeta gráfica | Ninguna (funciona con el procesador, mucho más despacio) | NVIDIA con 6 GB o más (RTX 3050 de 8 GB o superior) |
 | Memoria | 8 GB de RAM | 16 GB o más |
-| Disco | 10 GB libres | 25 GB libres (si instalas todos los motores) |
+| Disco | 10 GB libres | 35 GB libres (si instalas los tres motores) |
 
-Con una tarjeta NVIDIA de 4 GB funciona usando el modelo ligero (0.6B). El motor opcional Chatterbox no es compatible con la serie RTX 50.
+Con una tarjeta NVIDIA de 4 GB funciona usando el modelo ligero (0.6B). De los motores opcionales, el castellano rápido (Chatterbox) pide 4,5 GB y no es compatible con la serie RTX 50, y el de máximo parecido (VoxCPM2) pide 8 GB.
+
+La interfaz está disponible en español e inglés: el idioma se elige en *Ajustes*.
 
 ## Instalación
 
@@ -68,7 +72,8 @@ El instalador solo ocupa unos 50 MB. Los motores y modelos se descargan después
 | Modelo Base 1.7B **o** 0.6B | Imprescindible (uno de los dos) | Clonar voces y narrar | 4,3 / 2,4 GB |
 | Modelo VoiceDesign | Recomendado | Diseñar voces nuevas | 4,3 GB |
 | Whisper | Opcional | Transcribir grabaciones al clonar | 1,6 GB |
-| Chatterbox | Opcional | Motor alternativo con control de la emoción | 4,9–8,4 GB |
+| Motor castellano rápido (Chatterbox) | Opcional | Más rapidez y control de la emoción; solo castellano | 4,9–8,4 GB |
+| Motor de máximo parecido (VoxCPM2) | Opcional | La voz más parecida a la original; pide 8 GB de tarjeta | 10,5 GB |
 
 ## Cómo se usa
 
@@ -98,6 +103,8 @@ Alguien llamó a la puerta. [long pause]
 | `[pause]` / `[long pause]` | Pausa corta o larga (ajustables) |
 | `[whispers]` | Susurra hasta el final de la línea |
 | `[asustado]`, `[tenso]`, `[alegre]`… | Lee con esa variante de la voz hasta el final de la línea |
+| `[voz: Nombre]` | Lee con otra voz de tu biblioteca hasta el final de la línea |
+| `[sfx: trueno]` | Suena un efecto (trueno, latido, reloj, campana, ráfaga o uno tuyo de «Mis sonidos») |
 | `[normal]` | Vuelve a la voz normal |
 | `# nombre` | Nombra el bloque (y su archivo) |
 | `// nota` | Comentario, no se lee |
@@ -107,20 +114,27 @@ Dentro de la aplicación tienes una sección de **Ayuda** con todo esto, con los
 
 ## Motores de voz
 
-| | Qwen3-TTS (principal) | Chatterbox (opcional) |
-|---|---|---|
-| Autor y licencia | Alibaba Qwen, Apache 2.0 | Resemble AI, MIT |
-| Clonar voces | ✅ Muy fiel, usa la transcripción | ✅ Solo con la grabación |
-| Diseñar voces | ✅ (VoiceDesign) | — |
-| Control de la emoción | Variantes de la voz | Variantes + intensidad emocional |
-| Pausas | Respeta bien las pausas naturales | Lee más seguido |
-| Marca de agua | No | Sí, inaudible |
+**El motor principal basta para todo.** Los otros dos son opcionales y no hace falta probarlos: Calíope mira tu tarjeta gráfica y te dice en «Componentes» si alguno te conviene.
 
-En «Voces → Probar» puedes escuchar la misma voz con los dos motores y quedarte con el que prefieras.
+| | Principal (Qwen3-TTS) | Castellano rápido (Chatterbox) | Máximo parecido (VoxCPM2) |
+|---|---|---|---|
+| Autor y licencia | Alibaba Qwen, Apache 2.0 | Resemble AI, MIT | OpenBMB, Apache 2.0 |
+| Para qué | El más completo: diseña voces y hace susurros | Acento de España, rapidez y control de la emoción | La voz más parecida a la original y el mejor sonido (48 kHz) |
+| Velocidad (tarjeta de 8 GB) | Lento: unas 3 veces lo que dura el audio | El más rápido: menos de lo que dura el audio | Medio: el doble de lo que dura el audio |
+| Parecido a la voz | Muy alto | Muy alto | El más alto, sobre todo con transcripción |
+| Idiomas | 10 | Solo castellano | 30 |
+| Tarjeta | Cualquiera (o ninguna) | Desde 4,5 GB; no RTX 50 | Desde 8 GB; mejor 10 GB |
+| Marca de agua | No | Sí, inaudible | No |
+
+Los tres leen el texto igual de bien: en una prueba con la misma voz y el mismo texto, ninguno se comió ni cambió más de 3 palabras.
+
+**¿Cuál te conviene?** Sin tarjeta NVIDIA o con menos de 4,5 GB, el principal. Entre 4,5 y 8 GB, el principal y, si narras en castellano y quieres rapidez, el castellano rápido. Con 8 GB, el de máximo parecido funciona pero justo. Con 10 GB o más, el de máximo parecido para el resultado final.
+
+En «Voces → Probar» puedes escuchar la misma voz con cada motor instalado.
 
 ## Preguntas frecuentes
 
-**¿Necesito internet?** Solo para descargar los componentes la primera vez. Después funciona sin conexión.
+**¿Necesito internet?** Solo para descargar los componentes la primera vez. Después funciona sin conexión. Al arrancar, Calíope mira en GitHub si hay una versión nueva (sin enviar nada tuyo); puedes desactivarlo en Ajustes.
 
 **¿Cuánto tarda?** Con una RTX 3050, unos segundos por frase. La primera generación tarda entre 20 y 60 segundos más, mientras carga el modelo. Sin tarjeta NVIDIA funciona, pero bastante más despacio.
 
@@ -164,7 +178,8 @@ Calíope existe gracias al trabajo de otros. Las piezas principales:
 | Herramienta | Autor | Licencia | Para qué |
 |---|---|---|---|
 | [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) | Alibaba (equipo Qwen) | Apache 2.0 | Motor de voz principal: clonar, diseñar y narrar |
-| [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) | Resemble AI | MIT | Motor alternativo con control de la emoción |
+| [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) y su paquete de castellano | Resemble AI | MIT | Motor castellano rápido, con control de la emoción |
+| [VoxCPM2](https://github.com/OpenBMB/VoxCPM) | OpenBMB | Apache 2.0 | Motor de máximo parecido |
 | [Whisper](https://github.com/openai/whisper) | OpenAI | MIT | Transcripción y revisión automática |
 | [PyTorch](https://pytorch.org) | PyTorch Foundation | BSD-3 | Ejecutar los modelos |
 | [FFmpeg](https://ffmpeg.org) y [Rubber Band](https://breakfastquay.com/rubberband/) | FFmpeg · Breakfast Quay | GPL | Audio: volumen, velocidad, tono, mezcla |

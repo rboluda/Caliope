@@ -4,6 +4,7 @@ using Constantino.App.Servicios;
 using Constantino.Core;
 using Constantino.Core.Catalogo;
 using Constantino.Core.Instalaciones;
+using Constantino.Core.Motores;
 using Constantino.Core.Recomendaciones;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,6 +12,7 @@ using Wpf.Ui;
 using Wpf.Ui.Controls;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using MessageBoxResult = Wpf.Ui.Controls.MessageBoxResult;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
@@ -26,7 +28,7 @@ public sealed partial class TarjetaComponente(Componente c, Recomendacion r, str
     public string Habilita { get; } = string.Join(" · ", c.Habilita);
     public string Necesita { get; } = necesita;
     public IReadOnlyList<Licencia> Licencias { get; } = c.Licencias;
-    public string? DisponibleEn { get; } = c.SePuedeInstalar ? null : c.DisponibleEn ?? "Llegará en una próxima versión.";
+    public string? DisponibleEn { get; } = c.SePuedeInstalar ? null : c.DisponibleEn ?? T("Llegará en una próxima versión.");
 
     // Antes de instalarlo, la etiqueta y el motivo son la recomendación; una vez instalado, dicen su estado
     // (si no, «Recomendado» parece pedir que se instale algo que ya está).
@@ -35,7 +37,7 @@ public sealed partial class TarjetaComponente(Componente c, Recomendacion r, str
     [ObservableProperty] public partial string Motivo { get; set; } = r.Motivo;
     [ObservableProperty] public partial string Estado { get; set; } = "";
     [ObservableProperty] public partial bool PuedeInstalar { get; set; }
-    [ObservableProperty] public partial string TextoInstalar { get; set; } = "Instalar";
+    [ObservableProperty] public partial string TextoInstalar { get; set; } = T("Instalar");
     [ObservableProperty] public partial bool PuedeReparar { get; set; }
     [ObservableProperty] public partial bool PuedeDesinstalar { get; set; }
 
@@ -43,28 +45,31 @@ public sealed partial class TarjetaComponente(Componente c, Recomendacion r, str
     {
         (Etiqueta, Apariencia, Motivo) = estado switch
         {
-            EstadoComponente.Instalado => ("Instalado", ControlAppearance.Success, "Instalado y listo para usar."),
-            EstadoComponente.Actualizable => ("Actualizable", ControlAppearance.Info, "Instalado. Hay una versión nueva: pulsa «Actualizar»."),
-            EstadoComponente.Danado => ("Dañado", ControlAppearance.Danger, "Faltan archivos: pulsa «Reparar» para volver a instalarlo."),
+            EstadoComponente.Instalado => (T("Instalado"), ControlAppearance.Success, T("Instalado y listo para usar.")),
+            EstadoComponente.Actualizable => (T("Actualizable"), ControlAppearance.Info, T("Instalado. Hay una versión nueva: pulsa «Actualizar».")),
+            EstadoComponente.Danado => (T("Dañado"), ControlAppearance.Danger, T("Faltan archivos: pulsa «Reparar» para volver a instalarlo.")),
             _ => (Presentacion.Etiqueta(r.Nivel), Presentacion.Apariencia(r.Nivel), r.Motivo),
         };
         Estado = estado switch
         {
-            EstadoComponente.NoDisponible => "Próximamente",
-            EstadoComponente.NoInstalado => "No instalado",
-            EstadoComponente.Instalado => "Instalado",
-            EstadoComponente.Danado => "Dañado: faltan archivos",
-            EstadoComponente.Actualizable => "Hay una versión nueva",
+            EstadoComponente.NoDisponible => T("Próximamente"),
+            EstadoComponente.NoInstalado => T("No instalado"),
+            EstadoComponente.Instalado => T("Instalado"),
+            EstadoComponente.Danado => T("Dañado: faltan archivos"),
+            EstadoComponente.Actualizable => T("Hay una versión nueva"),
             _ => "",
         };
         PuedeInstalar = estado is EstadoComponente.NoInstalado or EstadoComponente.Actualizable;
-        TextoInstalar = estado == EstadoComponente.Actualizable ? "Actualizar" : "Instalar";
+        TextoInstalar = estado == EstadoComponente.Actualizable ? T("Actualizar") : T("Instalar");
         PuedeReparar = estado is EstadoComponente.Instalado or EstadoComponente.Danado;
         PuedeDesinstalar = estado is EstadoComponente.Instalado or EstadoComponente.Danado or EstadoComponente.Actualizable;
     }
 }
 
-public sealed record GrupoComponentes(string Nombre, IReadOnlyList<TarjetaComponente> Tarjetas);
+/// <param name="Guia">Solo en el grupo de motores: cuál conviene a este equipo y la comparativa.</param>
+public sealed record GrupoComponentes(string Nombre, IReadOnlyList<TarjetaComponente> Tarjetas, GuiaVista? Guia = null);
+
+public sealed record GuiaVista(string Consejo, IReadOnlyList<FichaMotor> Fichas);
 
 public sealed partial class ComponentesViewModel : ObservableObject
 {
@@ -95,9 +100,10 @@ public sealed partial class ComponentesViewModel : ObservableObject
     private async Task MostrarAsync()
     {
         Cargando = true;
-        var (_, rec) = await _equipo.ObtenerAnalisisAsync();
+        var (equipo, rec) = await _equipo.ObtenerAnalisisAsync();
         var catalogo = _equipo.Catalogo;
         ResumenDispositivo = rec.ResumenDispositivo;
+        var guia = new GuiaVista(GuiaMotores.Consejo(equipo), GuiaMotores.Fichas);
 
         Grupos.Clear();
         foreach (var grupo in catalogo.Grupos)
@@ -106,7 +112,8 @@ public sealed partial class ComponentesViewModel : ObservableObject
                 .Where(c => c.Grupo == grupo)
                 .Select(c => new TarjetaComponente(c, rec.Para(c.Id), Formato.Gb(c.Tamano.Para(rec.UsaGpu)), Necesita(catalogo, c)))
                 .ToList();
-            Grupos.Add(new GrupoComponentes(grupo, tarjetas));
+            var deMotores = tarjetas.Any(t => MotoresDeVoz.DeComponente(t.Id) is not null);
+            Grupos.Add(new GrupoComponentes(grupo, tarjetas, deMotores ? guia : null));
         }
         await RefrescarEstadosAsync();
         Cargando = false;
@@ -122,12 +129,12 @@ public sealed partial class ComponentesViewModel : ObservableObject
     private static string Necesita(CatalogoComponentes catalogo, Componente c)
     {
         var texto = c.DependeDe.Count == 0
-            ? "Nada más."
+            ? T("Nada más.")
             : string.Join(", ", c.DependeDe.Select(id => catalogo[id].Nombre)) + ".";
         if (c.GrupoExclusivo is not null)
         {
             var otras = catalogo.Componentes.Where(o => o.GrupoExclusivo == c.GrupoExclusivo && o.Id != c.Id);
-            texto += $" Es alternativa a: {string.Join(", ", otras.Select(o => o.Nombre))}.";
+            texto += " " + T("Es alternativa a: {0}.", string.Join(", ", otras.Select(o => o.Nombre)));
         }
         return texto;
     }
@@ -140,7 +147,7 @@ public sealed partial class ComponentesViewModel : ObservableObject
         var lista = string.Join("\n", plan.Select(c => $"• {c.Nombre} ({Formato.Gb(c.Tamano.Para(rec.UsaGpu))})"));
         var total = Formato.Gb(plan.Sum(c => c.Tamano.Para(rec.UsaGpu)));
         if (!await ConfirmarAsync($"{tarjeta.TextoInstalar} {tarjeta.Nombre}",
-                $"Se descargará e instalará:\n\n{lista}\n\nEn total, unos {total}.", tarjeta.TextoInstalar))
+                T("Se descargará e instalará:\n\n{0}\n\nEn total, unos {1}.", lista, total), tarjeta.TextoInstalar))
             return;
         await EjecutarAsync([tarjeta.Id], forzar: false);
     }
@@ -148,8 +155,8 @@ public sealed partial class ComponentesViewModel : ObservableObject
     [RelayCommand]
     private async Task RepararAsync(TarjetaComponente tarjeta)
     {
-        if (!await ConfirmarAsync($"Reparar {tarjeta.Nombre}",
-                "Se volverá a instalar este componente. Lo ya descargado se aprovecha cuando es posible.", "Reparar"))
+        if (!await ConfirmarAsync(T("Reparar {0}", tarjeta.Nombre),
+                T("Se volverá a instalar este componente. Lo ya descargado se aprovecha cuando es posible."), T("Reparar")))
             return;
         await EjecutarAsync([tarjeta.Id], forzar: true);
     }
@@ -157,8 +164,8 @@ public sealed partial class ComponentesViewModel : ObservableObject
     [RelayCommand]
     private async Task DesinstalarAsync(TarjetaComponente tarjeta)
     {
-        if (!await ConfirmarAsync($"Desinstalar {tarjeta.Nombre}",
-                $"Se borrará de tu equipo y se liberarán unos {tarjeta.Tamano}. Podrás volver a instalarlo cuando quieras.", "Desinstalar"))
+        if (!await ConfirmarAsync(T("Desinstalar {0}", tarjeta.Nombre),
+                T("Se borrará de tu equipo y se liberarán unos {0}. Podrás volver a instalarlo cuando quieras.", tarjeta.Tamano), T("Desinstalar")))
             return;
         Aviso = await Instalacion.DesinstalarAsync(tarjeta.Id);
     }
@@ -180,7 +187,7 @@ public sealed partial class ComponentesViewModel : ObservableObject
             Title = titulo,
             Content = mensaje,
             PrimaryButtonText = accion,
-            CloseButtonText = "Cancelar",
+            CloseButtonText = T("Cancelar"),
         };
         return await caja.ShowDialogAsync() == MessageBoxResult.Primary;
     }

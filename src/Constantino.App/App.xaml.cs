@@ -6,6 +6,7 @@ using Constantino.App.Paginas;
 using Constantino.App.Servicios;
 using Constantino.App.ViewModels;
 using Constantino.App.Vistas;
+using Constantino.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wpf.Ui;
@@ -64,9 +65,13 @@ public partial class App : Application
         // UCEERR_RENDERTHREADFAILURE. La interfaz es sencilla y no lo nota.
         System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         base.OnStartup(e);
-        // Fechas y números de los bindings en español.
+        // El idioma va lo primero: todos los textos (también los del catálogo y los estáticos) se traducen al crearse.
+        Idioma.Activar(_host.Services.GetRequiredService<ServicioAjustes>().Actual.Idioma);
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = Idioma.Cultura;
+        CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = Idioma.Cultura;
+        // Fechas y números de los bindings en el idioma elegido.
         FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement),
-            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(CultureInfo.GetCultureInfo("es-ES").IetfLanguageTag)));
+            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(Idioma.Cultura.IetfLanguageTag)));
 
         await _host.StartAsync();
         _host.Services.GetRequiredService<ServicioAjustes>().AplicarTema();
@@ -85,7 +90,7 @@ public partial class App : Application
 
     private void AlFallarSinControl(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        MessageBox.Show($"Ha ocurrido un error inesperado:\n\n{e.Exception.Message}", Marca.Nombre,
+        MessageBox.Show(Idioma.T("Ha ocurrido un error inesperado:\n\n{0}", e.Exception.Message), Marca.Nombre,
             MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }

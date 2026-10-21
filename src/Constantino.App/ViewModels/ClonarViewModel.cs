@@ -10,13 +10,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using Wpf.Ui;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
 public sealed partial class ClonarViewModel : ObservableObject
 {
-    private static readonly CultureInfo Es = CultureInfo.GetCultureInfo("es-ES");
-
     private readonly ServicioMotor _motor;
     private readonly ServicioVoces _voces;
     private readonly ServicioInstalacion _instalacion;
@@ -72,7 +71,7 @@ public sealed partial class ClonarViewModel : ObservableObject
     public bool EsEspanol => Idioma == "Spanish";
 
     [ObservableProperty] public partial bool Consentimiento { get; set; }
-    [ObservableProperty] public partial string TextoPrueba { get; set; } = "Sábado por la noche. Diluvia. En la puerta de la discoteca hay una chica empapada, temblando de frío.";
+    [ObservableProperty] public partial string TextoPrueba { get; set; } = T("Sábado por la noche. Diluvia. En la puerta de la discoteca hay una chica empapada, temblando de frío.");
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Libre))]
@@ -114,7 +113,7 @@ public sealed partial class ClonarViewModel : ObservableObject
         }
         catch (Exception e) when (e is NAudio.MmException or InvalidOperationException)
         {
-            Error = $"No se ha podido usar el micrófono: {e.Message}";
+            Error = T("No se ha podido usar el micrófono: {0}", e.Message);
         }
     }
 
@@ -122,7 +121,7 @@ public sealed partial class ClonarViewModel : ObservableObject
     private async Task DetenerGrabacionAsync()
     {
         var audio = await Grabacion.DetenerAsync();
-        Origen = $"Grabación del micrófono ({Segundos(audio.Segundos)})";
+        Origen = T("Grabación del micrófono ({0})", Segundos(audio.Segundos));
         Cargar(audio);
     }
 
@@ -139,8 +138,8 @@ public sealed partial class ClonarViewModel : ObservableObject
     {
         var dialogo = new OpenFileDialog
         {
-            Title = "Grabación de la voz",
-            Filter = "Audio (*.wav;*.mp3;*.flac;*.ogg;*.m4a)|*.wav;*.mp3;*.flac;*.ogg;*.m4a|Todos los archivos|*.*",
+            Title = T("Grabación de la voz"),
+            Filter = "Audio (*.wav;*.mp3;*.flac;*.ogg;*.m4a)|*.wav;*.mp3;*.flac;*.ogg;*.m4a|" + T("Todos los archivos") + "|*.*",
         };
         if (dialogo.ShowDialog() != true)
             return;
@@ -151,13 +150,13 @@ public sealed partial class ClonarViewModel : ObservableObject
             // Cualquier formato se convierte a WAV mono para poder dibujarlo y recortarlo.
             var rutas = (await _instalacion.InstaladorAsync()).Rutas;
             if (!File.Exists(rutas.Ffmpeg))
-                throw new InvalidOperationException("Faltan las herramientas básicas: instálalas desde Componentes.");
+                throw new InvalidOperationException(T("Faltan las herramientas básicas: instálalas desde Componentes."));
             var destino = await _voces.ArchivoTemporalAsync("clon-importado");
             var r = await new EjecutorProcesos().EjecutarAsync(rutas.Ffmpeg,
                 ["-hide_banner", "-nostdin", "-y", "-i", dialogo.FileName, "-vn", "-ac", "1", "-ar", "24000", "-c:a", "pcm_f32le", destino],
                 new Dictionary<string, string>(), _ => { }, CancellationToken.None);
             if (r.CodigoSalida != 0)
-                throw new InvalidOperationException("No se ha podido leer el audio. Prueba con un WAV o un MP3.");
+                throw new InvalidOperationException(T("No se ha podido leer el audio. Prueba con un WAV o un MP3."));
             var audio = Pcm.LeerWav(destino);
             Origen = $"{Path.GetFileName(dialogo.FileName)} ({Segundos(audio.Segundos)})";
             if (string.IsNullOrWhiteSpace(Nombre))
@@ -197,7 +196,7 @@ public sealed partial class ClonarViewModel : ObservableObject
         if (Audio is null)
             return;
         var duracion = Math.Max(0, Fin - Inicio);
-        Seleccion = $"Tramo seleccionado: {Segundos(Inicio)} – {Segundos(Fin)} ({Segundos(duracion)})";
+        Seleccion = T("Tramo seleccionado: {0} – {1} ({2})", Segundos(Inicio), Segundos(Fin), Segundos(duracion));
         Avisos.Clear();
         if (duracion > 0.2)
         {
@@ -249,7 +248,7 @@ public sealed partial class ClonarViewModel : ObservableObject
     {
         if (Audio is null || Fin - Inicio < 0.5)
         {
-            Error = "Selecciona un tramo de la grabación arrastrando sobre la onda.";
+            Error = T("Selecciona un tramo de la grabación arrastrando sobre la onda.");
             return null;
         }
         if (_rutaSeleccion is null || !File.Exists(_rutaSeleccion))
@@ -274,7 +273,7 @@ public sealed partial class ClonarViewModel : ObservableObject
             var r = await _motor.TranscribirAsync(ruta, Idioma);
             SinTranscripcion = false;
             Transcripcion = r.Texto;
-            Mensaje = "Revisa la transcripción: tiene que ser exactamente lo que se dice.";
+            Mensaje = T("Revisa la transcripción: tiene que ser exactamente lo que se dice.");
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
@@ -291,7 +290,7 @@ public sealed partial class ClonarViewModel : ObservableObject
     {
         if (!Consentimiento)
         {
-            Error = "Confirma primero que la voz es tuya o que tienes permiso para usarla.";
+            Error = T("Confirma primero que la voz es tuya o que tienes permiso para usarla.");
             return;
         }
         if (AvisoTranscripcion is not null)
@@ -309,7 +308,7 @@ public sealed partial class ClonarViewModel : ObservableObject
                 Fin - Inicio, DateTimeOffset.Now, Consentimiento);
             var salida = await _voces.ArchivoTemporalAsync("clon-prueba");
             var r = await _motor.SintetizarAsync(voz, ruta, TextoPrueba.Trim(), salida);
-            Mensaje = $"Así sonaría: {Segundos(r.Duracion)} generados en {Segundos(r.Segundos)}.";
+            Mensaje = T("Así sonaría: {0} generados en {1}.", Segundos(r.Duracion), Segundos(r.Segundos));
             Reproductor.Reproducir(r.Salida);
         }
         catch (Exception e) when (e is not OperationCanceledException)
@@ -338,7 +337,7 @@ public sealed partial class ClonarViewModel : ObservableObject
                 _voces.MarcarPredeterminada(r.Voz.Id);
             else
                 _voces.Notificar();
-            Guardada = $"«{r.Voz.Nombre}» está en tu biblioteca." + (r.Aviso is null ? "" : " " + r.Aviso);
+            Guardada = T("«{0}» está en tu biblioteca.", r.Voz.Nombre) + (r.Aviso is null ? "" : " " + r.Aviso);
         }
         catch (VozInvalidaException e)
         {
@@ -367,5 +366,5 @@ public sealed partial class ClonarViewModel : ObservableObject
     [RelayCommand]
     private void IrAComponentes() => _navegacion.Navigate(typeof(PaginaComponentes));
 
-    private static string Segundos(double s) => $"{s.ToString("0.0", Es)} s";
+    private static string Segundos(double s) => $"{s.ToString("0.0", global::Constantino.Core.Idioma.Cultura)} s";
 }

@@ -7,6 +7,7 @@ using System.Windows.Threading;
 using Constantino.Core.Catalogo;
 using Constantino.Core.Instalaciones;
 using CommunityToolkit.Mvvm.ComponentModel;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.Servicios;
 
@@ -24,7 +25,7 @@ public sealed partial class FilaInstalacion(string id, string nombre) : Observab
     public string Id { get; } = id;
     public string Nombre { get; } = nombre;
     [ObservableProperty] public partial EstadoFila Estado { get; set; }
-    [ObservableProperty] public partial string Detalle { get; set; } = "Pendiente";
+    [ObservableProperty] public partial string Detalle { get; set; } = T("Pendiente");
 }
 
 /// <summary>
@@ -102,7 +103,7 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
         Filas.Clear();
         foreach (var c in plan)
             Filas.Add(new FilaInstalacion(c.Id, c.Nombre));
-        Titulo = plan.Count == 0 ? "Todo lo elegido ya está instalado" : $"Instalando {plan.Count} componente(s)";
+        Titulo = plan.Count == 0 ? T("Todo lo elegido ya está instalado") : T("Instalando {0} componente(s)", plan.Count);
         _cancelacion = new CancellationTokenSource();
 
         var despachador = Application.Current.Dispatcher;
@@ -128,26 +129,26 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
         switch (fallo)
         {
             case null:
-                Titulo = "Instalación terminada";
-                Mensaje = "Todo se ha instalado correctamente.";
+                Titulo = T("Instalación terminada");
+                Mensaje = T("Todo se ha instalado correctamente.");
                 Fraccion = 1;
                 return true;
             case OperationCanceledException:
-                MarcarFilaActual("Cancelado");
-                Titulo = "Instalación cancelada";
-                Error = "Has cancelado la instalación. Lo descargado se aprovechará si vuelves a intentarlo.";
+                MarcarFilaActual(T("Cancelado"));
+                Titulo = T("Instalación cancelada");
+                Error = T("Has cancelado la instalación. Lo descargado se aprovechará si vuelves a intentarlo.");
                 return false;
             case InstalacionFallidaException e:
-                MarcarFilaActual("Error");
-                Titulo = "La instalación no se ha completado";
+                MarcarFilaActual(T("Error"));
+                Titulo = T("La instalación no se ha completado");
                 Error = e.Message;
                 DetalleError = e.Detalle;
                 return false;
             case HttpRequestException or IOException or UnauthorizedAccessException:
-                MarcarFilaActual("Error");
-                Titulo = "La instalación no se ha completado";
+                MarcarFilaActual(T("Error"));
+                Titulo = T("La instalación no se ha completado");
                 Error = fallo is HttpRequestException
-                    ? $"No se ha podido descargar: {fallo.Message}. Comprueba la conexión a internet y vuelve a intentarlo."
+                    ? T("No se ha podido descargar: {0}. Comprueba la conexión a internet y vuelve a intentarlo.", fallo.Message)
                     : fallo.Message;
                 return false;
             default:
@@ -193,11 +194,11 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
                 if (fila is not null)
                 {
                     fila.Estado = EstadoFila.Instalando;
-                    fila.Detalle = "Instalando…";
+                    fila.Detalle = T("Instalando…");
                 }
                 break;
             case TipoEvento.Paso:
-                Mensaje = $"{e.Mensaje} (paso {e.Paso} de {e.TotalPasos})";
+                Mensaje = T("{0} (paso {1} de {2})", e.Mensaje, e.Paso, e.TotalPasos);
                 Indeterminado = true;
                 if (fila is not null)
                     fila.Detalle = e.Mensaje;
@@ -216,7 +217,7 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
                 if (fila is not null)
                 {
                     fila.Estado = EstadoFila.Instalado;
-                    fila.Detalle = "Instalado";
+                    fila.Detalle = T("Instalado");
                 }
                 break;
         }

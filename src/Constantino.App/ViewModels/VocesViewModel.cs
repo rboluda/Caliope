@@ -11,6 +11,7 @@ using Microsoft.Win32;
 using Wpf.Ui;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using MessageBoxResult = Wpf.Ui.Controls.MessageBoxResult;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
@@ -20,14 +21,12 @@ public sealed record OpcionIdioma(string Clave, string Nombre);
 public sealed record FilaVariante(Variante Variante, string Referencia)
 {
     public string Nombre => Variante.Nombre;
-    public string Detalle => $"{Variante.Etiqueta} · {Variante.DuracionSegundos.ToString("0.#", CultureInfo.GetCultureInfo("es-ES"))} s";
+    public string Detalle => T("{0} · {1:0.#} s", Variante.Etiqueta, Variante.DuracionSegundos);
 }
 
 /// <summary>Una voz en la lista, con su zona de prueba y su edición de nombre.</summary>
 public sealed partial class TarjetaVoz : ObservableObject
 {
-    private static readonly CultureInfo Es = CultureInfo.GetCultureInfo("es-ES");
-
     public TarjetaVoz(Voz voz, string referencia, bool predeterminada)
     {
         Voz = voz;
@@ -47,8 +46,8 @@ public sealed partial class TarjetaVoz : ObservableObject
     public string Nombre => Voz.Nombre;
 
     public string Transcripcion => Voz.SoloTimbre
-        ? "Sin transcripción: se imita solo el timbre de la voz."
-        : $"«{Voz.Transcripcion}»";
+        ? T("Sin transcripción: se imita solo el timbre de la voz.")
+        : T("«{0}»", Voz.Transcripcion);
 
     /// <summary>Si la transcripción no encaja con la grabación (y por eso la voz saldrá cortada), la explicación.</summary>
     public string? AvisoTranscripcion
@@ -90,7 +89,7 @@ public sealed partial class TarjetaVoz : ObservableObject
     [ObservableProperty] public partial string? ErrorTranscripcion { get; set; }
 
     public string Detalle =>
-        $"{Origen(Voz.Origen)} · {Idiomas.Nombre(Voz.Idioma)} · grabación de {Voz.DuracionSegundos.ToString("0.#", Es)} s · añadida el {Voz.Creada.ToString("d", Es)}";
+        T("{0} · {1} · grabación de {2:0.#} s · añadida el {3:d}", Origen(Voz.Origen), Idiomas.Nombre(Voz.Idioma), Voz.DuracionSegundos, Voz.Creada);
 
     [ObservableProperty] public partial bool EsPredeterminada { get; set; }
     [ObservableProperty] public partial bool MostrarPrueba { get; set; }
@@ -104,9 +103,9 @@ public sealed partial class TarjetaVoz : ObservableObject
 
     private static string Origen(OrigenVoz o) => o switch
     {
-        OrigenVoz.Disenada => "Diseñada",
-        OrigenVoz.Clonada => "Clonada",
-        _ => "Importada",
+        OrigenVoz.Disenada => T("Diseñada"),
+        OrigenVoz.Clonada => T("Clonada"),
+        _ => T("Importada"),
     };
 
     private static string TextoDeEjemplo(string idioma) => idioma switch
@@ -138,7 +137,7 @@ public sealed partial class VocesViewModel : ObservableObject
     [ObservableProperty] public partial bool SinVoces { get; set; }
 
     /// <summary>Motores instalados, para escuchar la misma voz con cada uno.</summary>
-    public ObservableCollection<OpcionMotor> Motores { get; } = [new(MotoresDeVoz.Qwen, "Qwen3-TTS")];
+    public ObservableCollection<OpcionMotor> Motores { get; } = [OpcionMotor.De(MotoresDeVoz.Qwen)];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HayVariosMotores))]
@@ -161,11 +160,10 @@ public sealed partial class VocesViewModel : ObservableObject
 
     public async Task CargarAsync()
     {
-        if (await Motor.ChatterboxInstaladoAsync() && Motores.All(m => m.Id != MotoresDeVoz.Chatterbox))
-        {
-            Motores.Add(new OpcionMotor(MotoresDeVoz.Chatterbox, "Chatterbox"));
-            OnPropertyChanged(nameof(HayVariosMotores));
-        }
+        OpcionMotor.Sincronizar(Motores, await Motor.MotoresInstaladosAsync());
+        if (Motores.All(m => m.Id != MotorPrueba))
+            MotorPrueba = MotoresDeVoz.Qwen;
+        OnPropertyChanged(nameof(HayVariosMotores));
         var biblioteca = await _voces.BibliotecaAsync();
         var predeterminada = _voces.Predeterminada;
         Voces.Clear();
@@ -199,8 +197,8 @@ public sealed partial class VocesViewModel : ObservableObject
     {
         var dialogo = new OpenFileDialog
         {
-            Title = "Grabación de la variante",
-            Filter = "Audio (*.wav;*.mp3;*.flac;*.ogg;*.m4a)|*.wav;*.mp3;*.flac;*.ogg;*.m4a|Todos los archivos|*.*",
+            Title = T("Grabación de la variante"),
+            Filter = "Audio (*.wav;*.mp3;*.flac;*.ogg;*.m4a)|*.wav;*.mp3;*.flac;*.ogg;*.m4a|" + T("Todos los archivos") + "|*.*",
         };
         if (dialogo.ShowDialog() == true)
             t.ArchivoVariante = dialogo.FileName;
@@ -285,9 +283,9 @@ public sealed partial class VocesViewModel : ObservableObject
     {
         var dialogo = new SaveFileDialog
         {
-            Title = "Exportar la voz",
-            FileName = $"{Constantino.Core.Textos.NombreDeArchivo(t.Nombre)} - voz de Calíope.zip",
-            Filter = "Voz de Calíope (*.zip)|*.zip",
+            Title = T("Exportar la voz"),
+            FileName = T("{0} - voz de Calíope.zip", Constantino.Core.Textos.NombreDeArchivo(t.Nombre)),
+            Filter = T("Voz de Calíope") + " (*.zip)|*.zip",
             DefaultExt = ".zip",
         };
         if (dialogo.ShowDialog() != true)
@@ -296,11 +294,11 @@ public sealed partial class VocesViewModel : ObservableObject
         {
             (await _voces.BibliotecaAsync()).Exportar(t.Voz.Id, dialogo.FileName);
             ErrorGeneral = null;
-            AvisoImportar = $"«{t.Nombre}» exportada a {dialogo.FileName}. Quien la reciba puede añadirla con «Abrir una voz compartida…».";
+            AvisoImportar = T("«{0}» exportada a {1}. Quien la reciba puede añadirla con «Abrir una voz compartida…».", t.Nombre, dialogo.FileName);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or VozInvalidaException)
         {
-            ErrorGeneral = $"No se ha podido exportar: {e.Message}";
+            ErrorGeneral = T("No se ha podido exportar: {0}", e.Message);
         }
     }
 
@@ -309,17 +307,17 @@ public sealed partial class VocesViewModel : ObservableObject
     {
         var dialogo = new OpenFileDialog
         {
-            Title = "Abrir una voz compartida",
-            Filter = "Voz de Calíope (*.zip)|*.zip",
+            Title = T("Abrir una voz compartida"),
+            Filter = T("Voz de Calíope") + " (*.zip)|*.zip",
         };
         if (dialogo.ShowDialog() != true)
             return;
         var permiso = new MessageBox
         {
-            Title = "¿Tienes permiso para usar esta voz?",
-            Content = "Solo puedes usar voces que sean tuyas o de personas que te hayan dado permiso expreso para usarlas.",
-            PrimaryButtonText = "Sí, tengo permiso",
-            CloseButtonText = "Cancelar",
+            Title = T("¿Tienes permiso para usar esta voz?"),
+            Content = T("Solo puedes usar voces que sean tuyas o de personas que te hayan dado permiso expreso para usarlas."),
+            PrimaryButtonText = T("Sí, tengo permiso"),
+            CloseButtonText = T("Cancelar"),
         };
         if (await permiso.ShowDialogAsync() != MessageBoxResult.Primary)
             return;
@@ -330,11 +328,11 @@ public sealed partial class VocesViewModel : ObservableObject
                 _voces.MarcarPredeterminada(voz.Id);
             await CargarAsync();
             ErrorGeneral = null;
-            AvisoImportar = $"«{voz.Nombre}» añadida a tu biblioteca.";
+            AvisoImportar = T("«{0}» añadida a tu biblioteca.", voz.Nombre);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or VozInvalidaException)
         {
-            ErrorGeneral = e is VozInvalidaException ? e.Message : $"No se ha podido abrir: {e.Message}";
+            ErrorGeneral = e is VozInvalidaException ? e.Message : T("No se ha podido abrir: {0}", e.Message);
         }
     }
 
@@ -354,8 +352,8 @@ public sealed partial class VocesViewModel : ObservableObject
     {
         var dialogo = new OpenFileDialog
         {
-            Title = "Grabación de la voz",
-            Filter = "Audio (*.wav;*.mp3;*.flac;*.ogg;*.m4a)|*.wav;*.mp3;*.flac;*.ogg;*.m4a|Todos los archivos|*.*",
+            Title = T("Grabación de la voz"),
+            Filter = "Audio (*.wav;*.mp3;*.flac;*.ogg;*.m4a)|*.wav;*.mp3;*.flac;*.ogg;*.m4a|" + T("Todos los archivos") + "|*.*",
         };
         if (dialogo.ShowDialog() != true)
             return;
@@ -390,7 +388,7 @@ public sealed partial class VocesViewModel : ObservableObject
             if (_voces.Predeterminada is null)
                 _voces.MarcarPredeterminada(r.Voz.Id);
             await CargarAsync();
-            AvisoImportar = r.Aviso is null ? $"«{r.Voz.Nombre}» añadida a tu biblioteca." : $"«{r.Voz.Nombre}» añadida. {r.Aviso}";
+            AvisoImportar = r.Aviso is null ? T("«{0}» añadida a tu biblioteca.", r.Voz.Nombre) : T("«{0}» añadida. {1}", r.Voz.Nombre, r.Aviso);
             ArchivoImportar = NombreImportar = TranscripcionImportar = "";
             ConsentimientoImportar = SinTranscripcionImportar = false;
             MostrarImportar = false;
@@ -440,9 +438,8 @@ public sealed partial class VocesViewModel : ObservableObject
             var motor = MotorPrueba;
             var r = await Motor.SintetizarAsync(t.Voz, t.Referencia, t.TextoPrueba.Trim(), salida, motor: motor);
             t.UltimaPrueba = r.Salida;
-            var es = CultureInfo.GetCultureInfo("es-ES");
-            t.ResultadoPrueba = $"{MotoresDeVoz.Nombre(motor)}: {r.Duracion.ToString("0.#", es)} s de audio generados en {r.Segundos.ToString("0.#", es)} s" +
-                                (r.VramPicoGib is { } v ? $" · {v.ToString("0.#", es)} GB de memoria de la tarjeta" : "");
+            t.ResultadoPrueba = T("{0}: {1:0.#} s de audio generados en {2:0.#} s", MotoresDeVoz.NombreVisible(motor), r.Duracion, r.Segundos) +
+                                (r.VramPicoGib is { } v ? " · " + T("{0:0.#} GB de memoria de la tarjeta", v) : "");
             Reproductor.Reproducir(r.Salida);
         }
         catch (Exception e) when (e is not OperationCanceledException)
@@ -481,7 +478,8 @@ public sealed partial class VocesViewModel : ObservableObject
 
     /// <summary>Al editar una voz ya creada, la alternativa es dejar la transcripción vacía, no marcar una casilla.</summary>
     internal static string ParaEdicion(string mensaje) =>
-        mensaje.Replace("o marca «No tengo la transcripción»", "o déjala vacía para imitar solo el timbre");
+        mensaje.Replace("o marca «No tengo la transcripción»", T("o déjala vacía para imitar solo el timbre"))
+            .Replace(T("o marca «No tengo la transcripción»"), T("o déjala vacía para imitar solo el timbre"));
 
     [RelayCommand]
     private void EditarTranscripcion(TarjetaVoz t)
@@ -517,10 +515,10 @@ public sealed partial class VocesViewModel : ObservableObject
     {
         var caja = new MessageBox
         {
-            Title = $"Borrar «{t.Nombre}»",
-            Content = "Se borrará la voz y su grabación de referencia. No se puede deshacer.",
-            PrimaryButtonText = "Borrar",
-            CloseButtonText = "Cancelar",
+            Title = T("Borrar «{0}»", t.Nombre),
+            Content = T("Se borrará la voz y su grabación de referencia. No se puede deshacer."),
+            PrimaryButtonText = T("Borrar"),
+            CloseButtonText = T("Cancelar"),
         };
         if (await caja.ShowDialogAsync() != MessageBoxResult.Primary)
             return;
@@ -532,7 +530,7 @@ public sealed partial class VocesViewModel : ObservableObject
         }
         catch (IOException e)
         {
-            ErrorGeneral = $"No se ha podido borrar: {e.Message}";
+            ErrorGeneral = T("No se ha podido borrar: {0}", e.Message);
             return;
         }
         if (_voces.Predeterminada == t.Voz.Id)

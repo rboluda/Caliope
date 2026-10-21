@@ -2,9 +2,10 @@
     x:Class="Constantino.App.Paginas.PaginaAyuda"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     ScrollViewer.CanContentScroll="False"
-    Title="Ayuda">
+    Title="{l:T 'Ayuda'}">
     <Page.Resources>
         <Style x:Key="Parrafo" TargetType="TextBlock">
             <Setter Property="Margin" Value="0,0,0,10" />
@@ -36,9 +37,9 @@
                 </Grid.ColumnDefinitions>
                 <Image Width="72" Height="72" Source="pack://application:,,,/Recursos/caliope.png" />
                 <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                    <TextBlock FontSize="28" FontWeight="SemiBold" Text="Ayuda" />
+                    <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Ayuda'}" />
                     <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                               Text="Calíope convierte textos en voz en tu propio ordenador: crea voces, clónalas y narra guiones completos sin conexión, sin cuentas y sin pagar por minuto. Es una suite que reúne herramientas de código abierto de terceros (Qwen3-TTS, Chatterbox, Whisper, FFmpeg…) y las hace fáciles de usar; los créditos completos están en Ajustes → Acerca de Calíope." />
+                               Text="{l:T 'Calíope convierte textos en voz en tu propio ordenador: crea voces, clónalas y narra guiones completos sin conexión, sin cuentas y sin pagar por minuto. Es una suite que reúne herramientas de código abierto de terceros (Qwen3-TTS, Chatterbox, VoxCPM2, Whisper, FFmpeg…) y las hace fáciles de usar; los créditos completos están en Ajustes → Acerca de Calíope.'}" />
                 </StackPanel>
             </Grid>
 
@@ -48,20 +49,20 @@
                     <ui:SymbolIcon Symbol="Rocket24" />
                 </ui:CardExpander.Icon>
                 <ui:CardExpander.Header>
-                    <TextBlock FontWeight="SemiBold" Text="Primeros pasos" />
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Primeros pasos'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Parrafo}" Text="1. Instala lo necesario. El asistente del primer arranque analiza tu equipo y propone qué instalar. Siempre puedes añadir o quitar piezas desde «Componentes». Lo imprescindible son las herramientas básicas, el motor de voz y una de las voces (la de alta calidad, o la ligera en equipos modestos)." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="2. Consigue una voz. Puedes diseñarla describiéndola con palabras («Diseñar voz»), clonarla a partir de una grabación tuya o de alguien que te haya dado permiso («Clonar voz»), o importar un audio que ya tengas («Voces → Importar una voz»)." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="3. Narra. En «Narrar» crea un proyecto, escribe o pega el guion, elige la voz y pulsa «Generar narración». Cada párrafo se convierte en un bloque de audio; si cambias algo, solo se rehace lo que ha cambiado." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="4. Saca el audio. En la zona «Narración completa» puedes escucharla, guardarla donde quieras, copiarla o arrastrarla directamente a tu editor de vídeo. «Exportar todo…» copia también cada bloque por separado." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '1. Instala lo necesario. El asistente del primer arranque analiza tu equipo y propone qué instalar. Siempre puedes añadir o quitar piezas desde «Componentes». Lo imprescindible son las herramientas básicas, el motor de voz y una de las voces (la de alta calidad, o la ligera en equipos modestos).'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '2. Consigue una voz. Puedes diseñarla describiéndola con palabras («Diseñar voz»), clonarla a partir de una grabación tuya o de alguien que te haya dado permiso («Clonar voz»), o importar un audio que ya tengas («Voces → Importar una voz»).'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '3. Narra. En «Narrar» crea un proyecto, escribe o pega el guion, elige la voz y pulsa «Generar narración». Cada párrafo se convierte en un bloque de audio; si cambias algo, solo se rehace lo que ha cambiado.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '4. Saca el audio. En la zona «Narración completa» puedes escucharla, guardarla donde quieras, copiarla o arrastrarla directamente a tu editor de vídeo. «Exportar todo…» copia también cada bloque por separado.'}" />
                     <StackPanel Orientation="Horizontal">
-                        <ui:Button Click="AlIrAComponentes" Content="Ir a Componentes">
+                        <ui:Button Click="AlIrAComponentes" Content="{l:T 'Ir a Componentes'}">
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="PuzzlePiece24" />
                             </ui:Button.Icon>
                         </ui:Button>
-                        <ui:Button Margin="8,0,0,0" Click="AlIrANarrar" Content="Ir a Narrar">
+                        <ui:Button Margin="8,0,0,0" Click="AlIrANarrar" Content="{l:T 'Ir a Narrar'}">
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="BookOpen24" />
                             </ui:Button.Icon>
@@ -76,17 +77,17 @@
                     <ui:SymbolIcon Symbol="PersonVoice24" />
                 </ui:CardExpander.Icon>
                 <ui:CardExpander.Header>
-                    <TextBlock FontWeight="SemiBold" Text="Voces: diseñar, clonar y variantes" />
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Voces: diseñar, clonar y variantes'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Diseñar una voz" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Elige sexo, edad, timbre, ritmo, tono y acento (o escribe la descripción tú mismo). Calíope genera varias versiones con semillas distintas: escúchalas y guarda la que más te guste. Necesita el diseñador de voces." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Clonar una voz" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Graba entre 10 y 20 segundos leyendo el texto propuesto (o importa un audio), recorta el tramo bueno y comprueba el análisis: sin saturar, sin ruido de fondo y con volumen suficiente. La transcripción tiene que ser exacta: con la transcripción automática instalada se escribe sola." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="La transcripción importa" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Si la transcripción no coincide con lo que se oye, la voz sale cortada (medio segundo de audio). Calíope avisa cuando no encaja. Si no la tienes, marca «No tengo la transcripción»: se imitará solo el timbre, algo menos parecido pero sin riesgo." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Variantes" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Una variante es la misma voz hablando de otra forma: susurrando, tensa, asustada, triste, alegre o gritando. Se añaden en «Voces → Añadir variante» desde una grabación o, si la voz es diseñada, generándola con el diseñador de voces. En el guion se usan con su etiqueta." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Diseñar una voz'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Elige sexo, edad, timbre, ritmo, tono y acento (o escribe la descripción tú mismo). Calíope genera varias versiones con semillas distintas: escúchalas y guarda la que más te guste. Necesita el diseñador de voces.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Clonar una voz'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Graba entre 10 y 20 segundos leyendo el texto propuesto (o importa un audio), recorta el tramo bueno y comprueba el análisis: sin saturar, sin ruido de fondo y con volumen suficiente. La transcripción tiene que ser exacta: con la transcripción automática instalada se escribe sola.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'La transcripción importa'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si la transcripción no coincide con lo que se oye, la voz sale cortada (medio segundo de audio). Calíope avisa cuando no encaja. Si no la tienes, marca «No tengo la transcripción»: se imitará solo el timbre, algo menos parecido pero sin riesgo.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Variantes'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Una variante es la misma voz hablando de otra forma: susurrando, tensa, asustada, triste, alegre o gritando. Se añaden en «Voces → Añadir variante» desde una grabación o, si la voz es diseñada, generándola con el diseñador de voces. En el guion se usan con su etiqueta.'}" />
                 </StackPanel>
             </ui:CardExpander>
 
@@ -96,10 +97,10 @@
                     <ui:SymbolIcon Symbol="DocumentText24" />
                 </ui:CardExpander.Icon>
                 <ui:CardExpander.Header>
-                    <TextBlock FontWeight="SemiBold" Text="Cómo se escribe un guion" />
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Cómo se escribe un guion'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Escribe el texto tal cual. Cada párrafo (separado por una línea en blanco) es un bloque con su propio archivo de audio. Puedes usar estas marcas:" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Escribe el texto tal cual. Cada párrafo (separado por una línea en blanco) es un bloque con su propio archivo de audio. Puedes usar estas marcas:'}" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -108,30 +109,30 @@
                         <Grid.RowDefinitions>
                             <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Style="{StaticResource Codigo}" Text="[pause]" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource Celda}" Text="Pausa corta (0,6 s por defecto)." />
-                        <TextBlock Grid.Row="1" Style="{StaticResource Codigo}" Text="[long pause]" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Celda}" Text="Pausa larga (1,5 s por defecto)." />
-                        <TextBlock Grid.Row="2" Style="{StaticResource Codigo}" Text="[whispers]" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource Celda}" Text="Susurra hasta el final de la línea. Usa la variante «susurro» si la voz la tiene; si no, baja el volumen." />
-                        <TextBlock Grid.Row="3" Style="{StaticResource Codigo}" Text="[asustado], [tenso]…" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" Style="{StaticResource Celda}" Text="Lee con esa variante de la voz hasta el final de la línea. En Narrar aparecen botones con las variantes de la voz elegida." />
-                        <TextBlock Grid.Row="4" Style="{StaticResource Codigo}" Text="[normal]" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" Style="{StaticResource Celda}" Text="Vuelve a la voz normal antes de que acabe la línea." />
-                        <TextBlock Grid.Row="5" Style="{StaticResource Codigo}" Text="# nombre" />
-                        <TextBlock Grid.Row="5" Grid.Column="1" Style="{StaticResource Celda}" Text="En la primera línea de un párrafo, da nombre al bloque (y a su archivo)." />
-                        <TextBlock Grid.Row="6" Style="{StaticResource Codigo}" Text="// nota" />
-                        <TextBlock Grid.Row="6" Grid.Column="1" Style="{StaticResource Celda}" Text="Comentario: no se lee." />
-                        <TextBlock Grid.Row="7" Style="{StaticResource Codigo}" Text="(línea en blanco)" />
-                        <TextBlock Grid.Row="7" Grid.Column="1" Style="{StaticResource Celda}" Text="Separa bloques. Entre bloques hay una pausa que ajustas en «Más ajustes»." />
-                        <TextBlock Grid.Row="8" Style="{StaticResource Codigo}" Text="[voz: Nombre]" />
-                        <TextBlock Grid.Row="8" Grid.Column="1" Style="{StaticResource Celda}" Text="Lee con otra voz de tu biblioteca hasta el final de la línea: para diálogos y personajes. [normal] vuelve a la tuya." />
-                        <TextBlock Grid.Row="9" Style="{StaticResource Codigo}" Text="[sfx: trueno]" />
-                        <TextBlock Grid.Row="9" Grid.Column="1" Style="{StaticResource Celda}" Text="Un efecto de sonido de «Mis sonidos», con la voz en pausa mientras suena." />
+                        <TextBlock Grid.Row="0" Style="{StaticResource Codigo}" Text="{l:T '[pause]'}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Pausa corta (0,6 s por defecto).'}" />
+                        <TextBlock Grid.Row="1" Style="{StaticResource Codigo}" Text="{l:T '[long pause]'}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Pausa larga (1,5 s por defecto).'}" />
+                        <TextBlock Grid.Row="2" Style="{StaticResource Codigo}" Text="{l:T '[whispers]'}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Susurra hasta el final de la línea. Usa la variante «susurro» si la voz la tiene; si no, baja el volumen.'}" />
+                        <TextBlock Grid.Row="3" Style="{StaticResource Codigo}" Text="{l:T '[asustado], [tenso]…'}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Lee con esa variante de la voz hasta el final de la línea. En Narrar aparecen botones con las variantes de la voz elegida.'}" />
+                        <TextBlock Grid.Row="4" Style="{StaticResource Codigo}" Text="{l:T '[normal]'}" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Vuelve a la voz normal antes de que acabe la línea.'}" />
+                        <TextBlock Grid.Row="5" Style="{StaticResource Codigo}" Text="{l:T '# nombre'}" />
+                        <TextBlock Grid.Row="5" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'En la primera línea de un párrafo, da nombre al bloque (y a su archivo).'}" />
+                        <TextBlock Grid.Row="6" Style="{StaticResource Codigo}" Text="{l:T '// nota'}" />
+                        <TextBlock Grid.Row="6" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Comentario: no se lee.'}" />
+                        <TextBlock Grid.Row="7" Style="{StaticResource Codigo}" Text="{l:T '(línea en blanco)'}" />
+                        <TextBlock Grid.Row="7" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Separa bloques. Entre bloques hay una pausa que ajustas en «Más ajustes».'}" />
+                        <TextBlock Grid.Row="8" Style="{StaticResource Codigo}" Text="{l:T '[voz: Nombre]'}" />
+                        <TextBlock Grid.Row="8" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Lee con otra voz de tu biblioteca hasta el final de la línea: para diálogos y personajes. [normal] vuelve a la tuya.'}" />
+                        <TextBlock Grid.Row="9" Style="{StaticResource Codigo}" Text="{l:T '[sfx: trueno]'}" />
+                        <TextBlock Grid.Row="9" Grid.Column="1" Style="{StaticResource Celda}" Text="{l:T 'Un efecto de sonido de «Mis sonidos», con la voz en pausa mientras suena.'}" />
                     </Grid>
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Ejemplo" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Ejemplo'}" />
                     <Border Padding="12" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
-                        <TextBlock FontFamily="Cascadia Mono, Consolas" TextWrapping="Wrap"><Run Text="# inicio" /><LineBreak /><Run Text="Era sábado por la noche. [pause] Diluviaba." /><LineBreak /><LineBreak /><Run Text="# susto" /><LineBreak /><Run Text="Alguien llamó a la puerta. [long pause]" /><LineBreak /><Run Text="[whispers] No abras. [normal] Pero ella abrió. [sfx: trueno]" /><LineBreak /><Run Text="[voz: Anciano] ¿Quién anda ahí?" /></TextBlock>
+                        <TextBlock FontFamily="Cascadia Mono, Consolas" TextWrapping="Wrap"><Run Text="{l:T '# inicio'}" /><LineBreak /><Run Text="{l:T 'Era sábado por la noche. [pause] Diluviaba.'}" /><LineBreak /><LineBreak /><Run Text="{l:T '# susto'}" /><LineBreak /><Run Text="{l:T 'Alguien llamó a la puerta. [long pause]'}" /><LineBreak /><Run Text="{l:T '[whispers] No abras. [normal] Pero ella abrió. [sfx: trueno]'}" /><LineBreak /><Run Text="{l:T '[voz: Anciano] ¿Quién anda ahí?'}" /></TextBlock>
                     </Border>
                 </StackPanel>
             </ui:CardExpander>
@@ -142,19 +143,19 @@
                     <ui:SymbolIcon Symbol="Wand24" />
                 </ui:CardExpander.Icon>
                 <ui:CardExpander.Header>
-                    <TextBlock FontWeight="SemiBold" Text="Pronunciación, otras tomas y sonidos" />
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Pronunciación, otras tomas y sonidos'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Pronunciación" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Si la voz dice mal una palabra (un nombre, una sigla, una palabra extranjera), pulsa «Pronunciación» en Narrar y escribe cómo debe sonar: «ONU» → «o ene u». Sirve para todos tus proyectos." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Otras tomas" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Cada vez que se genera un bloque, la voz lo interpreta de una manera. Si no te convence, pulsa el botón de capas del bloque y «Generar 2 tomas»: escúchalas y quédate con la que mejor suene. La anterior no se pierde, queda como otra toma." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Revisión automática" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Con la transcripción automática instalada, Calíope escucha cada bloque nuevo y lo compara con el guion. Si la voz se ha saltado o inventado palabras, prueba otras tomas y se queda con la buena; si ninguna lo consigue, te avisa para que lo revises." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Sonidos" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="En «Mis sonidos» hay efectos (trueno, latido, reloj…) y ambientes (lluvia, viento, hoguera, noche) creados por Calíope, libres de derechos. Puedes añadir tus propios audios a cada carpeta. La música de fondo la pones tú en la carpeta «Música»: usa solo música con licencia para tu uso." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Fondo y duración" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="En «Fondo, duración y revisión» eliges un ambiente o una música para el audio completo: bajan solos cuando habla la voz. Con una duración máxima (59 s para un Short), si el audio se pasa un poco, se acelera sin cambiar el tono para que quepa." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Pronunciación'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si la voz dice mal una palabra (un nombre, una sigla, una palabra extranjera), pulsa «Pronunciación» en Narrar y escribe cómo debe sonar: «ONU» → «o ene u». Sirve para todos tus proyectos.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Otras tomas'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Cada vez que se genera un bloque, la voz lo interpreta de una manera. Si no te convence, pulsa el botón de capas del bloque y «Generar 2 tomas»: escúchalas y quédate con la que mejor suene. La anterior no se pierde, queda como otra toma.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Revisión automática'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Con la transcripción automática instalada, Calíope escucha cada bloque nuevo y lo compara con el guion. Si la voz se ha saltado o inventado palabras, prueba otras tomas y se queda con la buena; si ninguna lo consigue, te avisa para que lo revises.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Sonidos'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Mis sonidos» hay efectos (trueno, latido, reloj…) y ambientes (lluvia, viento, hoguera, noche) creados por Calíope, libres de derechos. Puedes añadir tus propios audios a cada carpeta. La música de fondo la pones tú en la carpeta «Música»: usa solo música con licencia para tu uso.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Fondo y duración'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Fondo, duración y revisión» eliges un ambiente o una música para el audio completo: bajan solos cuando habla la voz. Con una duración máxima (59 s para un Short), si el audio se pasa un poco, se acelera sin cambiar el tono para que quepa.'}" />
                 </StackPanel>
             </ui:CardExpander>
 
@@ -164,15 +165,15 @@
                     <ui:SymbolIcon Symbol="Options24" />
                 </ui:CardExpander.Icon>
                 <ui:CardExpander.Header>
-                    <TextBlock FontWeight="SemiBold" Text="Ajustes de la narración" />
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Ajustes de la narración'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Expresividad: cuánta libertad tiene el motor al entonar. Baja, más estable y monótona; alta, más viva pero con más riesgo de errores (palabras raras o repetidas). Si un bloque sale mal, pulsa su botón de regenerar o cambia la semilla." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Velocidad y tono: se aplican al final, sin que uno afecte al otro. Más allá de un 15 % de velocidad o de 2 semitonos empieza a notarse artificial." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Intensidad emocional (solo Chatterbox): cuánto se exagera la emoción. 0,5 es natural; por encima de 0,7 puede sonar teatral." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Semilla: el mismo texto con la misma semilla sale siempre igual. Cámbiala para obtener otra interpretación." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Volumen (LUFS): todas las narraciones se igualan a este volumen. −16 es lo habitual en vídeos y pódcast; −14 suena más fuerte." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Formato: MP3 para usar directamente; WAV si vas a seguir editando el audio." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Expresividad (no la usa el motor de máximo parecido): cuánta libertad tiene el motor al entonar. Baja, más estable y monótona; alta, más viva pero con más riesgo de errores (palabras raras o repetidas). Si un bloque sale mal, pulsa su botón de regenerar o cambia la semilla.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Velocidad y tono: se aplican al final, sin que uno afecte al otro. Más allá de un 15 % de velocidad o de 2 semitonos empieza a notarse artificial.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Intensidad emocional (solo con el motor castellano rápido): cuánto se exagera la emoción. 0,5 es natural; por encima de 0,7 puede sonar teatral.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Semilla: el mismo texto con la misma semilla sale siempre igual. Cámbiala para obtener otra interpretación.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Volumen (LUFS): todas las narraciones se igualan a este volumen. −16 es lo habitual en vídeos y pódcast; −14 suena más fuerte.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Formato: MP3 para usar directamente; WAV si vas a seguir editando el audio.'}" />
                 </StackPanel>
             </ui:CardExpander>
 
@@ -182,13 +183,16 @@
                     <ui:SymbolIcon Symbol="Server24" />
                 </ui:CardExpander.Icon>
                 <ui:CardExpander.Header>
-                    <TextBlock FontWeight="SemiBold" Text="Motores y componentes" />
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Motores y componentes'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Qwen3-TTS (Alibaba, licencia Apache 2.0) es el motor principal: clona voces con mucha fidelidad, respeta bien las pausas y es el único que diseña voces (VoiceDesign). El modelo Base 1.7B da la mejor calidad; el 0.6B es para tarjetas de 4 GB o equipos sin tarjeta NVIDIA." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Chatterbox (Resemble AI, licencia MIT) es un motor alternativo opcional: lee más seguido, deja ajustar la intensidad emocional y marca todo lo que genera con una marca de agua inaudible. En «Voces → Probar» puedes escuchar la misma voz con los dos y quedarte con el que prefieras." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Whisper (OpenAI, MIT) transcribe las grabaciones al clonar. Es opcional: sin él, escribes la transcripción a mano." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Solo un motor ocupa la tarjeta gráfica a la vez: al cambiar de motor, Calíope cierra el otro. El motor se enciende solo cuando hace falta y puedes apagarlo para liberar memoria." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Qwen3-TTS (Alibaba, licencia Apache 2.0) es el motor principal: clona voces con mucha fidelidad, respeta bien las pausas y es el único que diseña voces (VoiceDesign). El modelo Base 1.7B da la mejor calidad; el 0.6B es para tarjetas de 4 GB o equipos sin tarjeta NVIDIA.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'El motor principal basta para todo. Los otros dos son opcionales y no hace falta probarlos: en «Componentes», el recuadro «¿Qué motor me conviene?» mira tu tarjeta gráfica y te dice si alguno te aporta algo.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Castellano rápido (Chatterbox, de Resemble AI, licencia MIT): versión afinada para el castellano de España. Es el más rápido (tarda menos de lo que dura el audio), deja ajustar la intensidad emocional y marca lo que genera con una marca de agua inaudible. Solo lee en español, pide 4,5 GB de tarjeta y todavía no funciona con las RTX 50.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Máximo parecido (VoxCPM2, de OpenBMB, licencia Apache 2.0): el que más se parece a la voz original, sobre todo si la voz tiene transcripción, y el de mejor sonido (48 kHz). Lee 30 idiomas. Es el más exigente: necesita una tarjeta de 8 GB (con 8 va justo y más lento; mejor 10 GB o más).'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Los tres leen el texto igual de bien. Elige el motor en «Narrar»; en «Voces → Probar» puedes escuchar la misma voz con cada uno.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Whisper (OpenAI, MIT) transcribe las grabaciones al clonar. Es opcional: sin él, escribes la transcripción a mano.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Solo un motor ocupa la tarjeta gráfica a la vez: al cambiar de motor, Calíope cierra el otro. El motor se enciende solo cuando hace falta y puedes apagarlo para liberar memoria.'}" />
                 </StackPanel>
             </ui:CardExpander>
 
@@ -198,24 +202,24 @@
                     <ui:SymbolIcon Symbol="Wrench24" />
                 </ui:CardExpander.Icon>
                 <ui:CardExpander.Header>
-                    <TextBlock FontWeight="SemiBold" Text="Si algo no va bien" />
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Si algo no va bien'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="La voz sale cortada o muy corta" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Casi siempre es la transcripción de la voz: corrígela en «Voces → Editar transcripción» o déjala vacía para imitar solo el timbre." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="«No hay memoria suficiente en la tarjeta gráfica»" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Cierra navegadores, juegos y otros programas que usen la tarjeta y vuelve a intentarlo. En equipos de 4 GB usa la «Voz ligera»." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="La primera vez tarda" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Arrancar el motor y cargar el modelo lleva entre 20 y 60 segundos. Después queda en memoria y cada bloque va mucho más rápido." />
-                    <TextBlock Style="{StaticResource Subtitulo}" Text="Un componente da errores" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="En «Componentes», pulsa «Reparar»: vuelve a instalarlo aprovechando lo ya descargado. Si quieres verlo, el registro de lo que ha pasado está en «Programas internos», dentro de la carpeta de Calíope (en Ajustes → Almacenamiento ves cada carpeta y lo que ocupa)." />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'La voz sale cortada o muy corta'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Casi siempre es la transcripción de la voz: corrígela en «Voces → Editar transcripción» o déjala vacía para imitar solo el timbre.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T '«No hay memoria suficiente en la tarjeta gráfica»'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Cierra navegadores, juegos y otros programas que usen la tarjeta y vuelve a intentarlo. En equipos de 4 GB usa la «Voz ligera».'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'La primera vez tarda'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Arrancar el motor y cargar el modelo lleva entre 20 y 60 segundos. Después queda en memoria y cada bloque va mucho más rápido.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Un componente da errores'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Componentes», pulsa «Reparar»: vuelve a instalarlo aprovechando lo ya descargado. Si quieres verlo, el registro de lo que ha pasado está en «Programas internos», dentro de la carpeta de Calíope (en Ajustes → Almacenamiento ves cada carpeta y lo que ocupa).'}" />
                     <StackPanel Orientation="Horizontal">
-                        <ui:Button Click="AlAbrirDatos" Content="Abrir la carpeta de datos">
+                        <ui:Button Click="AlAbrirDatos" Content="{l:T 'Abrir la carpeta de datos'}">
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="FolderOpen24" />
                             </ui:Button.Icon>
                         </ui:Button>
-                        <ui:Button Margin="8,0,0,0" Click="AlAbrirRegistros" Content="Abrir los registros">
+                        <ui:Button Margin="8,0,0,0" Click="AlAbrirRegistros" Content="{l:T 'Abrir los registros'}">
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="DocumentSearch24" />
                             </ui:Button.Icon>
@@ -230,12 +234,12 @@
                     <ui:SymbolIcon Symbol="Shield24" />
                 </ui:CardExpander.Icon>
                 <ui:CardExpander.Header>
-                    <TextBlock FontWeight="SemiBold" Text="Uso responsable" />
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Uso responsable'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Clona solo tu voz o la de personas que te hayan dado permiso expreso. Por eso Calíope pide confirmar el consentimiento al clonar o importar una voz." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="No uses voces clonadas para suplantar a nadie, engañar ni difamar. Si publicas contenido con voces sintéticas, indícalo cuando pueda confundir a quien lo escucha." />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="Todo se genera en tu equipo: ni los textos ni las voces salen de él. Internet solo se usa para descargar los componentes." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Clona solo tu voz o la de personas que te hayan dado permiso expreso. Por eso Calíope pide confirmar el consentimiento al clonar o importar una voz.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'No uses voces clonadas para suplantar a nadie, engañar ni difamar. Si publicas contenido con voces sintéticas, indícalo cuando pueda confundir a quien lo escucha.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Todo se genera en tu equipo: ni los textos ni las voces salen de él. Internet solo se usa para descargar los componentes.'}" />
                 </StackPanel>
             </ui:CardExpander>
 
@@ -246,11 +250,11 @@
                 </ui:CardControl.Icon>
                 <ui:CardControl.Header>
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="Código, novedades y avisos de errores" />
-                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="github.com/rboluda/Caliope" />
+                        <TextBlock FontWeight="SemiBold" Text="{l:T 'Código, novedades y avisos de errores'}" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'github.com/rboluda/Caliope'}" />
                     </StackPanel>
                 </ui:CardControl.Header>
-                <ui:Button Click="AlAbrirGitHub" Content="Abrir en el navegador">
+                <ui:Button Click="AlAbrirGitHub" Content="{l:T 'Abrir en el navegador'}">
                     <ui:Button.Icon>
                         <ui:SymbolIcon Symbol="Open24" />
                     </ui:Button.Icon>

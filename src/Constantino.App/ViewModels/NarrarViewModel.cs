@@ -8,6 +8,7 @@ using Constantino.App.Paginas;
 using Constantino.App.Servicios;
 using Constantino.Core.Motores;
 using Constantino.Core.Narracion;
+using Constantino.Core.Recomendaciones;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -15,6 +16,7 @@ using Wpf.Ui;
 using Wpf.Ui.Controls;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using MessageBoxResult = Wpf.Ui.Controls.MessageBoxResult;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
@@ -55,10 +57,10 @@ public sealed partial class FilaBloque(int indice, string nombre, string resumen
 
     public string Etiqueta => Estado switch
     {
-        EstadoBloqueVista.Generado => "Generado",
-        EstadoBloqueVista.Desactualizado => "Por actualizar",
-        EstadoBloqueVista.Generando => "Generando…",
-        _ => "Pendiente",
+        EstadoBloqueVista.Generado => T("Generado"),
+        EstadoBloqueVista.Desactualizado => T("Por actualizar"),
+        EstadoBloqueVista.Generando => T("Generando…"),
+        _ => T("Pendiente"),
     };
 
     public ControlAppearance Apariencia => Estado switch
@@ -86,7 +88,20 @@ public sealed record OpcionVoz(string Id, string Nombre);
 
 public sealed record OpcionFormato(FormatoSalida Valor, string Nombre);
 
-public sealed record OpcionMotor(string Id, string Nombre);
+public sealed record OpcionMotor(string Id, string Nombre)
+{
+    public static OpcionMotor De(string motor) => new(motor, MotoresDeVoz.NombreVisible(motor));
+
+    /// <summary>Deja en <paramref name="lista"/> los motores instalados, en orden, sin vaciarla (no se pierde la selección).</summary>
+    public static void Sincronizar(ObservableCollection<OpcionMotor> lista, IReadOnlyList<string> instalados)
+    {
+        foreach (var sobra in lista.Where(o => !instalados.Contains(o.Id)).ToList())
+            lista.Remove(sobra);
+        for (var i = 0; i < instalados.Count; i++)
+            if (i >= lista.Count || lista[i].Id != instalados[i])
+                lista.Insert(i, De(instalados[i]));
+    }
+}
 
 /// <summary>Un sonido de fondo elegible; Clave vacía = ninguno.</summary>
 public sealed record OpcionSonido(string Clave, string Nombre);
@@ -96,8 +111,6 @@ public sealed record EtiquetaVariante(string Nombre, string Etiqueta);
 
 public sealed partial class NarrarViewModel : ObservableObject
 {
-    private static readonly CultureInfo Es = CultureInfo.GetCultureInfo("es-ES");
-
     private readonly ServicioNarracion _narracion;
     private readonly ServicioVoces _voces;
     private readonly INavigationService _navegacion;
@@ -131,7 +144,7 @@ public sealed partial class NarrarViewModel : ObservableObject
     public ObservableCollection<FilaBloque> Bloques { get; } = [];
 
     public IReadOnlyList<OpcionFormato> Formatos { get; } =
-        [new(FormatoSalida.Mp3, "MP3 (192 kbps)"), new(FormatoSalida.Wav, "WAV (sin pérdida)")];
+        [new(FormatoSalida.Mp3, "MP3 (192 kbps)"), new(FormatoSalida.Wav, T("WAV (sin pérdida)"))];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HayProyecto))]
@@ -158,20 +171,22 @@ public sealed partial class NarrarViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(TextoTono))]
     public partial double TonoSemitonos { get; set; }
 
-    public string TextoVelocidad => Math.Abs(Velocidad - 1) < 0.001 ? "normal" : $"{Velocidad.ToString("0.00", Es)}×";
+    public string TextoVelocidad => Math.Abs(Velocidad - 1) < 0.001 ? T("normal") : $"{Velocidad.ToString("0.00", Idioma.Cultura)}×";
 
     public string TextoTono => Math.Abs(TonoSemitonos) < 0.001
-        ? "natural"
-        : $"{(TonoSemitonos > 0 ? "+" : "")}{TonoSemitonos.ToString("0.#", Es)} semitonos";
+        ? T("natural")
+        : T("{0} semitonos", $"{(TonoSemitonos > 0 ? "+" : "")}{TonoSemitonos.ToString("0.#", Idioma.Cultura)}");
 
     // --- Motor de voz ---
-    public ObservableCollection<OpcionMotor> Motores { get; } = [new(MotoresDeVoz.Qwen, "Qwen3-TTS")];
+    public ObservableCollection<OpcionMotor> Motores { get; } = [OpcionMotor.De(MotoresDeVoz.Qwen)];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(EsChatterbox))]
+    [NotifyPropertyChangedFor(nameof(TieneIntensidad), nameof(TieneExpresividad), nameof(AyudaMotor))]
     public partial string MotorVoz { get; set; } = MotoresDeVoz.Qwen;
 
-    public bool EsChatterbox => MotorVoz == MotoresDeVoz.Chatterbox;
+    public bool TieneIntensidad => MotoresDeVoz.TieneIntensidad(MotorVoz);
+
+    public bool TieneExpresividad => MotoresDeVoz.TieneExpresividad(MotorVoz);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoIntensidad))]
@@ -179,14 +194,15 @@ public sealed partial class NarrarViewModel : ObservableObject
 
     public string TextoIntensidad => Intensidad switch
     {
-        < 0.4 => "contenida",
-        < 0.65 => "natural",
-        < 0.85 => "intensa",
-        _ => "exagerada",
+        < 0.4 => T("contenida"),
+        < 0.65 => T("natural"),
+        < 0.85 => T("intensa"),
+        _ => T("exagerada"),
     };
 
-    /// <summary>Explica el motor elegido, o cómo conseguir el otro.</summary>
-    [ObservableProperty] public partial string? AyudaMotor { get; set; }
+    /// <summary>Explica el motor elegido y, si solo está el principal, que hay otros opcionales.</summary>
+    public string AyudaMotor => GuiaMotores.Resumen(MotorVoz) +
+                                (Motores.Count == 1 ? " " + T("Hay otros dos motores opcionales en «Componentes»; la guía de allí te dice si te conviene alguno.") : "");
 
     /// <summary>Otras voces de la biblioteca, para insertar [voz: …].</summary>
     public ObservableCollection<EtiquetaVariante> OtrasVoces { get; } = [];
@@ -242,9 +258,9 @@ public sealed partial class NarrarViewModel : ObservableObject
 
     public string TextoExpresividad => Temperatura switch
     {
-        < 0.7 => "Estable y contenida",
-        < 1.0 => "Natural",
-        _ => "Muy expresiva (más riesgo de fallos)",
+        < 0.7 => T("Estable y contenida"),
+        < 1.0 => T("Natural"),
+        _ => T("Muy expresiva (más riesgo de fallos)"),
     };
 
     // --- Carga ---------------------------------------------------------------------------------
@@ -257,10 +273,8 @@ public sealed partial class NarrarViewModel : ObservableObject
             Voces.Add(new OpcionVoz(v.Id, v.Nombre));
         SinVoces = Voces.Count == 0;
 
-        var hayChatterbox = await _narracion.ChatterboxInstaladoAsync();
-        if (hayChatterbox && Motores.All(m => m.Id != MotoresDeVoz.Chatterbox))
-            Motores.Add(new OpcionMotor(MotoresDeVoz.Chatterbox, "Chatterbox"));
-        AyudaMotor = hayChatterbox ? null : "Instala Chatterbox en «Componentes» para poder comparar con otro motor.";
+        OpcionMotor.Sincronizar(Motores, await _narracion.MotoresInstaladosAsync());
+        OnPropertyChanged(nameof(AyudaMotor));
 
         var almacen = await _narracion.AlmacenAsync();
         var actual = ProyectoSeleccionado?.Id;
@@ -410,7 +424,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         Bloques.Clear();
         foreach (var b in bloques)
         {
-            var fila = new FilaBloque(b.Indice, b.Nombre, b.Vacio ? "(solo silencio)" : Recortar(b.TextoLeido, 160));
+            var fila = new FilaBloque(b.Indice, b.Nombre, b.Vacio ? T("(solo silencio)") : Recortar(b.TextoLeido, 160));
             if (estados.TryGetValue(b.Indice, out var e) && File.Exists(Path.Combine(salida, e.Archivo)))
             {
                 var huella = narrador?.Huella(proyecto, b);
@@ -433,17 +447,17 @@ public sealed partial class NarrarViewModel : ObservableObject
         var porActualizar = Bloques.Count(f => f.Estado == EstadoBloqueVista.Desactualizado);
         var duracion = _proyecto.Bloques.Where(e => e.Indice <= bloques.Count).Sum(e => e.Duracion);
         Resumen = Bloques.Count == 0
-            ? "El guion está vacío."
-            : $"{Bloques.Count} bloques · {generados} generados" +
-              (porActualizar > 0 ? $" · {porActualizar} por actualizar" : "") +
-              (duracion > 0 ? $" · {Duracion(duracion)} de audio" : "");
+            ? T("El guion está vacío.")
+            : T("{0} bloques · {1} generados", Bloques.Count, generados) +
+              (porActualizar > 0 ? " · " + T("{0} por actualizar", porActualizar) : "") +
+              (duracion > 0 ? " · " + T("{0} de audio", Duracion(duracion)) : "");
     }
 
     private async Task ActualizarInsertablesAsync(VozParaNarrar? voz)
     {
         OtrasVoces.Clear();
         foreach (var v in await _narracion.OtrasVocesAsync(voz?.Voz.Id))
-            OtrasVoces.Add(new EtiquetaVariante(v.Nombre, $"[voz: {v.Nombre}] "));
+            OtrasVoces.Add(new EtiquetaVariante(v.Nombre, Idioma.EsIngles ? $"[voice: {v.Nombre}] " : $"[voz: {v.Nombre}] "));
         var sonidos = await _narracion.SonidosAsync(esperar: false);
         Efectos.Clear();
         foreach (var e in sonidos.ListaEfectos)
@@ -451,8 +465,8 @@ public sealed partial class NarrarViewModel : ObservableObject
         // Las listas de fondo se rellenan sin perder lo elegido (el ComboBox lo borraría al vaciarse).
         var (ambiente, musica) = (Ambiente, Musica);
         _cargando = true;
-        Rellenar(Ambientes, "Sin ambiente", sonidos.ListaAmbientes);
-        Rellenar(Musicas, "Sin música", sonidos.ListaMusica);
+        Rellenar(Ambientes, T("Sin ambiente"), sonidos.ListaAmbientes);
+        Rellenar(Musicas, T("Sin música"), sonidos.ListaMusica);
         (Ambiente, Musica) = (ambiente, musica);
         _cargando = false;
         RevisionDisponible = await _narracion.RevisionDisponibleAsync();
@@ -552,8 +566,8 @@ public sealed partial class NarrarViewModel : ObservableObject
         fila.Tomas.Clear();
         var n = 1;
         foreach (var t in tomas)
-            fila.Tomas.Add(new FilaToma(fila.Indice, t.Semilla, t.Archivo, Segundos(t.Duracion), $"Toma {n++}"));
-        fila.MensajeTomas = fila.Tomas.Count == 0 ? "Aún no hay otras tomas de este bloque." : null;
+            fila.Tomas.Add(new FilaToma(fila.Indice, t.Semilla, t.Archivo, Segundos(t.Duracion), T("Toma {0}", n++)));
+        fila.MensajeTomas = fila.Tomas.Count == 0 ? T("Aún no hay otras tomas de este bloque.") : null;
     }
 
     [RelayCommand]
@@ -567,24 +581,24 @@ public sealed partial class NarrarViewModel : ObservableObject
         actual.MostrarTomas = true;
         if (await NarradorActualAsync() is not { } narrador)
         {
-            Error = "Elige una voz y comprueba que el motor está instalado.";
+            Error = T("Elige una voz y comprueba que el motor está instalado.");
             return;
         }
         Reproductor.Detener();
         Generando = true;
         actual.GenerandoTomas = true;
-        actual.MensajeTomas = "Generando dos tomas nuevas…";
+        actual.MensajeTomas = T("Generando dos tomas nuevas…");
         _cancelacion = new CancellationTokenSource();
         try
         {
             var progreso = new Progress<EventoNarracion>(e => { Mensaje = e.Mensaje; Fraccion = e.Fraccion; });
             await narrador.GenerarTomasAsync(_proyecto, TextoGuion, actual.Indice, 2, progreso, _cancelacion.Token);
             CargarTomas(actual, narrador.TomasDe(_proyecto, TextoGuion, actual.Indice));
-            Mensaje = "Escucha las tomas y quédate con la que mejor suene.";
+            Mensaje = T("Escucha las tomas y quédate con la que mejor suene.");
         }
         catch (OperationCanceledException)
         {
-            actual.MensajeTomas = "Cancelado.";
+            actual.MensajeTomas = T("Cancelado.");
         }
         catch (Exception e)
         {
@@ -611,13 +625,13 @@ public sealed partial class NarrarViewModel : ObservableObject
             return;
         Reproductor.Detener();
         Generando = true;
-        Mensaje = "Usando la toma elegida…";
+        Mensaje = T("Usando la toma elegida…");
         try
         {
             _proyecto = await narrador.ElegirTomaAsync(_proyecto, TextoGuion, toma.Indice, toma.Semilla, CancellationToken.None);
             var r = await narrador.NarrarAsync(_proyecto, TextoGuion, null, false, new Progress<EventoNarracion>(_ => { }), CancellationToken.None);
             _proyecto = r.Proyecto;
-            Mensaje = "Listo: el bloque usa la toma elegida.";
+            Mensaje = T("Listo: el bloque usa la toma elegida.");
         }
         catch (Exception e)
         {
@@ -646,10 +660,12 @@ public sealed partial class NarrarViewModel : ObservableObject
         foreach (var (v, _) in voz.Variantes.Where(v => v.Variante.Id != Constantino.Core.Voces.CatalogoVariantes.Susurro))
             EtiquetasVoz.Add(new EtiquetaVariante(v.Nombre, v.Etiqueta + " "));
         var tieneSusurro = voz.IdsVariantes.Contains(Constantino.Core.Voces.CatalogoVariantes.Susurro);
+        var lista = string.Join(", ", voz.Variantes.Select(v => $"{v.Variante.Etiqueta} {v.Variante.Nombre.ToLowerInvariant()}"));
         AyudaVariantes = voz.Variantes.Count == 0
-            ? "Esta voz no tiene variantes: [whispers] se simula bajando el volumen. Puedes añadirle variantes en «Voces»."
-            : "Variantes de esta voz: " + string.Join(", ", voz.Variantes.Select(v => $"{v.Variante.Etiqueta} {v.Variante.Nombre.ToLowerInvariant()}")) +
-              (tieneSusurro ? "." : ". [whispers] se simula bajando el volumen.");
+            ? T("Esta voz no tiene variantes: [whispers] se simula bajando el volumen. Puedes añadirle variantes en «Voces».")
+            : tieneSusurro
+                ? T("Variantes de esta voz: {0}.", lista)
+                : T("Variantes de esta voz: {0}. [whispers] se simula bajando el volumen.", lista);
     }
 
     // --- Proyectos ---------------------------------------------------------------------------
@@ -683,10 +699,10 @@ public sealed partial class NarrarViewModel : ObservableObject
             return;
         var caja = new MessageBox
         {
-            Title = $"Borrar «{_proyecto.Nombre}»",
-            Content = "Se borrarán el guion y todos los audios generados del proyecto. No se puede deshacer.",
-            PrimaryButtonText = "Borrar",
-            CloseButtonText = "Cancelar",
+            Title = T("Borrar «{0}»", _proyecto.Nombre),
+            Content = T("Se borrarán el guion y todos los audios generados del proyecto. No se puede deshacer."),
+            PrimaryButtonText = T("Borrar"),
+            CloseButtonText = T("Cancelar"),
         };
         if (await caja.ShowDialogAsync() != MessageBoxResult.Primary)
             return;
@@ -728,7 +744,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         var extension = Path.GetExtension(origen);
         var dialogo = new SaveFileDialog
         {
-            Title = "Guardar el audio",
+            Title = T("Guardar el audio"),
             FileName = nombre,
             DefaultExt = extension,
             Filter = $"Audio {extension.TrimStart('.').ToUpperInvariant()}|*{extension}",
@@ -739,11 +755,11 @@ public sealed partial class NarrarViewModel : ObservableObject
         try
         {
             File.Copy(origen, dialogo.FileName, overwrite: true);
-            AvisoSalida = $"Guardado en {dialogo.FileName}";
+            AvisoSalida = T("Guardado en {0}", dialogo.FileName);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            AvisoSalida = $"No se ha podido guardar: {e.Message}";
+            AvisoSalida = T("No se ha podido guardar: {0}", e.Message);
         }
     }
 
@@ -755,7 +771,7 @@ public sealed partial class NarrarViewModel : ObservableObject
             return;
         var dialogo = new OpenFolderDialog
         {
-            Title = "Carpeta donde copiar los audios",
+            Title = T("Carpeta donde copiar los audios"),
             InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
         };
         if (dialogo.ShowDialog() != true)
@@ -769,12 +785,12 @@ public sealed partial class NarrarViewModel : ObservableObject
             Directory.CreateDirectory(destino);
             foreach (var a in archivos)
                 File.Copy(a, Path.Combine(destino, Path.GetFileName(a)), overwrite: true);
-            AvisoSalida = $"{archivos.Count} audios copiados a {destino}";
+            AvisoSalida = T("{0} audios copiados a {1}", archivos.Count, destino);
             Process.Start(new ProcessStartInfo(destino) { UseShellExecute = true });
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            AvisoSalida = $"No se ha podido copiar: {e.Message}";
+            AvisoSalida = T("No se ha podido copiar: {0}", e.Message);
         }
     }
 
@@ -796,7 +812,7 @@ public sealed partial class NarrarViewModel : ObservableObject
     private void Copiar(string ruta)
     {
         System.Windows.Clipboard.SetFileDropList(new System.Collections.Specialized.StringCollection { ruta });
-        AvisoSalida = $"«{Path.GetFileName(ruta)}» copiado: pégalo en una carpeta o en tu editor de vídeo.";
+        AvisoSalida = T("«{0}» copiado: pégalo en una carpeta o en tu editor de vídeo.", Path.GetFileName(ruta));
     }
 
     [RelayCommand]
@@ -826,14 +842,14 @@ public sealed partial class NarrarViewModel : ObservableObject
         await GuardarYRefrescarAsync();
         if (await _narracion.VozAsync(VozId) is not { } voz)
         {
-            Error = Voces.Count == 0 ? "Primero añade una voz en «Voces»." : "Elige la voz con la que narrar.";
+            Error = Voces.Count == 0 ? T("Primero añade una voz en «Voces».") : T("Elige la voz con la que narrar.");
             return;
         }
         if (await _narracion.ModeloAsync(MotorVoz) is not { } modelo)
         {
-            Error = EsChatterbox
-                ? "Falta el motor alternativo: instálalo desde Componentes o elige el motor principal."
-                : "Falta una voz: instala la «Voz de alta calidad» desde Componentes.";
+            Error = MotorVoz == MotoresDeVoz.Qwen
+                ? T("Falta una voz: instala la «Voz de alta calidad» desde Componentes.")
+                : T("Falta el motor «{0}»: instálalo desde Componentes o elige el principal.", MotoresDeVoz.NombreVisible(MotorVoz));
             return;
         }
 
@@ -841,7 +857,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         Reproductor.Detener();
         Generando = true;
         Fraccion = 0;
-        Mensaje = "Preparando…";
+        Mensaje = T("Preparando…");
         _cancelacion = new CancellationTokenSource();
         var progreso = new Progress<EventoNarracion>(e =>
         {
@@ -861,13 +877,15 @@ public sealed partial class NarrarViewModel : ObservableObject
             var r = await narrador.NarrarAsync(_proyecto, TextoGuion, solo, forzar, progreso, _cancelacion.Token);
             _proyecto = r.Proyecto;
             Mensaje = r.Generados == 0
-                ? (r.Completo is null ? "No había nada que actualizar." : "Listo: audio completo actualizado.")
-                : $"Listo: {r.Generados} bloque(s) generado(s)" + (r.SinCambios > 0 ? $", {r.SinCambios} sin cambios." : ".");
+                ? (r.Completo is null ? T("No había nada que actualizar.") : T("Listo: audio completo actualizado."))
+                : r.SinCambios > 0
+                    ? T("Listo: {0} bloque(s) generado(s), {1} sin cambios.", r.Generados, r.SinCambios)
+                    : T("Listo: {0} bloque(s) generado(s).", r.Generados);
             AvisosResultado = r.Avisos is { Count: > 0 } avisos ? string.Join("\n", avisos) : null;
         }
         catch (OperationCanceledException)
         {
-            Mensaje = "Cancelado. Lo ya generado se conserva.";
+            Mensaje = T("Cancelado. Lo ya generado se conserva.");
         }
         catch (Exception e)
         {
@@ -913,7 +931,7 @@ public sealed partial class NarrarViewModel : ObservableObject
 
     private static string Recortar(string texto, int maximo) => texto.Length <= maximo ? texto : texto[..(maximo - 1)] + "…";
 
-    private static string Segundos(double s) => $"{s.ToString("0.0", Es)} s";
+    private static string Segundos(double s) => $"{s.ToString("0.0", Idioma.Cultura)} s";
 
     private static string Duracion(double s) =>
         s < 60 ? Segundos(s) : $"{(int)(s / 60)} min {(int)(s % 60)} s";

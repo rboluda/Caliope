@@ -16,6 +16,7 @@ import threading
 import traceback
 
 from . import PROTOCOLO, VERSION
+from .textos import t
 
 
 class ErrorMotor(Exception):
@@ -55,6 +56,9 @@ def _crear_motor():
     if os.environ.get("CONSTANTINO_MOTOR") == "chatterbox":
         from .chatterbox import MotorChatterbox
         return MotorChatterbox()
+    if os.environ.get("CONSTANTINO_MOTOR") == "voxcpm":
+        from .voxcpm import MotorVoxCpm
+        return MotorVoxCpm()
     from .qwen import MotorQwen
     return MotorQwen()
 
@@ -99,7 +103,7 @@ def main():
                 break
             accion = getattr(motor, "op_" + str(op), None)
             if accion is None:
-                raise ErrorMotor("operacion_desconocida", f"Operación desconocida: {op}")
+                raise ErrorMotor("operacion_desconocida", t("Operación desconocida: {op}", op=op))
             datos = accion(params, progreso)
             canal.enviar(id=id_peticion, tipo="resultado", datos=datos or {})
         except ErrorMotor as e:

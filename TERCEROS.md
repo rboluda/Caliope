@@ -1,3 +1,5 @@
+**Español** · [English](TERCEROS.en.md)
+
 # Herramientas de terceros que usa Calíope
 
 **Calíope es una suite que reúne herramientas de código abierto de terceros y las hace fáciles de usar**: las instala, las coordina y les pone una interfaz sencilla. Los motores y los modelos de voz no son obra de Calíope. Pertenecen a sus autores, que merecen todo el reconocimiento, y se usan según sus licencias.
@@ -9,7 +11,8 @@ Calíope **no redistribuye** los motores ni los modelos: los descarga de sus fue
 | Herramienta | Autor | Licencia | Para qué la usa Calíope |
 |---|---|---|---|
 | [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS): modelos Base 1.7B / 0.6B y VoiceDesign 1.7B | Alibaba (equipo Qwen) | Apache 2.0 | El motor de voz principal: clonar voces, diseñarlas a partir de una descripción y leer los guiones. |
-| [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) | Resemble AI | MIT | El motor alternativo, con control de la intensidad emocional. |
+| [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) v3 y su [paquete de castellano de España](https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-es) | Resemble AI | MIT | El motor castellano rápido, con control de la intensidad emocional. |
+| [VoxCPM2](https://github.com/OpenBMB/VoxCPM) | OpenBMB | Apache 2.0 | El motor de máximo parecido: imita la voz con más fidelidad y genera audio a 48 kHz. |
 | [Perth](https://github.com/resemble-ai/perth) | Resemble AI | MIT | La marca de agua inaudible que Chatterbox añade a todo lo que genera. |
 | [Whisper large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) | OpenAI | MIT | La transcripción automática y la revisión de que la voz lee bien. |
 

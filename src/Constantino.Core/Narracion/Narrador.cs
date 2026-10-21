@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Constantino.Core.Audio;
 using Constantino.Core.Instalaciones;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Narracion;
 
@@ -171,7 +172,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                     sinCambios++;
                     hecho += pesos[i];
                     progreso.Report(new EventoNarracion(TipoEventoNarracion.BloqueSinCambios, b.Indice, bloques.Count,
-                        $"Bloque {b.Indice} sin cambios", hecho / pesoTotal));
+                        T("Bloque {0} sin cambios", b.Indice), hecho / pesoTotal));
                     continue;
                 }
                 if (noPedido)
@@ -185,7 +186,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
 
                 var inicioBloque = hecho;
                 progreso.Report(new EventoNarracion(TipoEventoNarracion.Bloque, b.Indice, bloques.Count,
-                    $"Generando el bloque {b.Indice} de {bloques.Count}", hecho / pesoTotal));
+                    T("Generando el bloque {0} de {1}", b.Indice, bloques.Count), hecho / pesoTotal));
                 var (montaje, medida, avisos) = await GenerarBloqueAsync(b, ab, temporal, (fraccion, texto) =>
                     progreso.Report(new EventoNarracion(TipoEventoNarracion.Frase, b.Indice, bloques.Count, texto,
                         (inicioBloque + pesos[i] * fraccion) / pesoTotal)), ct).ConfigureAwait(false);
@@ -209,7 +210,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 nuevos.Add(b.Indice);
                 hecho += pesos[i];
                 progreso.Report(new EventoNarracion(TipoEventoNarracion.BloqueListo, b.Indice, bloques.Count,
-                    $"Bloque {b.Indice} listo ({duracion:0.0} s)", hecho / pesoTotal));
+                    T("Bloque {0} listo ({1:0.0} s)", b.Indice, duracion), hecho / pesoTotal));
             }
         }
         finally
@@ -234,7 +235,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         JsonObject? infoCompleto = null;
         if (bloques.Count > 0 && estados.Count == bloques.Count)
         {
-            progreso.Report(new EventoNarracion(TipoEventoNarracion.Montando, 0, bloques.Count, "Montando el audio completo", 1));
+            progreso.Report(new EventoNarracion(TipoEventoNarracion.Montando, 0, bloques.Count, T("Montando el audio completo"), 1));
             (completo, infoCompleto) = await MontarCompletoAsync(proyecto, estados.Values.ToList(), normalizados, temporal,
                 avisosResultado, ct).ConfigureAwait(false);
         }
@@ -261,7 +262,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             if (!bloques.TryGetValue(indices[k], out var b) || b.Vacio)
                 continue;
             progreso.Report(new EventoNarracion(TipoEventoNarracion.Montando, b.Indice, bloques.Count,
-                $"Revisando que se lee bien: bloque {b.Indice}", (double)k / indices.Count));
+                T("Revisando que se lee bien: bloque {0}", b.Indice), (double)k / indices.Count));
             var oido = await revisor!.TranscribirAsync(Path.Combine(normalizados, $"{b.Archivo}.wav"), ct).ConfigureAwait(false);
             var c = Revision.Comparar(b.TextoLeido, oido);
             if (c.MalLeido)
@@ -275,7 +276,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         foreach (var (b, original) in fallidos)
         {
             progreso.Report(new EventoNarracion(TipoEventoNarracion.Bloque, b.Indice, bloques.Count,
-                $"El bloque {b.Indice} no se ha leído bien: probando otras tomas", 1));
+                T("El bloque {0} no se ha leído bien: probando otras tomas", b.Indice), 1));
             candidatas.Add((b, original, await GenerarTomasAsync(proyecto, guion, b.Indice, 2, progreso, ct).ConfigureAwait(false)));
         }
         foreach (var (b, original, tomas) in candidatas)
@@ -290,9 +291,9 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             if (mejor.Semilla is { } semilla)
                 proyecto = await ElegirTomaAsync(proyecto, guion, b.Indice, semilla, ct).ConfigureAwait(false);
             var aviso = mejor.Comparacion.MalLeido
-                ? $"Revisa cómo suena: la voz no dice exactamente el texto ({mejor.Comparacion.Errores} diferencias). Prueba «Otras tomas» o cambia la frase."
-                : $"Se ha leído mal a la primera ({original.Errores} diferencias) y se ha corregido solo con otra toma.";
-            avisos.Add($"Bloque {b.Indice}: {aviso}");
+                ? T("Revisa cómo suena: la voz no dice exactamente el texto ({0} diferencias). Prueba «Otras tomas» o cambia la frase.", mejor.Comparacion.Errores)
+                : T("Se ha leído mal a la primera ({0} diferencias) y se ha corregido solo con otra toma.", original.Errores);
+            avisos.Add(T("Bloque {0}: {1}", b.Indice, aviso));
             proyecto = ConAviso(proyecto, b.Indice, aviso);
         }
         return proyecto;
@@ -339,7 +340,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 continue;
             }
             var v = (EventoVoz)evento;
-            avance((double)letrasHechas / totalLetras, $"Bloque {b.Indice}: «{Resumen(v.Texto)}»");
+            avance((double)letrasHechas / totalLetras, T("Bloque {0}: «{1}»", b.Indice, Resumen(v.Texto)));
             // Las variantes son de la voz del proyecto; otra voz se lee con su grabación principal.
             var variante = v.VozId is null && v.Variante is { } id && sintetizador.Variantes.Contains(id) ? id : null;
             var ruta = await sintetizador.SintetizarAsync(v.Texto, variante, v.VozId, a,
@@ -357,7 +358,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             }
             var esperado = v.Texto.Length / LetrasPorSegundo;
             if (audio.Segundos > 2.5 * esperado + 1 || audio.Segundos < 0.4 * esperado)
-                avisos.Add($"Duración anómala ({audio.Segundos:0.0} s, se esperaban ~{esperado:0.0} s): «{Resumen(v.Texto)}». Revisa cómo suena.");
+                avisos.Add(T("Duración anómala ({0:0.0} s, se esperaban ~{1:0.0} s): «{2}». Revisa cómo suena.", audio.Segundos, esperado, Resumen(v.Texto)));
             if (anteriorVoz)
                 partes.Add((Pcm.Silencio(a.PausaEntreFrases, audio.Frecuencia), 0));
             // Otra voz no sabemos si tiene variante de susurro: se simula bajando el volumen.
@@ -373,7 +374,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             piezas.Add(Pcm.Silencio(a.SilencioFin, sr));
             return Pcm.Unir(piezas, sr);
         }
-        avance(1, $"Bloque {b.Indice}: ajustando el volumen");
+        avance(1, T("Bloque {0}: ajustando el volumen", b.Indice));
         return (Montar(true), Montar(false), avisos);
     }
 
@@ -414,12 +415,12 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                     nodo!["inicio_s"] = Math.Round((double)nodo["inicio_s"]! / factor, 3);
                 t /= factor;
                 info["acelerado"] = Math.Round(factor, 3);
-                avisos.Add($"El audio completo se ha acelerado un {(factor - 1) * 100:0} % para que dure {maxima:0} s.");
+                avisos.Add(T("El audio completo se ha acelerado un {0:0} % para que dure {1:0} s.", (factor - 1) * 100, maxima));
             }
             else
             {
-                avisos.Add($"El audio completo dura {t:0} s y el máximo es {maxima:0} s: haría falta acelerarlo un {(factor - 1) * 100:0} %, " +
-                           "demasiado para que suene natural. Acorta el guion o reduce las pausas.");
+                avisos.Add(T("El audio completo dura {0:0} s y el máximo es {1:0} s: haría falta acelerarlo un {2:0} %, " +
+                             "demasiado para que suene natural. Acorta el guion o reduce las pausas.", t, maxima, (factor - 1) * 100));
             }
         }
 
@@ -450,7 +451,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         IProgress<EventoNarracion> progreso, CancellationToken ct)
     {
         var b = Leer(proyecto, guion).FirstOrDefault(x => x.Indice == indice)
-                ?? throw new InvalidOperationException($"No hay bloque {indice}.");
+                ?? throw new InvalidOperationException(T("No hay bloque {0}.", indice));
         var carpeta = CarpetaTomasDe(proyecto, b);
         var temporal = Path.Combine(almacen.CarpetaSalida(proyecto.Id), CarpetaTemporal);
         Directory.CreateDirectory(carpeta);
@@ -465,7 +466,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             var ab = proyecto.AjustesDe(b) with { Semilla = semilla };
             var (montaje, medida, avisos) = await GenerarBloqueAsync(b, ab, temporal, (f, texto) =>
                 progreso.Report(new EventoNarracion(TipoEventoNarracion.Frase, b.Indice, cantidad,
-                    $"Toma {k + 1} de {cantidad}: {texto}", (k + f) / cantidad)), ct).ConfigureAwait(false);
+                    T("Toma {0} de {1}: {2}", k + 1, cantidad, texto), (k + f) / cantidad)), ct).ConfigureAwait(false);
             var wav = Path.Combine(temporal, $"toma_{semilla}.wav");
             var wavMedida = Path.Combine(temporal, $"toma_{semilla}_medida.wav");
             montaje.EscribirWav(wav);
@@ -501,11 +502,11 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
     public async Task<Proyecto> ElegirTomaAsync(Proyecto proyecto, string guion, int indice, int semilla, CancellationToken ct)
     {
         var b = Leer(proyecto, guion).FirstOrDefault(x => x.Indice == indice)
-                ?? throw new InvalidOperationException($"No hay bloque {indice}.");
+                ?? throw new InvalidOperationException(T("No hay bloque {0}.", indice));
         var carpeta = CarpetaTomasDe(proyecto, b);
         var origen = Path.Combine(carpeta, $"{semilla}.wav");
         if (!File.Exists(origen))
-            throw new InvalidOperationException("Esa toma ya no existe.");
+            throw new InvalidOperationException(T("Esa toma ya no existe."));
         var salida = almacen.CarpetaSalida(proyecto.Id);
         var normalizado = Path.Combine(salida, CarpetaNormalizados, $"{b.Archivo}.wav");
         // La toma actual se conserva entre las alternativas.
@@ -698,7 +699,7 @@ public sealed partial class ProcesadorFfmpeg(string ffmpeg, IEjecutorProcesos ej
         var r = await ejecutor.EjecutarAsync(ffmpeg, ["-hide_banner", "-nostdin", .. argumentos],
             new Dictionary<string, string>(), _ => { }, ct).ConfigureAwait(false);
         if (r.CodigoSalida != 0)
-            throw new InvalidOperationException($"ffmpeg ha fallado: {r.Salida.Split('\n').LastOrDefault(l => l.Trim().Length > 0)?.Trim()}");
+            throw new InvalidOperationException(T("ffmpeg ha fallado: {0}", r.Salida.Split('\n').LastOrDefault(l => l.Trim().Length > 0)?.Trim()));
         return r.Salida;
     }
 

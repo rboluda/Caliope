@@ -4,6 +4,7 @@ using Constantino.Core.Catalogo;
 using Constantino.Core.Motores;
 using Constantino.Core.Voces;
 using CommunityToolkit.Mvvm.ComponentModel;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.Servicios;
 
@@ -23,7 +24,7 @@ public sealed class MotorNoDisponibleException(string mensaje) : Exception(mensa
 /// <summary>
 /// Los motores de voz como servicio: se arranca el que hace falta la primera vez, carga el modelo una sola vez
 /// y lo mantiene en memoria hasta que se apaga (o se cierra la aplicación). Solo hay un motor vivo a la vez
-/// (Qwen3-TTS o Chatterbox, cada uno con el Python de su entorno): cambiar de uno a otro cierra el anterior para
+/// (Qwen3-TTS, Chatterbox o VoxCPM2, cada uno con el Python de su entorno): cambiar de uno a otro cierra el anterior para
 /// liberar la tarjeta. Atiende una petición a la vez.
 /// </summary>
 public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : ObservableObject, IAsyncDisposable
@@ -37,7 +38,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     [NotifyPropertyChangedFor(nameof(Encendido))]
     public partial EstadoMotor Estado { get; set; } = EstadoMotor.Apagado;
 
-    [ObservableProperty] public partial string Descripcion { get; set; } = "Apagado. Se encenderá solo cuando haga falta.";
+    [ObservableProperty] public partial string Descripcion { get; set; } = T("Apagado. Se encenderá solo cuando haga falta.");
 
     public bool Encendido => Estado is not (EstadoMotor.Apagado or EstadoMotor.Error);
 
@@ -55,33 +56,45 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         var modelo = await ModeloDeVozAsync(motor);
         return await EjecutarAsync(modelo, (m, progreso) => m.SintetizarAsync(
             new ParametrosSintesis(texto, voz.Idioma, referenciaWav, voz.Transcripcion, salida, semilla, Temperatura: temperatura,
-                Intensidad: motor == MotoresDeVoz.Chatterbox ? intensidad : null),
+                Intensidad: MotoresDeVoz.TieneIntensidad(motor) ? intensidad : null),
             progreso, ct), ct);
     }
 
     /// <summary>El componente con el modelo que lee voces con <paramref name="motor"/>, o una explicación de qué falta.</summary>
     private async Task<string> ModeloDeVozAsync(string motor)
     {
-        if (motor == MotoresDeVoz.Chatterbox)
-            return await ChatterboxInstaladoAsync()
+        if (motor != MotoresDeVoz.Qwen)
+            return await InstaladoAsync(motor)
                 ? MotoresDeVoz.Componente(motor)
-                : throw new MotorNoDisponibleException("Falta el motor alternativo: instálalo desde Componentes.");
+                : throw new MotorNoDisponibleException(
+                    T("Falta el motor «{0}»: instálalo desde Componentes o elige el principal.", MotoresDeVoz.NombreVisible(motor)));
         return (await ModeloBaseAsync())?.Componente
-               ?? throw new MotorNoDisponibleException("Falta una voz: instala la «Voz de alta calidad» (o la ligera) desde Componentes.");
+               ?? throw new MotorNoDisponibleException(T("Falta una voz: instala la «Voz de alta calidad» (o la ligera) desde Componentes."));
     }
 
-    public async Task<bool> ChatterboxInstaladoAsync() =>
-        (await instalacion.InstaladorAsync()).EstaInstalado(MotoresDeVoz.Componente(MotoresDeVoz.Chatterbox));
+    /// <summary>Si está instalado <paramref name="motor"/> (el principal cuenta solo con una voz instalada).</summary>
+    public async Task<bool> InstaladoAsync(string motor) => motor == MotoresDeVoz.Qwen
+        ? await ModeloBaseAsync() is not null
+        : (await instalacion.InstaladorAsync()).EstaInstalado(MotoresDeVoz.Componente(motor));
+
+    /// <summary>Los motores que se pueden usar ya, del principal a los opcionales.</summary>
+    public async Task<IReadOnlyList<string>> MotoresInstaladosAsync()
+    {
+        var instalador = await instalacion.InstaladorAsync();
+        return MotoresDeVoz.Todos.Where(m => m == MotoresDeVoz.Qwen || instalador.EstaInstalado(MotoresDeVoz.Componente(m))).ToList();
+    }
 
     /// <summary>Lo que identifica al modelo de <paramref name="motor"/> en las huellas, o null si no está instalado.</summary>
     public async Task<string?> FirmaModeloAsync(string motor)
     {
-        if (motor == MotoresDeVoz.Chatterbox)
+        if (motor != MotoresDeVoz.Qwen)
         {
-            if (!await ChatterboxInstaladoAsync())
+            if (!await InstaladoAsync(motor))
                 return null;
-            var paso = instalacion.Catalogo[MotoresDeVoz.Componente(motor)].Instalacion!.Pasos.OfType<PasoModelo>().First();
-            return $"{MotoresDeVoz.Chatterbox}@{paso.Revision}";
+            // Todas las revisiones: si cambia cualquier pieza (Chatterbox v3 añade el paquete de castellano), cambia la voz.
+            var revisiones = instalacion.Catalogo[MotoresDeVoz.Componente(motor)].Instalacion!.Pasos.OfType<PasoModelo>()
+                .Select(p => p.Revision);
+            return $"{motor}@{string.Join('+', revisiones)}";
         }
         return await ModeloBaseAsync() is { } m ? $"{m.Componente}@{m.Revision}" : null;
     }
@@ -91,7 +104,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         int semilla, double? temperatura = null, CancellationToken ct = default)
     {
         if (!(await instalacion.InstaladorAsync()).EstaInstalado(ModeloVoiceDesign))
-            throw new MotorNoDisponibleException("Falta el diseñador de voces: instálalo desde Componentes.");
+            throw new MotorNoDisponibleException(T("Falta el diseñador de voces: instálalo desde Componentes."));
         return await EjecutarAsync(ModeloVoiceDesign, (motor, progreso) => motor.DisenarAsync(
             new ParametrosDiseno(texto, idioma, instruccion, salida, semilla, temperatura), progreso, ct), ct);
     }
@@ -100,20 +113,20 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     public async Task<ResultadoTranscripcion> TranscribirAsync(string audio, string idioma, CancellationToken ct = default)
     {
         if (!(await instalacion.InstaladorAsync()).EstaInstalado(ModeloWhisper))
-            throw new MotorNoDisponibleException("Falta la transcripción automática: instálala desde Componentes, o escribe el texto a mano.");
+            throw new MotorNoDisponibleException(T("Falta la transcripción automática: instálala desde Componentes, o escribe el texto a mano."));
         return await EjecutarAsync(ModeloWhisper, (motor, progreso) =>
             motor.TranscribirAsync(new ParametrosTranscripcion(audio, idioma), progreso, ct), ct);
     }
 
     /// <summary>Una operación a la vez, con el modelo que necesite ya cargado.</summary>
-    private async Task<T> EjecutarAsync<T>(string modelo, Func<MotorQwen, IProgress<EventoMotor>, Task<T>> trabajo, CancellationToken ct)
+    private async Task<TResultado> EjecutarAsync<TResultado>(string modelo, Func<MotorQwen, IProgress<EventoMotor>, Task<TResultado>> trabajo, CancellationToken ct)
     {
         await _turno.WaitAsync(ct);
         try
         {
             var motor = await PrepararAsync(modelo, ct);
             Estado = EstadoMotor.Trabajando;
-            Descripcion = "Generando la voz…";
+            Descripcion = T("Generando la voz…");
             var progreso = new Progress<EventoMotor>(e => Descripcion = e.Mensaje + "…");
             var r = await trabajo(motor, progreso);
             await MarcarListoAsync(motor);
@@ -124,7 +137,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             // Cancelar a mitad detiene el proceso del motor: se deja apagado y la próxima petición lo arranca.
             await CerrarAsync();
             Estado = EstadoMotor.Apagado;
-            Descripcion = "Detenido. Se encenderá solo cuando haga falta.";
+            Descripcion = T("Detenido. Se encenderá solo cuando haga falta.");
             throw;
         }
         catch (Exception e)
@@ -156,7 +169,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         {
             await CerrarAsync();
             Estado = EstadoMotor.Apagado;
-            Descripcion = "Apagado. Se encenderá solo cuando haga falta.";
+            Descripcion = T("Apagado. Se encenderá solo cuando haga falta.");
         }
         finally
         {
@@ -171,25 +184,27 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     private async Task<MotorQwen> PrepararAsync(string modelo, CancellationToken ct)
     {
         var instalador = await instalacion.InstaladorAsync();
-        var motorId = modelo == MotoresDeVoz.Componente(MotoresDeVoz.Chatterbox) ? MotoresDeVoz.Chatterbox : MotoresDeVoz.Qwen;
+        var motorId = MotoresDeVoz.DeComponente(modelo) ?? MotoresDeVoz.Qwen;
         if (!instalador.EstaInstalado(MotoresDeVoz.Componente(motorId)))
-            throw new MotorNoDisponibleException($"Falta el motor {MotoresDeVoz.Nombre(motorId)}: instálalo desde Componentes.");
+            throw new MotorNoDisponibleException(T("Falta el motor {0}: instálalo desde Componentes.", MotoresDeVoz.Nombre(motorId)));
 
         if (_motor is null || !_motor.Cliente.Vivo || _motorVivo != motorId)
         {
-            // Los dos motores no caben a la vez en la tarjeta: se cierra el que hubiera.
+            // Dos motores no caben a la vez en la tarjeta: se cierra el que hubiera.
             await CerrarAsync();
             Estado = EstadoMotor.Arrancando;
-            Descripcion = $"Arrancando el motor {MotoresDeVoz.Nombre(motorId)}…";
+            Descripcion = T("Arrancando el motor {0}…", MotoresDeVoz.Nombre(motorId));
             var rutas = instalador.Rutas;
             var entorno = new Dictionary<string, string>(rutas.EntornoProcesos) { ["HF_HUB_OFFLINE"] = "1" };
-            if (motorId == MotoresDeVoz.Chatterbox)
+            // Los mensajes de error y de progreso del motor, en el idioma de la interfaz.
+            entorno["CONSTANTINO_IDIOMA"] = Idioma.Actual;
+            if (motorId != MotoresDeVoz.Qwen)
             {
-                entorno["CONSTANTINO_MOTOR"] = MotoresDeVoz.Chatterbox;
+                entorno["CONSTANTINO_MOTOR"] = motorId;
                 entorno["TQDM_DISABLE"] = "1"; // sin barras de progreso en el registro de diagnóstico
             }
             var cliente = await ClienteMotor.ArrancarAsync(
-                Path.Combine(rutas.Entornos, motorId == MotoresDeVoz.Chatterbox ? "chatterbox" : "qwen3tts", "Scripts", "python.exe"),
+                Path.Combine(rutas.Entornos, MotoresDeVoz.Entorno(motorId), "Scripts", "python.exe"),
                 Path.Combine(AppContext.BaseDirectory, "motores"),
                 entorno, TimeSpan.FromMinutes(2), ct);
             _motor = new MotorQwen(cliente);
@@ -202,10 +217,11 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             Estado = EstadoMotor.CargandoModelo;
             Descripcion = modelo switch
             {
-                ModeloVoiceDesign => "Preparando el diseñador de voces (unos segundos)…",
-                ModeloWhisper => "Preparando la transcripción (unos segundos)…",
-                "chatterbox" => "Preparando el motor alternativo (unos segundos)…",
-                _ => "Preparando la voz (unos segundos la primera vez)…",
+                ModeloVoiceDesign => T("Preparando el diseñador de voces (unos segundos)…"),
+                ModeloWhisper => T("Preparando la transcripción (unos segundos)…"),
+                "chatterbox" => T("Preparando el motor castellano (unos segundos)…"),
+                "voxcpm2" => T("Preparando el motor de máximo parecido (medio minuto)…"),
+                _ => T("Preparando la voz (unos segundos la primera vez)…"),
             };
             var paso = instalacion.Catalogo[modelo].Instalacion!.Pasos.OfType<PasoModelo>().First();
             await _motor.CargarAsync(paso.Repositorio, paso.Revision, null, ct, modelo == ModeloWhisper ? "asr" : "tts");
@@ -221,12 +237,12 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         {
             var info = await motor.InfoAsync();
             Descripcion = info.Gpu is null
-                ? "Listo (generando con el procesador)."
-                : $"Listo en {info.Gpu} · {Formato.Gb((info.VramTotalGib ?? 0) - (info.VramLibreGib ?? 0))} de {Formato.Gb(info.VramTotalGib ?? 0)} ocupados.";
+                ? T("Listo (generando con el procesador).")
+                : T("Listo en {0} · {1} de {2} ocupados.", info.Gpu, Formato.Gb((info.VramTotalGib ?? 0) - (info.VramLibreGib ?? 0)), Formato.Gb(info.VramTotalGib ?? 0));
         }
         catch (Exception e) when (e is MotorException or MotorCaidoException)
         {
-            Descripcion = "Listo.";
+            Descripcion = T("Listo.");
         }
     }
 
@@ -244,14 +260,14 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     {
         MotorNoDisponibleException => e.Message,
         MotorException { Codigo: "sin_memoria" } =>
-            "No hay memoria suficiente en la tarjeta gráfica. Cierra navegadores y otros programas que la usen y vuelve a intentarlo.",
-        MotorException { Codigo: "modelo_no_encontrado" } => "Falta algo por instalar o se ha estropeado: pulsa «Reparar» en Componentes.",
-        MotorException { Codigo: "sin_descripcion" } => "Describe la voz que quieres crear.",
+            T("No hay memoria suficiente en la tarjeta gráfica. Cierra navegadores y otros programas que la usen y vuelve a intentarlo."),
+        MotorException { Codigo: "modelo_no_encontrado" } => T("Falta algo por instalar o se ha estropeado: pulsa «Reparar» en Componentes."),
+        MotorException { Codigo: "sin_descripcion" } => T("Describe la voz que quieres crear."),
         MotorException { Codigo: "idioma_no_soportado" or "no_soportado" or "instalacion_incompleta" } m => m.Message,
-        MotorException { Codigo: "archivo_no_encontrado" } => "No se encuentra la grabación de referencia de la voz.",
-        MotorException m => $"El motor ha fallado: {m.Message}",
-        MotorCaidoException c => "El motor de voz se ha cerrado inesperadamente." +
-                                 (string.IsNullOrWhiteSpace(c.Diagnostico) ? "" : $" Últimos mensajes:\n{UltimasLineas(c.Diagnostico, 6)}"),
+        MotorException { Codigo: "archivo_no_encontrado" } => T("No se encuentra la grabación de referencia de la voz."),
+        MotorException m => T("El motor ha fallado: {0}", m.Message),
+        MotorCaidoException c => T("El motor de voz se ha cerrado inesperadamente.") +
+                                 (string.IsNullOrWhiteSpace(c.Diagnostico) ? "" : " " + T("Últimos mensajes:\n{0}", UltimasLineas(c.Diagnostico, 6))),
         _ => e.Message,
     };
 

@@ -2,21 +2,60 @@
     x:Class="Constantino.App.Paginas.PaginaAjustes"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     ScrollViewer.CanContentScroll="False"
-    Title="Ajustes">
+    Title="{l:T 'Ajustes'}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="32,24,32,32" MaxWidth="1040">
-            <TextBlock FontSize="28" FontWeight="SemiBold" Text="Ajustes" />
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Ajustes'}" />
 
-            <ui:CardControl Margin="0,16,0,0">
+            <!--  El título va en los dos idiomas: quien no entienda el actual también encuentra el selector.  -->
+            <ui:Card Margin="0,16,0,0">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon VerticalAlignment="Center" FontSize="24" Symbol="LocalLanguage24" />
+                        <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" Text="Idioma · Language" />
+                            <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'El idioma de las ventanas y los mensajes.'}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="2"
+                            MinWidth="180"
+                            VerticalAlignment="Center"
+                            DisplayMemberPath="Nombre"
+                            ItemsSource="{Binding ViewModel.IdiomasInterfaz}"
+                            SelectedValue="{Binding ViewModel.IdiomaInterfaz}"
+                            SelectedValuePath="Clave" />
+                    </Grid>
+                    <ui:InfoBar
+                        Margin="0,12,0,0"
+                        IsClosable="False"
+                        IsOpen="{Binding ViewModel.HayQueReiniciar}"
+                        Message="{Binding ViewModel.AvisoReinicio}"
+                        Severity="Informational" />
+                    <ui:Button
+                        Margin="0,8,0,0"
+                        Appearance="Primary"
+                        Command="{Binding ViewModel.ReiniciarCommand}"
+                        Content="{Binding ViewModel.TextoReiniciar}"
+                        Visibility="{Binding ViewModel.HayQueReiniciar, Converter={StaticResource BoolAVisibilidad}}" />
+                </StackPanel>
+            </ui:Card>
+
+            <ui:CardControl Margin="0,8,0,0">
                 <ui:CardControl.Icon>
                     <ui:SymbolIcon Symbol="Color24" />
                 </ui:CardControl.Icon>
                 <ui:CardControl.Header>
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="Tema" />
-                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Colores claros u oscuros de la ventana." />
+                        <TextBlock FontWeight="SemiBold" Text="{l:T 'Tema'}" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Colores claros u oscuros de la ventana.'}" />
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ComboBox
@@ -37,7 +76,7 @@
                         </Grid.ColumnDefinitions>
                         <ui:SymbolIcon VerticalAlignment="Top" FontSize="24" Symbol="Folder24" />
                         <StackPanel Grid.Column="1" Margin="14,0,0,0">
-                            <TextBlock FontWeight="SemiBold" Text="Almacenamiento" />
+                            <TextBlock FontWeight="SemiBold" Text="{l:T 'Almacenamiento'}" />
                             <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.CarpetaDatos}" TextWrapping="Wrap" />
                             <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.TotalOcupado}" />
                         </StackPanel>
@@ -46,7 +85,7 @@
                             VerticalAlignment="Top"
                             Command="{Binding ViewModel.AbrirCommand}"
                             CommandParameter="{Binding ViewModel.CarpetaDatos}"
-                            Content="Abrir">
+                            Content="{l:T 'Abrir'}">
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="FolderOpen24" />
                             </ui:Button.Icon>
@@ -72,7 +111,7 @@
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.AbrirCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                         CommandParameter="{Binding Ruta}"
-                                        ToolTip="Abrir esta carpeta">
+                                        ToolTip="{l:T 'Abrir esta carpeta'}">
                                         <ui:Button.Icon>
                                             <ui:SymbolIcon Symbol="FolderOpen24" />
                                         </ui:Button.Icon>
@@ -90,8 +129,8 @@
                 </ui:CardControl.Icon>
                 <ui:CardControl.Header>
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="Actualizaciones" />
-                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Avisar al arrancar cuando haya una versión nueva de Calíope (se instala con un botón)." TextWrapping="Wrap" />
+                        <TextBlock FontWeight="SemiBold" Text="{l:T 'Actualizaciones'}" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Avisar al arrancar cuando haya una versión nueva de Calíope (se instala con un botón).'}" TextWrapping="Wrap" />
                         <TextBlock
                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                             Text="{Binding ViewModel.EstadoActualizacion}"
@@ -102,7 +141,7 @@
                     <ui:Button
                         Margin="0,0,12,0"
                         Command="{Binding ViewModel.BuscarAhoraCommand}"
-                        Content="Buscar ahora"
+                        Content="{l:T 'Buscar ahora'}"
                         IsEnabled="{Binding ViewModel.Buscando, Converter={StaticResource NegarBool}}" />
                     <ui:ToggleSwitch IsChecked="{Binding ViewModel.BuscarActualizaciones}" />
                 </StackPanel>
@@ -117,26 +156,26 @@
                         </Grid.ColumnDefinitions>
                         <Image Width="64" Height="64" VerticalAlignment="Top" Source="pack://application:,,,/Recursos/caliope.png" />
                         <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                            <TextBlock FontSize="18" FontWeight="SemiBold" Text="Acerca de Calíope" />
+                            <TextBlock FontSize="18" FontWeight="SemiBold" Text="{l:T 'Acerca de Calíope'}" />
                             <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                                <Run Text="Versión " /><Run Text="{Binding ViewModel.Version, Mode=OneWay}" />
+                                <Run Text="{l:T 'Versión '}" /><Run Text="{Binding ViewModel.Version, Mode=OneWay}" />
                             </TextBlock>
                             <TextBlock Margin="0,6,0,0" TextWrapping="Wrap">
-                                <Run Text="Creado por " /><Hyperlink Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlAutor}"><Run Text="{Binding ViewModel.Autor, Mode=OneWay}" /></Hyperlink>
+                                <Run Text="{l:T 'Creado por '}" /><Hyperlink Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlAutor}"><Run Text="{Binding ViewModel.Autor, Mode=OneWay}" /></Hyperlink>
                             </TextBlock>
                             <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.Copyright, Mode=OneWay}" />
                             <WrapPanel Margin="0,8,0,0">
-                                <ui:Button Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlAutor}" Content="Mi GitHub">
+                                <ui:Button Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlAutor}" Content="{l:T 'Mi GitHub'}">
                                     <ui:Button.Icon>
                                         <ui:SymbolIcon Symbol="Person24" />
                                     </ui:Button.Icon>
                                 </ui:Button>
-                                <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlRepositorio}" Content="Código y novedades">
+                                <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlRepositorio}" Content="{l:T 'Código y novedades'}">
                                     <ui:Button.Icon>
                                         <ui:SymbolIcon Symbol="Code24" />
                                     </ui:Button.Icon>
                                 </ui:Button>
-                                <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="https://github.com/rboluda/Caliope/issues" Content="Avisar de un problema">
+                                <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="https://github.com/rboluda/Caliope/issues" Content="{l:T 'Avisar de un problema'}">
                                     <ui:Button.Icon>
                                         <ui:SymbolIcon Symbol="Bug24" />
                                     </ui:Button.Icon>
@@ -150,10 +189,10 @@
                         Background="{DynamicResource ControlFillColorSecondaryBrush}"
                         CornerRadius="6">
                         <TextBlock LineHeight="20" TextWrapping="Wrap">
-                            <Run FontWeight="SemiBold" Text="Calíope es una suite que reúne herramientas de código abierto de terceros" /><Run Text=" y las hace fáciles de usar: las instala, las coordina y les pone una interfaz sencilla. Los motores y modelos de voz no son obra de Calíope; pertenecen a sus autores, que merecen todo el reconocimiento, y se usan según sus licencias. Calíope no incluye ninguno: los descarga de sus fuentes oficiales cuando lo pides, y te muestra cada licencia antes de instalar." />
+                            <Run FontWeight="SemiBold" Text="{l:T 'Calíope es una suite que reúne herramientas de código abierto de terceros'}" /><Run Text="{l:T ' y las hace fáciles de usar: las instala, las coordina y les pone una interfaz sencilla. Los motores y modelos de voz no son obra de Calíope; pertenecen a sus autores, que merecen todo el reconocimiento, y se usan según sus licencias. Calíope no incluye ninguno: los descarga de sus fuentes oficiales cuando lo pides, y te muestra cada licencia antes de instalar.'}" />
                         </TextBlock>
                     </Border>
-                    <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="Herramientas de terceros que usa Calíope" />
+                    <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="{l:T 'Herramientas de terceros que usa Calíope'}" />
                     <ItemsControl ItemsSource="{Binding ViewModel.Creditos}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -161,7 +200,7 @@
                                     <TextBlock>
                                         <Hyperlink Command="{Binding DataContext.ViewModel.AbrirEnlaceCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding Url}"><Run FontWeight="SemiBold" Text="{Binding Nombre, Mode=OneWay}" /></Hyperlink>
                                         <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Autor, Mode=OneWay, StringFormat=' · {0}'}" />
-                                        <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Licencia, Mode=OneWay, StringFormat=' · Licencia {0}'}" />
+                                        <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Licencia, Mode=OneWay, StringFormat={l:T ' · Licencia {0}'}}" />
                                     </TextBlock>
                                     <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Uso}" TextWrapping="Wrap" />
                                 </StackPanel>
@@ -169,7 +208,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock Margin="0,4,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"
-                               Text="Los efectos y ambientes de «Mis sonidos» los crea Calíope con FFmpeg: no son grabaciones de terceros. La lista completa, con versiones y licencias, está en el archivo TERCEROS.md del repositorio." />
+                               Text="{l:T 'Los efectos y ambientes de «Mis sonidos» los crea Calíope con FFmpeg: no son grabaciones de terceros. La lista completa, con versiones y licencias, está en el archivo TERCEROS.md del repositorio.'}" />
                 </StackPanel>
             </ui:Card>
         </StackPanel>

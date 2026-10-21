@@ -29,13 +29,17 @@ Publica la aplicación autocontenida (con .NET, sin los motores ni los modelos, 
 
 - **H7**: Chatterbox Multilingual (Resemble AI) como motor alternativo, en su propio entorno (chatterbox-tts 0.1.7, torch 2.6.0 cu124, 80 dependencias fijadas, sin gradio) y descargando solo los 6 archivos del modelo multilingüe (3,2 GB de 12). Narrar tiene un selector de motor y, con Chatterbox, «intensidad emocional»; en Voces → Probar se puede escuchar la misma voz con cada motor. Solo hay un motor vivo a la vez en la tarjeta: cambiar de motor cierra el otro. La huella solo incluye el motor cuando no es Qwen.
 
+- **1.1**: tres motores. Chatterbox pasa a la v3 con el paquete de castellano de España (código de GitHub 5de7a54; del repositorio general solo `ve.pt` y `conds.pt`, el resto de `Chatterbox-Multilingual-es-es`; el adaptador monta T3 y S3Gen a mano porque `from_pretrained` no conoce el paquete) y llega VoxCPM2 (OpenBMB, torch 2.11 cu128, 66 dependencias fijadas e instaladas con `--no-deps`, sin gradio, modelscope, funasr ni datasets; sin limpiador de ruido ni `torch.compile`). `GuiaMotores` compara los tres y da un consejo según la memoria de la tarjeta, en «Componentes» y en el motivo de cada recomendación. La huella del modelo junta las revisiones de todos sus pasos `modelo`, así que pasar de Chatterbox v2 a v3 regenera lo hecho con él. Con VoxCPM2 no cuentan ni la intensidad ni la expresividad.
+
+- **1.1 · idiomas**: interfaz en español e inglés. Los textos se escriben en español y ese texto es la clave: `T("…")` en C# (`using static Constantino.Core.Idioma`), `{l:T '…'}` en el XAML, y el catálogo se traduce al cargarse. Las traducciones están en `src/Constantino.Core/Idiomas/en.json` (recurso incrustado); `IdiomaTests` falla si un texto no tiene traducción o pierde un hueco `{0}`. Los motores de Python reciben `CONSTANTINO_IDIOMA` y traducen sus mensajes con `textos.py`. El guion admite también etiquetas en inglés (`[voice: …]`, `[scared]`, `[sfx: thunder]`…). Las carpetas de datos conservan sus nombres en español. Cambiar de idioma pide reiniciar.
+
 ### Proyectos de narración
 
 `<datos>\proyectos\<id>\`: `proyecto.json` (ajustes y estado de cada bloque generado), `guion.txt` y `salida\` con `NN_nombre.mp3`, `<id>_completo.mp3` y `manifiesto.json`.
 
 ### El motor de voz
 
-La app lanza `python -m constantino_motor` con el Python del entorno de cada motor (`CONSTANTINO_MOTOR=chatterbox` elige el adaptador de Chatterbox; sin ella, Qwen) y le envía una petición JSON por línea (`info`, `cargar`, `descargar`, `sintetizar`, `disenar`, `transcribir`, `salir`); el motor responde con eventos `progreso`, `resultado` o `error`. stdout queda reservado al protocolo y todo lo demás va a stderr. Con `CONSTANTINO_MOTOR_FALSO=1` usa un motor falso sin torch, que es el que prueban los tests (`CONSTANTINO_EXIGIR_PYTHON=1` hace que falten Python sea un fallo y no se salte la prueba).
+La app lanza `python -m constantino_motor` con el Python del entorno de cada motor (`CONSTANTINO_MOTOR=chatterbox` o `voxcpm` elige el adaptador de Chatterbox o de VoxCPM2; sin ella, Qwen) y le envía una petición JSON por línea (`info`, `cargar`, `descargar`, `sintetizar`, `disenar`, `transcribir`, `salir`); el motor responde con eventos `progreso`, `resultado` o `error`. stdout queda reservado al protocolo y todo lo demás va a stderr. Con `CONSTANTINO_MOTOR_FALSO=1` usa un motor falso sin torch, que es el que prueban los tests (`CONSTANTINO_EXIGIR_PYTHON=1` hace que falten Python sea un fallo y no se salte la prueba).
 
 ### Dónde instala
 

@@ -5,6 +5,7 @@ using Constantino.Core.Audio;
 using Constantino.Core.Instalaciones;
 using Constantino.Core.Narracion;
 using Constantino.Core.Voces;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.Servicios;
 
@@ -90,7 +91,7 @@ public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioM
     /// <summary>Lo que identifica al modelo de <paramref name="motorVoz"/> en las huellas, o null si no está instalado.</summary>
     public Task<string?> ModeloAsync(string motorVoz) => motor.FirmaModeloAsync(motorVoz);
 
-    public Task<bool> ChatterboxInstaladoAsync() => motor.ChatterboxInstaladoAsync();
+    public Task<IReadOnlyList<string>> MotoresInstaladosAsync() => motor.MotoresInstaladosAsync();
 
     public async Task<bool> RevisionDisponibleAsync() =>
         (await instalacion.InstaladorAsync()).EstaInstalado(ServicioMotor.ModeloWhisper);
@@ -172,7 +173,7 @@ public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioM
     {
         var rutas = (await instalacion.InstaladorAsync()).Rutas;
         if (!File.Exists(rutas.Ffmpeg))
-            throw new MotorNoDisponibleException("Faltan las herramientas básicas: instálalas desde Componentes.");
+            throw new MotorNoDisponibleException(T("Faltan las herramientas básicas: instálalas desde Componentes."));
         var biblioteca = await voces.BibliotecaAsync();
         var otras = new Dictionary<string, string>();
         foreach (var v in biblioteca.Listar().Where(v => v.Id != voz.Voz.Id))

@@ -2,6 +2,7 @@
     x:Class="Constantino.App.Vistas.VentanaPrincipal"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:paginas="clr-namespace:Constantino.App.Paginas"
     Title="Calíope"
@@ -55,7 +56,7 @@
                         Margin="0,0,6,0"
                         Appearance="Transparent"
                         Command="{Binding VerNovedadesCommand}"
-                        Content="Novedades"
+                        Content="{l:T 'Novedades'}"
                         Visibility="{Binding HayNovedades, Converter={StaticResource BoolAVisibilidad}}" />
                     <ui:Button
                         Appearance="Primary"
@@ -67,7 +68,7 @@
                         Appearance="Transparent"
                         Command="{Binding CerrarCommand}"
                         IsEnabled="{Binding Ocupado, Converter={StaticResource NegarBool}}"
-                        ToolTip="Ahora no">
+                        ToolTip="{l:T 'Ahora no'}">
                         <ui:Button.Icon>
                             <ui:SymbolIcon Symbol="Dismiss24" />
                         </ui:Button.Icon>
@@ -84,45 +85,45 @@
             OpenPaneLength="220"
             PaneDisplayMode="Left">
             <ui:NavigationView.MenuItems>
-                <ui:NavigationViewItem Content="Inicio" TargetPageType="{x:Type paginas:PaginaInicio}">
+                <ui:NavigationViewItem Content="{l:T 'Inicio'}" TargetPageType="{x:Type paginas:PaginaInicio}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Home24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Componentes" TargetPageType="{x:Type paginas:PaginaComponentes}">
+                <ui:NavigationViewItem Content="{l:T 'Componentes'}" TargetPageType="{x:Type paginas:PaginaComponentes}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="PuzzlePiece24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
                 <ui:NavigationViewItemSeparator />
-                <ui:NavigationViewItem Content="Voces" TargetPageType="{x:Type paginas:PaginaVoces}">
+                <ui:NavigationViewItem Content="{l:T 'Voces'}" TargetPageType="{x:Type paginas:PaginaVoces}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Library24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Diseñar voz" TargetPageType="{x:Type paginas:PaginaDisenar}">
+                <ui:NavigationViewItem Content="{l:T 'Diseñar voz'}" TargetPageType="{x:Type paginas:PaginaDisenar}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Sparkle24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Clonar voz" TargetPageType="{x:Type paginas:PaginaClonar}">
+                <ui:NavigationViewItem Content="{l:T 'Clonar voz'}" TargetPageType="{x:Type paginas:PaginaClonar}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Mic24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Narrar" TargetPageType="{x:Type paginas:PaginaNarrar}">
+                <ui:NavigationViewItem Content="{l:T 'Narrar'}" TargetPageType="{x:Type paginas:PaginaNarrar}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="BookOpen24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
-                <ui:NavigationViewItem Content="Ayuda" TargetPageType="{x:Type paginas:PaginaAyuda}">
+                <ui:NavigationViewItem Content="{l:T 'Ayuda'}" TargetPageType="{x:Type paginas:PaginaAyuda}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="QuestionCircle24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Ajustes" TargetPageType="{x:Type paginas:PaginaAjustes}">
+                <ui:NavigationViewItem Content="{l:T 'Ajustes'}" TargetPageType="{x:Type paginas:PaginaAjustes}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Settings24" />
                     </ui:NavigationViewItem.Icon>

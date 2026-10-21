@@ -1,5 +1,6 @@
 using Constantino.Core.Catalogo;
 using Constantino.Core.Equipo;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Recomendaciones;
 
@@ -56,7 +57,7 @@ public static class Recomendador
         var resultado = new Dictionary<string, Recomendacion>(StringComparer.Ordinal);
 
         foreach (var c in catalogo.Componentes.Where(c => c.GrupoExclusivo is null))
-            resultado[c.Id] = RecomendarIndividual(c, usaGpu, vram);
+            resultado[c.Id] = RecomendarIndividual(c, usaGpu, vram, gpu?.Nombre);
 
         foreach (var grupo in catalogo.Componentes.Where(c => c.GrupoExclusivo is not null).GroupBy(c => c.GrupoExclusivo!))
         {
@@ -71,29 +72,31 @@ public static class Recomendador
         AvisosDeGpu(equipo, gpu, usaGpu, avisos);
         AvisosDeDisco(equipo.Disco, descarga, avisos);
         if (equipo.RamGb is > 0 and < 12)
-            avisos.Add(new Aviso(SeveridadAviso.Atencion, "Poca memoria RAM",
-                $"Tu equipo tiene {Formato.Gb(equipo.RamGb)} de RAM. Cargar los modelos puede ir lento; se recomiendan 16 GB."));
+            avisos.Add(new Aviso(SeveridadAviso.Atencion, T("Poca memoria RAM"),
+                T("Tu equipo tiene {0} de RAM. Cargar los modelos puede ir lento; se recomiendan 16 GB.", Formato.Gb(equipo.RamGb))));
 
         var resumen = usaGpu
-            ? $"Se usará tu tarjeta {gpu!.Nombre} ({Formato.Gb(vram)} de memoria) para generar la voz."
-            : "No hay una tarjeta NVIDIA utilizable: la voz se generará con el procesador, bastante más despacio.";
+            ? T("Se usará tu tarjeta {0} ({1} de memoria) para generar la voz.", gpu!.Nombre, Formato.Gb(vram))
+            : T("No hay una tarjeta NVIDIA utilizable: la voz se generará con el procesador, bastante más despacio.");
 
         return new InformeRecomendacion(usaGpu, resumen, resultado, avisos, descarga);
     }
 
-    private static Recomendacion RecomendarIndividual(Componente c, bool usaGpu, double vram)
+    private static Recomendacion RecomendarIndividual(Componente c, bool usaGpu, double vram, string? gpu)
     {
+        if (usaGpu && c.Requisitos.SinRtx50 && GuiaMotores.EsRtx50(gpu))
+            return new(NivelRecomendacion.NoRecomendado, T("Todavía no funciona con las tarjetas RTX 50 como la tuya."));
         var minima = c.Requisitos.VramMinimaGb;
         if (usaGpu && minima is { } min && vram < min)
         {
             return c.Requisitos.FuncionaEnCpu
                 ? new(NivelRecomendacion.NoRecomendado,
-                    $"Necesita {Formato.Gb(min)} de memoria en la tarjeta y la tuya tiene {Formato.Gb(vram)}. Funcionaría con el procesador, pero muy despacio.")
+                    T("Necesita {0} de memoria en la tarjeta y la tuya tiene {1}. Funcionaría con el procesador, pero muy despacio.", Formato.Gb(min), Formato.Gb(vram)))
                 : new(NivelRecomendacion.NoRecomendado,
-                    $"Necesita {Formato.Gb(min)} de memoria en la tarjeta y la tuya tiene {Formato.Gb(vram)}.");
+                    T("Necesita {0} de memoria en la tarjeta y la tuya tiene {1}.", Formato.Gb(min), Formato.Gb(vram)));
         }
         if (!usaGpu && minima is not null && !c.Requisitos.FuncionaEnCpu)
-            return new(NivelRecomendacion.NoRecomendado, "Necesita una tarjeta NVIDIA y este equipo no tiene una utilizable.");
+            return new(NivelRecomendacion.NoRecomendado, T("Necesita una tarjeta NVIDIA y este equipo no tiene una utilizable."));
 
         var nivel = c.Necesidad switch
         {
@@ -103,15 +106,15 @@ public static class Recomendador
         };
         var motivo = c.Necesidad switch
         {
-            Necesidad.Imprescindible => "Sin esto, Calíope no puede funcionar.",
-            Necesidad.Recomendado => "Recomendado: amplía mucho lo que puedes hacer.",
-            _ => "Opcional: instálalo solo si lo vas a usar.",
+            Necesidad.Imprescindible => T("Sin esto, Calíope no puede funcionar."),
+            Necesidad.Recomendado => T("Recomendado: amplía mucho lo que puedes hacer."),
+            _ => GuiaMotores.MotivoOpcional(c.Id, vram, usaGpu) ?? T("Opcional: instálalo solo si lo vas a usar."),
         };
         if (!usaGpu && minima is not null)
         {
             if (nivel == NivelRecomendacion.Recomendado)
                 nivel = NivelRecomendacion.Opcional;
-            motivo += " Sin tarjeta NVIDIA irá lento.";
+            motivo += " " + T("Sin tarjeta NVIDIA irá lento.");
         }
         return new(nivel, motivo);
     }
@@ -131,13 +134,13 @@ public static class Recomendador
             var candidatas = holgadas.Count > 0 ? holgadas : caben.Count > 0 ? caben : alternativas;
             elegida = candidatas.MaxBy(c => c.Requisitos.VramRecomendadaGb ?? 0)!;
             motivoElegida = holgadas.Contains(elegida)
-                ? $"La mejor opción que cabe con holgura en tu tarjeta ({Formato.Gb(vram)})."
-                : $"La opción que mejor encaja en tu tarjeta ({Formato.Gb(vram)}), aunque irá algo justa.";
+                ? T("La mejor opción que cabe con holgura en tu tarjeta ({0}).", Formato.Gb(vram))
+                : T("La opción que mejor encaja en tu tarjeta ({0}), aunque irá algo justa.", Formato.Gb(vram));
         }
         else
         {
             elegida = alternativas.MinBy(c => c.Requisitos.VramMinimaGb ?? 0)!;
-            motivoElegida = "La opción más ligera, la adecuada para generar con el procesador.";
+            motivoElegida = T("La opción más ligera, la adecuada para generar con el procesador.");
         }
 
         foreach (var c in alternativas)
@@ -149,9 +152,9 @@ public static class Recomendador
             }
             var cabe = !usaGpu || vram >= (c.Requisitos.VramMinimaGb ?? 0);
             yield return (c.Id, cabe
-                ? new(NivelRecomendacion.Opcional, $"Alternativa a «{elegida.Nombre}». Solo hace falta una de las dos.")
+                ? new(NivelRecomendacion.Opcional, T("Alternativa a «{0}». Solo hace falta una de las dos.", elegida.Nombre))
                 : new(NivelRecomendacion.NoRecomendado,
-                    $"Necesita {Formato.Gb(c.Requisitos.VramMinimaGb ?? 0)} de memoria en la tarjeta y la tuya tiene {Formato.Gb(vram)}."));
+                    T("Necesita {0} de memoria en la tarjeta y la tuya tiene {1}.", Formato.Gb(c.Requisitos.VramMinimaGb ?? 0), Formato.Gb(vram))));
         }
     }
 
@@ -161,26 +164,26 @@ public static class Recomendador
         {
             var nvidiaSinDriver = equipo.Gpus.FirstOrDefault(g => g.Nombre.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase));
             avisos.Add(nvidiaSinDriver is not null
-                ? new Aviso(SeveridadAviso.Problema, "Falta el driver de NVIDIA",
-                    $"Hay una {nvidiaSinDriver.Nombre}, pero no responde. Instala el driver más reciente desde nvidia.com para que Calíope pueda usarla.")
-                : new Aviso(SeveridadAviso.Atencion, "Sin tarjeta NVIDIA",
-                    "La voz se generará con el procesador. Funciona, pero puede tardar varias veces más que la duración del audio."));
+                ? new Aviso(SeveridadAviso.Problema, T("Falta el driver de NVIDIA"),
+                    T("Hay una {0}, pero no responde. Instala el driver más reciente desde nvidia.com para que Calíope pueda usarla.", nvidiaSinDriver.Nombre))
+                : new Aviso(SeveridadAviso.Atencion, T("Sin tarjeta NVIDIA"),
+                    T("La voz se generará con el procesador. Funciona, pero puede tardar varias veces más que la duración del audio.")));
             return;
         }
         if (!usaGpu)
         {
-            avisos.Add(new Aviso(SeveridadAviso.Atencion, "Tarjeta con poca memoria",
-                $"Tu {gpu.Nombre} tiene {Formato.Gb(gpu.VramTotalGb ?? 0)} de memoria, por debajo de lo necesario. Se usará el procesador."));
+            avisos.Add(new Aviso(SeveridadAviso.Atencion, T("Tarjeta con poca memoria"),
+                T("Tu {0} tiene {1} de memoria, por debajo de lo necesario. Se usará el procesador.", gpu.Nombre, Formato.Gb(gpu.VramTotalGb ?? 0))));
         }
         if (int.TryParse(gpu.Driver?.Split('.')[0], out var mayor) && mayor < DriverMinimoNvidia)
         {
-            avisos.Add(new Aviso(SeveridadAviso.Problema, "Driver de NVIDIA antiguo",
-                $"Tienes la versión {gpu.Driver}. Hace falta la {DriverMinimoNvidia} o posterior: actualízalo desde nvidia.com."));
+            avisos.Add(new Aviso(SeveridadAviso.Problema, T("Driver de NVIDIA antiguo"),
+                T("Tienes la versión {0}. Hace falta la {1} o posterior: actualízalo desde nvidia.com.", gpu.Driver, DriverMinimoNvidia)));
         }
         if (usaGpu && gpu.VramUsadaGb is > 1.5)
         {
-            avisos.Add(new Aviso(SeveridadAviso.Informacion, "Otros programas usan la tarjeta",
-                $"Ahora mismo hay {Formato.Gb(gpu.VramUsadaGb.Value)} de memoria de la tarjeta ocupados (navegadores, Teams…). Ciérralos antes de generar voz para que el modelo quepa."));
+            avisos.Add(new Aviso(SeveridadAviso.Informacion, T("Otros programas usan la tarjeta"),
+                T("Ahora mismo hay {0} de memoria de la tarjeta ocupados (navegadores, Teams…). Ciérralos antes de generar voz para que el modelo quepa.", Formato.Gb(gpu.VramUsadaGb.Value))));
         }
     }
 
@@ -190,14 +193,14 @@ public static class Recomendador
             return;
         if (disco.EnOneDrive)
         {
-            avisos.Add(new Aviso(SeveridadAviso.Problema, "La carpeta está en OneDrive",
-                "OneDrive intentaría subir a la nube varios gigas de modelos. Elige una carpeta fuera de OneDrive."));
+            avisos.Add(new Aviso(SeveridadAviso.Problema, T("La carpeta está en OneDrive"),
+                T("OneDrive intentaría subir a la nube varios gigas de modelos. Elige una carpeta fuera de OneDrive.")));
         }
         const double margenGb = 5;
         if (disco.LibreGb < descargaGb + margenGb)
         {
-            avisos.Add(new Aviso(SeveridadAviso.Problema, "Poco espacio en disco",
-                $"La selección propuesta ocupa unos {Formato.Gb(descargaGb)} y en {disco.Unidad} quedan {Formato.Gb(disco.LibreGb)}. Libera espacio o elige otra unidad."));
+            avisos.Add(new Aviso(SeveridadAviso.Problema, T("Poco espacio en disco"),
+                T("La selección propuesta ocupa unos {0} y en {1} quedan {2}. Libera espacio o elige otra unidad.", Formato.Gb(descargaGb), disco.Unidad, Formato.Gb(disco.LibreGb))));
         }
     }
 }

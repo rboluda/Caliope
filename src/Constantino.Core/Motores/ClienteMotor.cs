@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Motores;
 
@@ -100,7 +101,7 @@ public sealed class ClienteMotor : IAsyncDisposable
             inicio.Environment[clave] = valor;
         inicio.Environment["PYTHONPATH"] = carpetaMotores;
 
-        var proceso = Process.Start(inicio) ?? throw new MotorCaidoException("No se ha podido arrancar el motor de voz.");
+        var proceso = Process.Start(inicio) ?? throw new MotorCaidoException(T("No se ha podido arrancar el motor de voz."));
         var cliente = new ClienteMotor(proceso.StandardInput, proceso.StandardOutput, proceso);
         proceso.ErrorDataReceived += (_, e) =>
         {
@@ -121,7 +122,7 @@ public sealed class ClienteMotor : IAsyncDisposable
             if (e is OperationCanceledException)
                 throw;
             throw new MotorCaidoException(
-                e is TimeoutException ? "El motor de voz no ha respondido al arrancar." : e.Message, diagnostico);
+                e is TimeoutException ? T("El motor de voz no ha respondido al arrancar.") : e.Message, diagnostico);
         }
     }
 
@@ -130,7 +131,7 @@ public sealed class ClienteMotor : IAsyncDisposable
         CancellationToken ct = default)
     {
         if (_caido)
-            throw new MotorCaidoException("El motor de voz se ha detenido.", UltimoDiagnostico);
+            throw new MotorCaidoException(T("El motor de voz se ha detenido."), UltimoDiagnostico);
         var id = Guid.NewGuid().ToString("N")[..12];
         var pendiente = new Pendiente(new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously), progreso);
         _pendientes[id] = pendiente;
@@ -150,7 +151,7 @@ public sealed class ClienteMotor : IAsyncDisposable
         catch (IOException e)
         {
             _pendientes.TryRemove(id, out _);
-            throw new MotorCaidoException("El motor de voz se ha detenido.", UltimoDiagnostico + Environment.NewLine + e.Message);
+            throw new MotorCaidoException(T("El motor de voz se ha detenido."), UltimoDiagnostico + Environment.NewLine + e.Message);
         }
         finally
         {
@@ -173,7 +174,7 @@ public sealed class ClienteMotor : IAsyncDisposable
         CancellationToken ct = default)
     {
         var datos = await PedirAsync(op, parametros, progreso, ct).ConfigureAwait(false);
-        return datos.Deserialize<T>(Json) ?? throw new MotorException("respuesta_vacia", $"El motor no devolvió datos para «{op}».");
+        return datos.Deserialize<T>(Json) ?? throw new MotorException("respuesta_vacia", Idioma.T("El motor no devolvió datos para «{0}».", op));
     }
 
     private async Task LeerAsync()
@@ -231,7 +232,7 @@ public sealed class ClienteMotor : IAsyncDisposable
                 if (_pendientes.TryRemove(id, out _))
                 {
                     pendiente.Fin.TrySetException(new MotorException(
-                        Texto(mensaje, "codigo") ?? "desconocido", Texto(mensaje, "mensaje") ?? "Error del motor.", Texto(mensaje, "detalle")));
+                        Texto(mensaje, "codigo") ?? "desconocido", Texto(mensaje, "mensaje") ?? T("Error del motor."), Texto(mensaje, "detalle")));
                 }
                 break;
         }
@@ -255,7 +256,7 @@ public sealed class ClienteMotor : IAsyncDisposable
     {
         _caido = true;
         var diagnostico = UltimoDiagnostico;
-        var error = new MotorCaidoException("El motor de voz se ha detenido de forma inesperada.", diagnostico);
+        var error = new MotorCaidoException(T("El motor de voz se ha detenido de forma inesperada."), diagnostico);
         _listo.TrySetException(error);
         foreach (var id in _pendientes.Keys)
         {

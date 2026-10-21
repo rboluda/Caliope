@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
@@ -24,8 +25,8 @@ public sealed partial class OpcionComponente(
     public string Id { get; } = id;
     public string Nombre { get; } = nombre;
     public string Resumen { get; } = resumen;
-    public string Motivo { get; } = yaInstalado ? "Ya está instalado." : disponible ? motivo : disponibleEn ?? "Todavía no disponible.";
-    public string Etiqueta { get; } = yaInstalado ? "Instalado" : Presentacion.Etiqueta(nivel);
+    public string Motivo { get; } = yaInstalado ? T("Ya está instalado.") : disponible ? motivo : disponibleEn ?? T("Todavía no disponible.");
+    public string Etiqueta { get; } = yaInstalado ? T("Instalado") : Presentacion.Etiqueta(nivel);
     public ControlAppearance Apariencia { get; } = yaInstalado ? ControlAppearance.Success : Presentacion.Apariencia(nivel);
     public double TamanoGb { get; } = tamanoGb;
     public string Tamano { get; } = Formato.Gb(tamanoGb);
@@ -55,7 +56,7 @@ public sealed partial class AsistenteViewModel(
 {
     public const int PasoBienvenida = 0, PasoEquipo = 1, PasoCarpeta = 2, PasoComponentes = 3, PasoInstalacion = 4, PasoFin = 5;
 
-    private static readonly string[] NombresPasos = ["Bienvenida", "Tu equipo", "Carpeta", "Componentes", "Instalación", "Listo"];
+    private static readonly string[] NombresPasos = [T("Bienvenida"), T("Tu equipo"), T("Carpeta"), T("Componentes"), T("Instalación"), T("Listo")];
 
     /// <summary>La fila de pasos de arriba: hechos, actual y pendientes.</summary>
     public IReadOnlyList<IndicadorPaso> Indicadores { get; } =
@@ -92,10 +93,10 @@ public sealed partial class AsistenteViewModel(
 
     public string TextoSiguiente => Paso switch
     {
-        PasoBienvenida => "Empezar",
-        PasoComponentes => "Instalar",
-        PasoFin => "Empezar a usar Constantino",
-        _ => "Siguiente",
+        PasoBienvenida => T("Empezar"),
+        PasoComponentes => T("Instalar"),
+        PasoFin => T("Empezar a usar Calíope"),
+        _ => T("Siguiente"),
     };
 
     private InformeRecomendacion? _recomendacion;
@@ -107,11 +108,12 @@ public sealed partial class AsistenteViewModel(
         _recomendacion = rec;
         ResumenDispositivo = rec.ResumenDispositivo;
         var gpu = eq.GpuPrincipal;
-        Especificaciones = $"{eq.SistemaOperativo}\n{eq.Procesador} · {Formato.Gb(eq.RamGb)} de RAM\n" +
-                           (gpu is null ? "Sin tarjeta NVIDIA" : $"{gpu.Nombre} · {Formato.Gb(gpu.VramTotalGb ?? 0)} de memoria");
+        Especificaciones = $"{eq.SistemaOperativo}\n{eq.Procesador} · {T("{0} de RAM", Formato.Gb(eq.RamGb))}\n" +
+                           (gpu is null ? T("Sin tarjeta NVIDIA") : T("{0} · {1} de memoria", gpu.Nombre, Formato.Gb(gpu.VramTotalGb ?? 0)));
         Avisos.Clear();
         // El aviso de OneDrive y de espacio se trata en el paso de la carpeta, con la carpeta elegida.
-        foreach (var a in rec.Avisos.Where(a => a.Titulo is not ("La carpeta está en OneDrive" or "Poco espacio en disco")))
+        foreach (var a in rec.Avisos.Where(a => a.Titulo is not ("La carpeta está en OneDrive" or "Poco espacio en disco")
+                     && a.Titulo != T("La carpeta está en OneDrive") && a.Titulo != T("Poco espacio en disco")))
             Avisos.Add(FilaAviso.De(a));
 
         Carpeta = ajustes.CarpetaDatosEfectiva;
@@ -127,16 +129,16 @@ public sealed partial class AsistenteViewModel(
     {
         if (string.IsNullOrWhiteSpace(Carpeta))
         {
-            ErrorCarpeta = "Elige una carpeta.";
+            ErrorCarpeta = T("Elige una carpeta.");
             InfoCarpeta = "";
             return;
         }
         var disco = DetectorEquipo.Disco(Carpeta);
-        InfoCarpeta = disco is null ? "No se puede usar esa ruta." : $"Quedan {Formato.Gb(disco.LibreGb)} libres en {disco.Unidad}";
+        InfoCarpeta = disco is null ? T("No se puede usar esa ruta.") : T("Quedan {0} libres en {1}", Formato.Gb(disco.LibreGb), disco.Unidad);
         ErrorCarpeta = disco switch
         {
-            null => "La ruta no es válida.",
-            { EnOneDrive: true } => "Esa carpeta está dentro de OneDrive: se intentarían subir a la nube varios gigas. Elige otra.",
+            null => T("La ruta no es válida."),
+            { EnOneDrive: true } => T("Esa carpeta está dentro de OneDrive: se intentarían subir a la nube varios gigas. Elige otra."),
             _ => null,
         };
         ActualizarTotal();
@@ -145,7 +147,7 @@ public sealed partial class AsistenteViewModel(
     [RelayCommand]
     private void Examinar()
     {
-        var dialogo = new OpenFolderDialog { Title = "Carpeta de datos de Constantino", InitialDirectory = Directory.Exists(Carpeta) ? Carpeta : null };
+        var dialogo = new OpenFolderDialog { Title = T("Carpeta de datos de Calíope"), InitialDirectory = Directory.Exists(Carpeta) ? Carpeta : null };
         if (dialogo.ShowDialog() == true)
             Carpeta = Path.Combine(dialogo.FolderName, "Constantino");
     }
@@ -178,7 +180,7 @@ public sealed partial class AsistenteViewModel(
             && !Opciones.Any(o => o.GrupoExclusivo == grupo && o.Seleccionado))
         {
             opcion.Seleccionado = true;
-            AvisoSeleccion = "Hace falta al menos uno de los modelos Base: sin él no se puede narrar ni clonar.";
+            AvisoSeleccion = T("Hace falta al menos uno de los modelos Base: sin él no se puede narrar ni clonar.");
             return;
         }
         AvisoSeleccion = null;
@@ -190,10 +192,12 @@ public sealed partial class AsistenteViewModel(
         var gb = Opciones.Where(o => o.Seleccionado && !o.YaInstalado).Sum(o => o.TamanoGb);
         var disco = string.IsNullOrWhiteSpace(Carpeta) ? null : DetectorEquipo.Disco(Carpeta);
         TotalSeleccion = gb == 0
-            ? "No hay nada nuevo que instalar."
-            : $"Se descargarán e instalarán unos {Formato.Gb(gb)}" + (disco is null ? "." : $" (quedan {Formato.Gb(disco.LibreGb)} libres en {disco.Unidad}).");
+            ? T("No hay nada nuevo que instalar.")
+            : disco is null
+                ? T("Se descargarán e instalarán unos {0}.", Formato.Gb(gb))
+                : T("Se descargarán e instalarán unos {0} (quedan {1} libres en {2}).", Formato.Gb(gb), Formato.Gb(disco.LibreGb), disco.Unidad);
         if (disco is not null && disco.LibreGb < gb + 5)
-            AvisoSeleccion ??= "No hay espacio suficiente en el disco para esta selección. Libera espacio o elige otra carpeta.";
+            AvisoSeleccion ??= T("No hay espacio suficiente en el disco para esta selección. Libera espacio o elige otra carpeta.");
     }
 
     [RelayCommand]
