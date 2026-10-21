@@ -16,4 +16,12 @@ public class TextosTests
     [InlineData("...", "narracion")]
     public void NombreDeArchivo_conserva_lo_legible_y_quita_lo_prohibido(string texto, string esperado) =>
         Assert.Equal(esperado, Textos.NombreDeArchivo(texto));
+
+    [Theory]
+    [InlineData(1_700_000L, "1,7 MB")]
+    [InlineData(340_000L, "340 KB")]
+    [InlineData(4_300_000_000L, "4,3 GB")]
+    [InlineData(25_000_000L, "25 MB")]
+    public void Los_tamanos_se_muestran_en_la_unidad_que_mejor_se_lee(long bytes, string esperado) =>
+        Assert.Equal(esperado, Formato.Bytes(bytes));
 }

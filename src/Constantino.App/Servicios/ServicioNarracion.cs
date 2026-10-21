@@ -53,7 +53,7 @@ public sealed class SintetizadorMotor(ServicioMotor motor, VozParaNarrar voz, st
 public sealed class ServicioNarracion(ServicioInstalacion instalacion, ServicioMotor motor, ServicioVoces voces)
 {
     public async Task<AlmacenProyectos> AlmacenAsync() =>
-        new(Path.Combine((await instalacion.InstaladorAsync()).Rutas.Raiz, "proyectos"));
+        new((await instalacion.InstaladorAsync()).Rutas.Narraciones);
 
     /// <summary>Lo que identifica al modelo de <paramref name="motorVoz"/> en las huellas, o null si no está instalado.</summary>
     public Task<string?> ModeloAsync(string motorVoz) => motor.FirmaModeloAsync(motorVoz);

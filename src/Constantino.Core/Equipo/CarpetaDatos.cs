@@ -3,8 +3,12 @@ namespace Constantino.Core.Equipo;
 /// <summary>Dónde guarda Constantino herramientas, entornos, modelos y voces.</summary>
 public static class CarpetaDatos
 {
-    /// <summary>%LOCALAPPDATA%\Constantino: no se sincroniza con OneDrive y no necesita permisos de administrador.</summary>
+    /// <summary>%LOCALAPPDATA%\Caliope: no se sincroniza con OneDrive y no necesita permisos de administrador.</summary>
     public static string Predeterminada =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Caliope");
+
+    /// <summary>La carpeta por defecto de las versiones anteriores, cuando la aplicación se llamaba Constantino.</summary>
+    public static string PredeterminadaAntigua =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Constantino");
 
     private static readonly string[] VariablesOneDrive = ["OneDrive", "OneDriveCommercial", "OneDriveConsumer"];

@@ -66,11 +66,20 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
 
     public CatalogoComponentes Catalogo => equipo.Catalogo;
 
+    private readonly HashSet<string> _carpetasRevisadas = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Si la carpeta de datos se ha reorganizado al arrancar (versiones anteriores lo guardaban todo suelto).</summary>
+    public ResultadoMigracion? Migracion { get; private set; }
+
     /// <summary>El instalador se crea con la carpeta y el dispositivo actuales (pueden cambiar en el asistente).</summary>
     public async Task<Instalador> InstaladorAsync()
     {
         var (_, rec) = await equipo.ObtenerAnalisisAsync();
-        return new Instalador(Catalogo, new RutasDatos(ajustes.CarpetaDatosEfectiva, rec.UsaGpu), new EjecutorProcesos(), new Descargador(Http));
+        var carpeta = ajustes.CarpetaDatosEfectiva;
+        // La primera vez que se usa una carpeta en esta sesión se pasa a la estructura clara (y se deja su LÉEME).
+        if (_carpetasRevisadas.Add(carpeta))
+            Migracion = await Task.Run(() => EstructuraDatos.Migrar(carpeta));
+        return new Instalador(Catalogo, new RutasDatos(carpeta, rec.UsaGpu), new EjecutorProcesos(), new Descargador(Http));
     }
 
     public async Task<EstadoComponente> EstadoDeAsync(string id) => (await InstaladorAsync()).EstadoDe(id);

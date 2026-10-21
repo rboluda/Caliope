@@ -114,7 +114,10 @@ public static class Huellas
 /// <summary>Proyectos en disco: <c>proyectos/&lt;id&gt;/proyecto.json</c>, <c>guion.txt</c> y <c>salida/</c>.</summary>
 public sealed class AlmacenProyectos(string carpeta)
 {
-    public const string ArchivoProyecto = "proyecto.json", ArchivoGuion = "guion.txt", CarpetaSalidaNombre = "salida";
+    public const string ArchivoProyecto = "proyecto.json", ArchivoGuion = "guion.txt", CarpetaSalidaNombre = "Audio";
+
+    /// <summary>Nombre de la carpeta de audio en versiones anteriores.</summary>
+    private const string CarpetaSalidaAntigua = "salida";
 
     public const string GuionDeEjemplo = """
         // Escribe aquí tu guion. Cada párrafo (separado por una línea en blanco) es un bloque y da un archivo de audio.
@@ -205,7 +208,17 @@ public sealed class AlmacenProyectos(string carpeta)
 
     public string CarpetaDe(string id) => Path.Combine(carpeta, id);
 
-    public string CarpetaSalida(string id) => Path.Combine(CarpetaDe(id), CarpetaSalidaNombre);
+    public string CarpetaSalida(string id)
+    {
+        var nueva = Path.Combine(CarpetaDe(id), CarpetaSalidaNombre);
+        var antigua = Path.Combine(CarpetaDe(id), CarpetaSalidaAntigua);
+        if (Directory.Exists(antigua) && !Directory.Exists(nueva))
+        {
+            try { Directory.Move(antigua, nueva); }
+            catch (IOException) { return antigua; } // en uso (p. ej. sonando): se renombra la próxima vez
+        }
+        return nueva;
+    }
 
     private static void EscribirAtomico(string ruta, string contenido)
     {

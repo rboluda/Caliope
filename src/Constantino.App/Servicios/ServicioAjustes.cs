@@ -19,11 +19,12 @@ public sealed record AjustesApp(
     bool AsistenteCompletado = false,
     string? VozPredeterminada = null);
 
-/// <summary>Preferencias del usuario, en %LOCALAPPDATA%\Constantino\ajustes.json (fuera de la carpeta de datos, que puede cambiar).</summary>
+/// <summary>Preferencias del usuario, en %LOCALAPPDATA%\Caliope\ajustes.json (fuera de la carpeta de datos, que puede cambiar).</summary>
 public sealed class ServicioAjustes
 {
     private static readonly JsonSerializerOptions Opciones = new(JsonSerializerDefaults.Web) { WriteIndented = true };
     private readonly string _ruta = Path.Combine(CarpetaDatos.Predeterminada, "ajustes.json");
+    private static readonly string RutaAntigua = Path.Combine(CarpetaDatos.PredeterminadaAntigua, "ajustes.json");
 
     public AjustesApp Actual { get; private set; }
 
@@ -62,6 +63,16 @@ public sealed class ServicioAjustes
     {
         try
         {
+            // Primera vez con el nombre de Calíope: se traen los ajustes de Constantino. Si usaba la carpeta por
+            // defecto, se apunta explícitamente para que no se pierda al cambiar el nombre por defecto.
+            if (!File.Exists(_ruta) && File.Exists(RutaAntigua))
+            {
+                var antiguos = JsonSerializer.Deserialize<AjustesApp>(File.ReadAllText(RutaAntigua), Opciones) ?? new AjustesApp();
+                if (antiguos.CarpetaDatos is null && antiguos.AsistenteCompletado)
+                    antiguos = antiguos with { CarpetaDatos = CarpetaDatos.PredeterminadaAntigua };
+                Guardar(antiguos);
+                return antiguos;
+            }
             return File.Exists(_ruta)
                 ? JsonSerializer.Deserialize<AjustesApp>(File.ReadAllText(_ruta), Opciones) ?? new AjustesApp()
                 : new AjustesApp();

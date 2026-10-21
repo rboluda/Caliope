@@ -46,6 +46,8 @@ public sealed class InstaladorTests : IDisposable
     private Instalador Instalador(CatalogoComponentes? catalogo = null, bool usaGpu = true) =>
         new(catalogo ?? Catalogo(), new RutasDatos(_datos, usaGpu), _ejecutor, _descargador, TimeSpan.FromMilliseconds(10));
 
+    private RutasDatos Rutas => new(_datos, usaGpu: true);
+
     private IProgress<EventoInstalacion> Progreso => new ProgresoSincrono<EventoInstalacion>(_eventos.Add);
 
     [Fact]
@@ -73,8 +75,8 @@ public sealed class InstaladorTests : IDisposable
         Assert.Equal(EstadoComponente.Instalado, instalador.EstadoDe("base"));
         Assert.Equal(EstadoComponente.Instalado, instalador.EstadoDe("motor"));
         Assert.Equal("cuda", instalador.Estado.Leer()["motor"].Dispositivo);
-        Assert.False(File.Exists(Path.Combine(_datos, "descargas", "b.zip")), "el zip se borra tras extraerlo");
-        Assert.False(File.Exists(Path.Combine(_datos, "herramientas", "b", "bin", "otro.txt")), "solo se extrae lo incluido");
+        Assert.False(File.Exists(Path.Combine(Rutas.Descargas, "b.zip")), "el zip se borra tras extraerlo");
+        Assert.False(File.Exists(Path.Combine(Rutas.Herramientas, "b", "bin", "otro.txt")), "solo se extrae lo incluido");
         Assert.Contains(_ejecutor.Llamadas, l => l.Contains("https://download.pytorch.org/whl/cu128"));
         Assert.Equal(TipoEvento.ComponenteCompletado, _eventos.Last().Tipo);
         Assert.Contains(_eventos, e => e is { Tipo: TipoEvento.Progreso, ComponenteId: "base" } && e.Fraccion > 0);
@@ -108,7 +110,7 @@ public sealed class InstaladorTests : IDisposable
         var instalador = Instalador();
         await instalador.InstalarAsync(["motor"], Progreso, CancellationToken.None);
 
-        File.Delete(Path.Combine(_datos, "entornos", "m", "python.exe"));
+        File.Delete(Path.Combine(Rutas.Entornos, "m", "python.exe"));
         Assert.Equal(EstadoComponente.Danado, instalador.EstadoDe("motor"));
         Assert.Equal(["motor"], instalador.Plan(["motor"]).Select(c => c.Id));
 
@@ -168,7 +170,7 @@ public sealed class InstaladorTests : IDisposable
 
         instalador.Desinstalar("motor");
         Assert.Equal(EstadoComponente.NoInstalado, instalador.EstadoDe("motor"));
-        Assert.False(Directory.Exists(Path.Combine(_datos, "entornos", "m")));
+        Assert.False(Directory.Exists(Path.Combine(Rutas.Entornos, "m")));
         instalador.Desinstalar("base");
         Assert.Empty(instalador.Estado.Leer());
     }
@@ -185,7 +187,7 @@ public sealed class InstaladorTests : IDisposable
         var paso = new PasoExtraer("Abriendo", zip, "{herramientas}/malo");
 
         Assert.Throws<InvalidDataException>(() => instalador.Extraer(paso, (_, _) => { }));
-        Assert.False(File.Exists(Path.Combine(_datos, "herramientas", "fuera.txt")));
+        Assert.False(File.Exists(Path.Combine(Rutas.Herramientas, "fuera.txt")));
     }
 
     [Fact]
@@ -227,7 +229,7 @@ public sealed class InstaladorTests : IDisposable
                                "archivos": ["a.pt", "b.json"] } ],
                   "rutas": ["{modelos}/hub/models--Org--Nombre"], "comprobar": ["{modelos}/hub/models--Org--Nombre/listo"] } } ] }
             """);
-        var carpeta = Path.Combine(_datos, "modelos", "hub", "models--Org--Nombre");
+        var carpeta = Path.Combine(Rutas.Modelos, "hub", "models--Org--Nombre");
         _ejecutor.Accion = async args =>
         {
             // Solo los archivos indicados, como JSON para allow_patterns.

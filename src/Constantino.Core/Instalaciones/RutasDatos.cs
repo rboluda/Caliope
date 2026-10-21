@@ -2,13 +2,18 @@ using System.Text.RegularExpressions;
 
 namespace Constantino.Core.Instalaciones;
 
-/// <summary>Estructura de la carpeta de datos y variables que usan los pasos del catálogo.</summary>
+/// <summary>
+/// Estructura de la carpeta de datos (ver <see cref="EstructuraDatos"/>) y variables que usan los pasos del catálogo.
+/// Si la carpeta aún tiene la estructura antigua (no se pudo migrar), se usan las rutas antiguas.
+/// </summary>
 public sealed partial class RutasDatos
 {
     public RutasDatos(string raiz, bool usaGpu)
     {
         Raiz = Path.GetFullPath(raiz);
         UsaGpu = usaGpu;
+        EstructuraAntigua = EstructuraDatos.EsAntigua(Raiz);
+        Interno = EstructuraAntigua ? Raiz : Path.Combine(Raiz, EstructuraDatos.Interno);
         Variables = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["datos"] = Raiz,
@@ -29,16 +34,25 @@ public sealed partial class RutasDatos
 
     public string Raiz { get; }
     public bool UsaGpu { get; }
-    public string Herramientas => Path.Combine(Raiz, "herramientas");
-    public string Python => Path.Combine(Raiz, "python");
-    public string Entornos => Path.Combine(Raiz, "entornos");
-    public string Modelos => Path.Combine(Raiz, "modelos");
-    public string Descargas => Path.Combine(Raiz, "descargas");
-    public string Cache => Path.Combine(Raiz, "cache");
-    public string Registros => Path.Combine(Raiz, "registros");
+    public bool EstructuraAntigua { get; }
+
+    // Lo del usuario, a la vista.
+    public string Narraciones => Path.Combine(Raiz, EstructuraAntigua ? "proyectos" : EstructuraDatos.Narraciones);
+    public string Voces => Path.Combine(Raiz, EstructuraAntigua ? "voces" : EstructuraDatos.Voces);
+    public string Modelos => Path.Combine(Raiz, EstructuraAntigua ? "modelos" : EstructuraDatos.Modelos);
+
+    // Lo interno, todo junto en «Programas internos».
+    public string Interno { get; }
+    public string Herramientas => Path.Combine(Interno, "herramientas");
+    public string Python => Path.Combine(Interno, "python");
+    public string Entornos => Path.Combine(Interno, "entornos");
+    public string Descargas => Path.Combine(Interno, "descargas");
+    public string Cache => Path.Combine(Interno, "cache");
+    public string Registros => Path.Combine(Interno, "registros");
+    public string Temporales => Path.Combine(Interno, "tmp");
     public string Uv => Path.Combine(Herramientas, "uv", "uv.exe");
     public string Ffmpeg => Path.Combine(Herramientas, "ffmpeg", "bin", "ffmpeg.exe");
-    public string ArchivoEstado => Path.Combine(Raiz, "estado.json");
+    public string ArchivoEstado => Path.Combine(Interno, "estado.json");
 
     public IReadOnlyDictionary<string, string> Variables { get; }
 

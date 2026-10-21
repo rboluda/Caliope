@@ -30,7 +30,7 @@ public partial class PaginaAyuda : Page
         Abrir((await _instalacion.InstaladorAsync()).Rutas.Raiz);
 
     private async void AlAbrirRegistros(object sender, RoutedEventArgs e) =>
-        Abrir(Path.Combine((await _instalacion.InstaladorAsync()).Rutas.Raiz, "registros"));
+        Abrir((await _instalacion.InstaladorAsync()).Rutas.Registros);
 
     private void AlAbrirGitHub(object sender, RoutedEventArgs e) => Abrir(UrlRepositorio);
 

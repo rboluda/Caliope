@@ -182,7 +182,7 @@
                     <TextBlock Style="{StaticResource Subtitulo}" Text="La primera vez tarda" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="Arrancar el motor y cargar el modelo lleva entre 20 y 60 segundos. Después queda en memoria y cada bloque va mucho más rápido." />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="Un componente da errores" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="En «Componentes», pulsa «Reparar»: vuelve a instalarlo aprovechando lo ya descargado. El registro de instalación está en la carpeta de datos, dentro de «registros»." />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="En «Componentes», pulsa «Reparar»: vuelve a instalarlo aprovechando lo ya descargado. Si quieres verlo, el registro de lo que ha pasado está en «Programas internos», dentro de la carpeta de Calíope (en Ajustes → Almacenamiento ves cada carpeta y lo que ocupa)." />
                     <StackPanel Orientation="Horizontal">
                         <ui:Button Click="AlAbrirDatos" Content="Abrir la carpeta de datos">
                             <ui:Button.Icon>

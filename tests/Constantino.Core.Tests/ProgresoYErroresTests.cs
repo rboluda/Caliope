@@ -116,7 +116,7 @@ public sealed class AvisosYReintentosTests : IDisposable
                                "progreso": { "carpetas": ["{cache}/x"], "bytesConGpu": 1000, "bytesSinGpu": 1000 } } ],
                   "rutas": ["{cache}/x"], "comprobar": ["{cache}/x"] } } ] }
             """);
-        var carpeta = Path.Combine(_datos, "cache", "x");
+        var carpeta = Path.Combine(new RutasDatos(_datos, true).Cache, "x");
         var ejecutor = new EjecutorConAccion(async escribir =>
         {
             Directory.CreateDirectory(carpeta);

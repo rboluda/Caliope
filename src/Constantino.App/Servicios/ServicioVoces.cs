@@ -12,7 +12,7 @@ public sealed class ServicioVoces(ServicioInstalacion instalacion, ServicioAjust
     public async Task<BibliotecaVoces> BibliotecaAsync()
     {
         var rutas = (await instalacion.InstaladorAsync()).Rutas;
-        return new BibliotecaVoces(Path.Combine(rutas.Raiz, "voces"), rutas.Ffmpeg, new EjecutorProcesos());
+        return new BibliotecaVoces(rutas.Voces, rutas.Ffmpeg, new EjecutorProcesos());
     }
 
     public string? Predeterminada => ajustes.Actual.VozPredeterminada;
@@ -28,7 +28,7 @@ public sealed class ServicioVoces(ServicioInstalacion instalacion, ServicioAjust
     /// <summary>Ruta nueva para un audio de prueba; borra los de sesiones anteriores.</summary>
     public async Task<string> ArchivoTemporalAsync(string prefijo)
     {
-        var carpeta = Path.Combine((await instalacion.InstaladorAsync()).Rutas.Raiz, "tmp");
+        var carpeta = (await instalacion.InstaladorAsync()).Rutas.Temporales;
         Directory.CreateDirectory(carpeta);
         foreach (var viejo in Directory.EnumerateFiles(carpeta, "*.wav").Where(f => File.GetLastWriteTime(f) < DateTime.Now.AddDays(-1)))
         {

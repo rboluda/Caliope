@@ -13,5 +13,6 @@ public partial class PaginaAjustes : Page, INavigableView<AjustesViewModel>
         ViewModel = viewModel;
         DataContext = this;
         InitializeComponent();
+        Loaded += async (_, _) => await ViewModel.CargarAsync();
     }
 }

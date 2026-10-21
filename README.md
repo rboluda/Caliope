@@ -124,7 +124,16 @@ En «Voces → Probar» puedes escuchar la misma voz con los dos motores y queda
 
 **La voz clonada sale cortada.** Casi siempre es porque la transcripción no coincide con la grabación. Corrígela en «Voces → Editar transcripción» o déjala vacía para imitar solo el timbre.
 
-**¿Dónde se guardan mis voces y narraciones?** En la carpeta de datos que eliges en el asistente (por defecto `%LOCALAPPDATA%\Constantino`). Desinstalar Calíope no la borra.
+**¿Dónde se guardan mis voces y narraciones?** En la carpeta que eliges en el asistente (por defecto `%LOCALAPPDATA%\Caliope`), organizada para que se entienda a simple vista:
+
+```text
+Mis narraciones\      tus proyectos; el audio de cada uno está en su carpeta «Audio»
+Mis vocesModelos de voz\       lo que más ocupa
+Programas internos\   motores y herramientas (no tocar)
+LÉEME.txt
+```
+
+En *Ajustes → Almacenamiento* ves cuánto ocupa cada parte y puedes abrirla.
 
 **¿En qué idiomas habla?** Español, inglés, francés, alemán, italiano, portugués, ruso, chino, japonés y coreano. Puedes elegir acento, por ejemplo castellano de España o español latino.
 
