@@ -128,7 +128,8 @@ En «Voces → Probar» puedes escuchar la misma voz con los dos motores y queda
 
 ```text
 Mis narraciones\      tus proyectos; el audio de cada uno está en su carpeta «Audio»
-Mis vocesModelos de voz\       lo que más ocupa
+Mis voces\            tus voces y sus variantes
+Modelos de voz\       lo que más ocupa
 Programas internos\   motores y herramientas (no tocar)
 LÉEME.txt
 ```
