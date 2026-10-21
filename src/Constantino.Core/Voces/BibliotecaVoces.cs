@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -305,6 +306,85 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
             }
         }
         throw new VozInvalidaException("El archivo de referencia no tiene audio.");
+    }
+
+    // --- Paquetes de voz: exportar e importar ---------------------------------------------------
+
+    /// <summary>Guarda la voz (grabación, ficha y variantes) en un .zip para llevarla a otro equipo o compartirla.</summary>
+    public void Exportar(string id, string destinoZip)
+    {
+        if (Obtener(id) is null)
+            throw new VozInvalidaException("Esa voz ya no está en tu biblioteca.");
+        var temporal = destinoZip + ".tmp";
+        if (File.Exists(temporal))
+            File.Delete(temporal);
+        ZipFile.CreateFromDirectory(CarpetaDe(id), temporal, CompressionLevel.Optimal, includeBaseDirectory: false);
+        File.Move(temporal, destinoZip, overwrite: true);
+    }
+
+    /// <summary>
+    /// Añade a la biblioteca una voz exportada con <see cref="Exportar"/>. Si ya hay una con el mismo nombre, la
+    /// importada se distingue con «(importada)». Pide confirmar el permiso, como al clonar.
+    /// </summary>
+    public Voz ImportarPaquete(string zip, bool consentimiento)
+    {
+        if (!consentimiento)
+            throw new VozInvalidaException("Confirma que la voz es tuya o que tienes permiso de su dueño para usarla.");
+        ZipArchive archivo;
+        try
+        {
+            archivo = ZipFile.OpenRead(zip);
+        }
+        catch (InvalidDataException)
+        {
+            throw new VozInvalidaException("Este archivo no es una voz de Calíope (no es un .zip válido).");
+        }
+        using (archivo)
+        {
+            if (archivo.GetEntry(ArchivoFicha) is not { } ficha || archivo.GetEntry(ArchivoReferencia) is null)
+                throw new VozInvalidaException("Este archivo no es una voz de Calíope: le falta la grabación o su ficha.");
+            Voz? voz;
+            using (var lector = new StreamReader(ficha.Open()))
+            {
+                try { voz = JsonSerializer.Deserialize<Voz>(lector.ReadToEnd(), Opciones); }
+                catch (JsonException) { voz = null; }
+            }
+            if (voz is null || string.IsNullOrWhiteSpace(voz.Nombre))
+                throw new VozInvalidaException("La ficha de la voz está dañada.");
+
+            Directory.CreateDirectory(carpeta);
+            var nombre = Listar().Any(v => string.Equals(v.Nombre, voz.Nombre, StringComparison.CurrentCultureIgnoreCase))
+                ? $"{voz.Nombre} (importada)"
+                : voz.Nombre;
+            var id = IdLibre(nombre);
+            var temporal = Path.Combine(carpeta, id + ".importando");
+            if (Directory.Exists(temporal))
+                Directory.Delete(temporal, recursive: true);
+            var raizTemporal = Path.GetFullPath(temporal) + Path.DirectorySeparatorChar;
+            try
+            {
+                foreach (var entrada in archivo.Entries.Where(e => !string.IsNullOrEmpty(e.Name)))
+                {
+                    // Nada puede escribirse fuera de la carpeta de la voz («..\» en el zip).
+                    var destino = Path.GetFullPath(Path.Combine(temporal, entrada.FullName));
+                    if (!destino.StartsWith(raizTemporal, StringComparison.OrdinalIgnoreCase))
+                        throw new VozInvalidaException("Este archivo no es una voz de Calíope válida.");
+                    Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
+                    entrada.ExtractToFile(destino, overwrite: true);
+                }
+                var duracion = DuracionWav(Path.Combine(temporal, ArchivoReferencia));
+                Directory.Move(temporal, CarpetaDe(id));
+                var nueva = voz with { Id = id, Nombre = nombre, DuracionSegundos = duracion, Consentimiento = true };
+                Escribir(nueva);
+                return nueva;
+            }
+            catch
+            {
+                if (Directory.Exists(temporal))
+                    Directory.Delete(temporal, recursive: true);
+                throw;
+            }
+        }
     }
 
     private Voz? Leer(string id)

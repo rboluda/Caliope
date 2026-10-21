@@ -257,4 +257,68 @@ public sealed class BibliotecaVocesTests : IDisposable
             return Task.FromResult(new ResultadoProceso(Codigo, ""));
         }
     }
+
+    // --- Paquetes de voz ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Exportar_e_importar_conserva_la_voz_y_sus_variantes()
+    {
+        _ejecutor.Segundos = 15;
+        var origen = Biblioteca();
+        var voz = (await origen.ImportarAsync(Solicitud(_audio, "Narrador"))).Voz;
+        await origen.AnadirVarianteAsync(voz.Id, "susurro", "Susurrando", _audio, Transcripcion(15), sinTranscripcion: false);
+        var zip = Path.Combine(_raiz, "Narrador.zip");
+
+        origen.Exportar(voz.Id, zip);
+        var destino = new BibliotecaVoces(Path.Combine(_raiz, "otro-equipo"), _ffmpeg, _ejecutor);
+        var importada = destino.ImportarPaquete(zip, consentimiento: true);
+
+        Assert.Equal("narrador", importada.Id);
+        Assert.Equal("Narrador", importada.Nombre);
+        Assert.Equal(voz.Transcripcion, importada.Transcripcion);
+        Assert.Equal(15, importada.DuracionSegundos, 1);
+        Assert.Equal(["susurro"], destino.Variantes(importada.Id).Select(v => v.Id));
+    }
+
+    [Fact]
+    public async Task Importar_una_voz_que_ya_existe_no_pisa_la_tuya()
+    {
+        _ejecutor.Segundos = 15;
+        var bib = Biblioteca();
+        var voz = (await bib.ImportarAsync(Solicitud(_audio, "Narrador"))).Voz;
+        var zip = Path.Combine(_raiz, "Narrador.zip");
+        bib.Exportar(voz.Id, zip);
+
+        var copia = bib.ImportarPaquete(zip, consentimiento: true);
+
+        Assert.Equal("Narrador (importada)", copia.Nombre);
+        Assert.NotEqual(voz.Id, copia.Id);
+        Assert.Equal(2, bib.Listar().Count);
+    }
+
+    [Fact]
+    public void Un_zip_que_no_es_una_voz_se_rechaza_sin_dejar_restos()
+    {
+        var zip = Path.Combine(_raiz, "otra-cosa.zip");
+        using (var z = System.IO.Compression.ZipFile.Open(zip, System.IO.Compression.ZipArchiveMode.Create))
+            z.CreateEntry("documento.txt");
+        var bib = Biblioteca();
+
+        var e = Assert.Throws<VozInvalidaException>(() => bib.ImportarPaquete(zip, consentimiento: true));
+        Assert.Contains("no es una voz", e.Message);
+        Assert.Empty(bib.Listar());
+        Assert.Throws<VozInvalidaException>(() => bib.ImportarPaquete(_audio, consentimiento: true));
+    }
+
+    [Fact]
+    public async Task Importar_pide_el_permiso_de_la_voz()
+    {
+        _ejecutor.Segundos = 15;
+        var bib = Biblioteca();
+        var voz = (await bib.ImportarAsync(Solicitud(_audio))).Voz;
+        var zip = Path.Combine(_raiz, "v.zip");
+        bib.Exportar(voz.Id, zip);
+
+        Assert.Throws<VozInvalidaException>(() => bib.ImportarPaquete(zip, consentimiento: false));
+    }
 }

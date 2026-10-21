@@ -278,6 +278,66 @@ public sealed partial class VocesViewModel : ObservableObject
         CargarVariantes(biblioteca, tarjeta);
     }
 
+    // --- Compartir voces -------------------------------------------------------------------------
+
+    [RelayCommand]
+    private async Task ExportarAsync(TarjetaVoz t)
+    {
+        var dialogo = new SaveFileDialog
+        {
+            Title = "Exportar la voz",
+            FileName = $"{Constantino.Core.Textos.NombreDeArchivo(t.Nombre)} - voz de Calíope.zip",
+            Filter = "Voz de Calíope (*.zip)|*.zip",
+            DefaultExt = ".zip",
+        };
+        if (dialogo.ShowDialog() != true)
+            return;
+        try
+        {
+            (await _voces.BibliotecaAsync()).Exportar(t.Voz.Id, dialogo.FileName);
+            ErrorGeneral = null;
+            AvisoImportar = $"«{t.Nombre}» exportada a {dialogo.FileName}. Quien la reciba puede añadirla con «Abrir una voz compartida…».";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or VozInvalidaException)
+        {
+            ErrorGeneral = $"No se ha podido exportar: {e.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task AbrirPaqueteAsync()
+    {
+        var dialogo = new OpenFileDialog
+        {
+            Title = "Abrir una voz compartida",
+            Filter = "Voz de Calíope (*.zip)|*.zip",
+        };
+        if (dialogo.ShowDialog() != true)
+            return;
+        var permiso = new MessageBox
+        {
+            Title = "¿Tienes permiso para usar esta voz?",
+            Content = "Solo puedes usar voces que sean tuyas o de personas que te hayan dado permiso expreso para usarlas.",
+            PrimaryButtonText = "Sí, tengo permiso",
+            CloseButtonText = "Cancelar",
+        };
+        if (await permiso.ShowDialogAsync() != MessageBoxResult.Primary)
+            return;
+        try
+        {
+            var voz = (await _voces.BibliotecaAsync()).ImportarPaquete(dialogo.FileName, consentimiento: true);
+            if (_voces.Predeterminada is null)
+                _voces.MarcarPredeterminada(voz.Id);
+            await CargarAsync();
+            ErrorGeneral = null;
+            AvisoImportar = $"«{voz.Nombre}» añadida a tu biblioteca.";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or VozInvalidaException)
+        {
+            ErrorGeneral = e is VozInvalidaException ? e.Message : $"No se ha podido abrir: {e.Message}";
+        }
+    }
+
     [RelayCommand]
     private void AbrirImportar()
     {

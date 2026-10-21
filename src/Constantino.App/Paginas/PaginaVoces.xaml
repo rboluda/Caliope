@@ -11,15 +11,25 @@
         <StackPanel Margin="32,24,32,32" MaxWidth="1040">
             <Grid>
                 <TextBlock FontSize="28" FontWeight="SemiBold" Text="Voces" />
-                <ui:Button
-                    HorizontalAlignment="Right"
-                    Appearance="Primary"
-                    Command="{Binding ViewModel.AbrirImportarCommand}"
-                    Content="Importar una voz">
-                    <ui:Button.Icon>
-                        <ui:SymbolIcon Symbol="Add24" />
-                    </ui:Button.Icon>
-                </ui:Button>
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <ui:Button
+                        Margin="0,0,8,0"
+                        Command="{Binding ViewModel.AbrirPaqueteCommand}"
+                        Content="Abrir una voz compartida…"
+                        ToolTip="Añade una voz que alguien exportó desde Calíope (un archivo .zip)">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="FolderZip24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                    <ui:Button
+                        Appearance="Primary"
+                        Command="{Binding ViewModel.AbrirImportarCommand}"
+                        Content="Importar una voz">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Add24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
             </Grid>
             <TextBlock
                 Margin="0,4,0,12"
@@ -470,6 +480,12 @@
                                         Command="{Binding DataContext.ViewModel.EditarTranscripcionCommand, ElementName=Raiz}"
                                         CommandParameter="{Binding}"
                                         Content="Editar transcripción" />
+                                    <ui:Button
+                                        Appearance="Transparent"
+                                        Command="{Binding DataContext.ViewModel.ExportarCommand, ElementName=Raiz}"
+                                        CommandParameter="{Binding}"
+                                        Content="Exportar…"
+                                        ToolTip="Guarda la voz y sus variantes en un .zip para llevarla a otro equipo o compartirla" />
                                     <ui:Button
                                         Appearance="Transparent"
                                         Command="{Binding DataContext.ViewModel.AlternarVarianteCommand, ElementName=Raiz}"
