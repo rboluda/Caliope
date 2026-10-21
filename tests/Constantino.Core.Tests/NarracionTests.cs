@@ -650,6 +650,21 @@ public sealed class NarradorTests : IDisposable
         var p3 = await Narrador().ElegirTomaAsync(r3.Proyecto, GuionTres, 2, Ajustes.Semilla, CancellationToken.None);
         Assert.Empty(p3.Tomas!);
     }
+
+    [Fact]
+    public async Task Elegir_una_toma_que_aun_esta_abierta_espera_a_que_se_suelte()
+    {
+        var p = _almacen.Crear("p", Ajustes, GuionTres);
+        var r1 = await Narrador().NarrarAsync(p, GuionTres, null, false, Sin, CancellationToken.None);
+        var toma = (await Narrador().GenerarTomasAsync(r1.Proyecto, GuionTres, 2, 1, Sin, CancellationToken.None))[0];
+
+        // Como el reproductor de Windows, que suelta el archivo un poco después de pararlo.
+        var abierto = new FileStream(toma.Archivo, FileMode.Open, FileAccess.Read, FileShare.None);
+        _ = Task.Delay(500).ContinueWith(_ => abierto.Dispose());
+        var p2 = await Narrador().ElegirTomaAsync(r1.Proyecto, GuionTres, 2, toma.Semilla, CancellationToken.None);
+
+        Assert.Equal(toma.Semilla, Assert.Single(p2.Tomas!).Value);
+    }
 }
 
 /// <summary>ffmpeg de verdad, si está en el PATH (si no, la prueba no hace nada).</summary>

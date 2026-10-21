@@ -512,7 +512,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         // La toma actual se conserva entre las alternativas.
         var actual = proyecto.AjustesDe(b).Semilla;
         if (File.Exists(normalizado))
-            File.Copy(normalizado, Path.Combine(carpeta, $"{actual}.wav"), overwrite: true);
+            await ConArchivoAsync(() => File.Copy(normalizado, Path.Combine(carpeta, $"{actual}.wav"), overwrite: true), ct).ConfigureAwait(false);
 
         var tomas = new Dictionary<string, int>(proyecto.Tomas ?? new Dictionary<string, int>());
         var clave = Huellas.ClaveBloque(b);
@@ -524,15 +524,37 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         var ab = nuevo.AjustesDe(b);
 
         Directory.CreateDirectory(Path.GetDirectoryName(normalizado)!);
-        File.Copy(origen, normalizado, overwrite: true);
+        await ConArchivoAsync(() => File.Copy(origen, normalizado, overwrite: true), ct).ConfigureAwait(false);
         var final = Path.Combine(salida, $"{b.Archivo}.{Extension(ab)}");
         await procesador.CodificarAsync(normalizado, final, ab, ct).ConfigureAwait(false);
-        File.Delete(origen);
+        // Si no se puede borrar (sigue abierta), da igual: la toma en uso no aparece entre las alternativas.
+        try { await ConArchivoAsync(() => File.Delete(origen), ct).ConfigureAwait(false); }
+        catch (IOException) { }
 
         var estado = new EstadoBloque(b.Indice, b.Nombre, Huella(nuevo, b), Path.GetFileName(final),
             Math.Round(Voces.BibliotecaVoces.DuracionWav(normalizado), 2), b.Avisos, DateTimeOffset.Now);
         var estados = new SortedDictionary<int, EstadoBloque> { [b.Indice] = estado };
         return almacen.Guardar(nuevo with { Bloques = Fusionar(nuevo.Bloques, estados, Leer(nuevo, guion).Count) });
+    }
+
+    /// <summary>
+    /// Copiar o borrar un audio que se acaba de escuchar puede fallar un momento: el reproductor de Windows lo suelta
+    /// con un poco de retraso. Se reintenta durante un par de segundos.
+    /// </summary>
+    private static async Task ConArchivoAsync(Action operacion, CancellationToken ct)
+    {
+        for (var intento = 1; ; intento++)
+        {
+            try
+            {
+                operacion();
+                return;
+            }
+            catch (IOException) when (intento < 20)
+            {
+                await Task.Delay(100, ct).ConfigureAwait(false);
+            }
+        }
     }
 
     private string CarpetaTomasDe(Proyecto p, Bloque b) =>

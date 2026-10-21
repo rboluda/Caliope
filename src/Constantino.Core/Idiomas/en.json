@@ -496,6 +496,7 @@
   "Listo en {0} · {1} de {2} ocupados.": "Ready on {0} · {1} of {2} in use.",
   "Listo.": "Ready.",
   "Listo: audio completo actualizado.": "Done: full audio updated.",
+  "Listo: el bloque usa ahora la {0}. La que tenía antes queda en la lista, por si quieres volver a ella.": "Done: the block now uses {0}. The one it had before stays in the list, in case you want to go back to it.",
   "Listo: el bloque usa la toma elegida.": "Done: the block now uses the chosen take.",
   "Listo: {0} bloque(s) generado(s), {1} sin cambios.": "Done: {0} block(s) generated, {1} unchanged.",
   "Listo: {0} bloque(s) generado(s).": "Done: {0} block(s) generated.",

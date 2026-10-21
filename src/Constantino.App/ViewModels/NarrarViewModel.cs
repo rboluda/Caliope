@@ -621,31 +621,48 @@ public sealed partial class NarrarViewModel : ObservableObject
     [RelayCommand]
     private async Task UsarTomaAsync(FilaToma toma)
     {
-        if (_proyecto is null || Generando || await NarradorActualAsync() is not { } narrador)
+        // Lo que pase se cuenta en el propio cuadro de tomas: es donde está mirando quien ha pulsado el botón.
+        void Avisar(string? texto)
+        {
+            if (Bloques.FirstOrDefault(f => f.Indice == toma.Indice) is { } f)
+                f.MensajeTomas = texto;
+        }
+        if (_proyecto is null || Generando)
             return;
+        if (await NarradorActualAsync() is not { } narrador)
+        {
+            Avisar(T("Elige una voz y comprueba que el motor está instalado."));
+            return;
+        }
         Reproductor.Detener();
         Generando = true;
         Mensaje = T("Usando la toma elegida…");
+        Avisar(T("Usando la toma elegida…"));
+        string? resultado;
         try
         {
             _proyecto = await narrador.ElegirTomaAsync(_proyecto, TextoGuion, toma.Indice, toma.Semilla, CancellationToken.None);
             var r = await narrador.NarrarAsync(_proyecto, TextoGuion, null, false, new Progress<EventoNarracion>(_ => { }), CancellationToken.None);
             _proyecto = r.Proyecto;
             Mensaje = T("Listo: el bloque usa la toma elegida.");
+            resultado = T("Listo: el bloque usa ahora la {0}. La que tenía antes queda en la lista, por si quieres volver a ella.",
+                toma.Titulo.ToLowerInvariant());
         }
         catch (Exception e)
         {
             Error = ServicioMotor.Explicar(e);
+            resultado = Error;
         }
         finally
         {
             Generando = false;
-            await RefrescarBloquesAsync();
-            if (Bloques.FirstOrDefault(f => f.Indice == toma.Indice) is { } fila)
-            {
-                fila.MostrarTomas = true;
-                CargarTomas(fila, narrador.TomasDe(_proyecto!, TextoGuion, toma.Indice));
-            }
+        }
+        await RefrescarBloquesAsync();
+        if (Bloques.FirstOrDefault(f => f.Indice == toma.Indice) is { } fila)
+        {
+            fila.MostrarTomas = true;
+            CargarTomas(fila, narrador.TomasDe(_proyecto!, TextoGuion, toma.Indice));
+            fila.MensajeTomas = resultado;
         }
     }
 
