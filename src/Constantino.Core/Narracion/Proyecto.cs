@@ -59,13 +59,22 @@ public sealed record EstadoBloque(
     IReadOnlyList<string> Avisos,
     DateTimeOffset Generado);
 
+/// <param name="Tomas">Semilla elegida para algunos bloques («Otras tomas»), por la clave de su texto.</param>
 public sealed record Proyecto(
     string Id,
     string Nombre,
     DateTimeOffset Creado,
     DateTimeOffset Modificado,
     AjustesNarracion Ajustes,
-    IReadOnlyList<EstadoBloque> Bloques);
+    IReadOnlyList<EstadoBloque> Bloques,
+    IReadOnlyDictionary<string, int>? Tomas = null)
+{
+    /// <summary>Los ajustes con los que se genera <paramref name="bloque"/>: los del proyecto con su toma elegida.</summary>
+    public AjustesNarracion AjustesDe(Bloque bloque) =>
+        Tomas is not null && Tomas.TryGetValue(Huellas.ClaveBloque(bloque), out var semilla)
+            ? Ajustes with { Semilla = semilla }
+            : Ajustes;
+}
 
 public static class Huellas
 {
@@ -74,7 +83,10 @@ public static class Huellas
     /// al sonido, el bloque generado sigue valiendo y no se repite.
     /// </summary>
     /// <param name="firmaVoz">Algo que cambie si cambia la voz (id, transcripción, grabación de referencia).</param>
-    public static string DeBloque(Bloque bloque, AjustesNarracion ajustes, string firmaVoz, string modelo)
+    /// <param name="firmaOtraVoz">Firma de las voces de [voz: …] (por id).</param>
+    /// <param name="firmaEfecto">Firma de los efectos de [sfx: …] (por nombre).</param>
+    public static string DeBloque(Bloque bloque, AjustesNarracion ajustes, string firmaVoz, string modelo,
+        Func<string, string>? firmaOtraVoz = null, Func<string, string>? firmaEfecto = null)
     {
         // La pausa entre bloques solo afecta al audio completo, no a cada bloque.
         var relevantes = JsonSerializer.SerializeToNode(ajustes with { PausaEntreBloques = 0, VozId = null })!.AsObject();
@@ -98,9 +110,11 @@ public static class Huellas
             {
                 // La variante solo entra cuando hay una distinta del susurro: así las huellas de los bloques
                 // generados antes de existir las variantes siguen valiendo.
+                EventoVoz { VozId: { } otra } v => $"voz@{otra}={firmaOtraVoz?.Invoke(otra)}:{(v.Susurro ? "s" : "n")}:{v.Texto}",
                 EventoVoz v when v.Variante is null or CatalogoVariantes.Susurro => $"voz:{(v.Susurro ? "s" : "n")}:{v.Texto}",
                 EventoVoz v => $"voz:{v.Variante}:{v.Texto}",
                 EventoSilencio s => $"silencio:{s.Segundos:0.###}",
+                EventoEfecto ef => $"efecto:{ef.Nombre}={firmaEfecto?.Invoke(ef.Nombre)}",
                 _ => "",
             }),
             Ajustes = relevantes,
@@ -108,6 +122,25 @@ public static class Huellas
             Modelo = modelo,
         });
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(datos)))[..16];
+    }
+
+    /// <summary>
+    /// Identifica un bloque por su contenido (nombre y lo que se lee), no por su posición: así la toma elegida
+    /// sigue con su bloque aunque se añadan párrafos antes.
+    /// </summary>
+    public static string ClaveBloque(Bloque bloque)
+    {
+        var datos = bloque.Nombre + "\n" + string.Join("\n", bloque.Eventos.Select(e => e.ToString()));
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(datos)))[..12];
+    }
+
+    /// <summary>Cambia si cambia el archivo (tamaño o fecha): para efectos y sonidos.</summary>
+    public static string FirmaArchivo(string? ruta)
+    {
+        if (ruta is null || !File.Exists(ruta))
+            return "0";
+        var info = new FileInfo(ruta);
+        return $"{info.Length}-{info.LastWriteTimeUtc.Ticks}";
     }
 }
 

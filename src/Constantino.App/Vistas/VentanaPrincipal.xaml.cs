@@ -34,11 +34,15 @@ public partial class VentanaPrincipal : FluentWindow
 
             // Versión nueva o mejoras para componentes (sin estorbar al arrancar ni en las capturas).
             if (captura is null && ajustes.Actual.AsistenteCompletado)
+            {
+                // Los sonidos incluidos se crean en segundo plano, para que estén listos al narrar.
+                _ = servicios.GetRequiredService<ServicioNarracion>().PrepararSonidosAsync();
                 _ = Task.Run(async () =>
                 {
                     await Task.Delay(TimeSpan.FromSeconds(3));
                     await Dispatcher.InvokeAsync(() => avisos.ComprobarAsync()).Task.Unwrap();
                 });
+            }
 
             if (captura is not null)
             {

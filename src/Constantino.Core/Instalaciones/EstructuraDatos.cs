@@ -23,6 +23,7 @@ public static class EstructuraDatos
 {
     public const string Narraciones = "Mis narraciones";
     public const string Voces = "Mis voces";
+    public const string Sonidos = "Mis sonidos";
     public const string Modelos = "Modelos de voz";
     public const string Interno = "Programas internos";
     public const string Leeme = "LÉEME.txt";
@@ -273,6 +274,9 @@ public static class EstructuraDatos
             .AppendLine($"{Voces}\\")
             .AppendLine("    Las voces de tu biblioteca: la grabación de cada una y sus variantes.")
             .AppendLine()
+            .AppendLine($"{Sonidos}\\")
+            .AppendLine("    Efectos, ambientes y música para tus narraciones. Puedes añadir tus propios audios a cada carpeta.")
+            .AppendLine()
             .AppendLine($"{Modelos}\\")
             .AppendLine("    Los modelos que generan la voz. Es lo que más ocupa. Se instalan y se quitan desde")
             .AppendLine("    Calíope → Componentes.")
@@ -281,7 +285,7 @@ public static class EstructuraDatos
             .AppendLine("    Los motores y herramientas que usa Calíope por dentro. No borres ni muevas nada de aquí:")
             .AppendLine("    si algo falla, usa «Reparar» en Calíope → Componentes.")
             .AppendLine()
-            .AppendLine("Puedes copiar «Mis narraciones» y «Mis voces» para hacer una copia de seguridad.")
+            .AppendLine("Puedes copiar «Mis narraciones», «Mis voces» y «Mis sonidos» para hacer una copia de seguridad.")
             .ToString();
         var ruta = Path.Combine(raiz, Leeme);
         if (!File.Exists(ruta) || File.ReadAllText(ruta) != texto)

@@ -47,6 +47,12 @@ public sealed partial class FilaBloque(int indice, string nombre, string resumen
 
     public bool Escuchable => Archivo is not null && Estado != EstadoBloqueVista.Generando;
 
+    // --- Otras tomas ---
+    public ObservableCollection<FilaToma> Tomas { get; } = [];
+    [ObservableProperty] public partial bool MostrarTomas { get; set; }
+    [ObservableProperty] public partial bool GenerandoTomas { get; set; }
+    [ObservableProperty] public partial string? MensajeTomas { get; set; }
+
     public string Etiqueta => Estado switch
     {
         EstadoBloqueVista.Generado => "Generado",
@@ -62,6 +68,16 @@ public sealed partial class FilaBloque(int indice, string nombre, string resumen
         EstadoBloqueVista.Generando => ControlAppearance.Primary,
         _ => ControlAppearance.Secondary,
     };
+}
+
+/// <summary>Una versión alternativa de un bloque, para escucharla y quedarse con ella.</summary>
+public sealed record FilaToma(int Indice, int Semilla, string Archivo, string Duracion, string Titulo);
+
+/// <summary>Una palabra del diccionario de pronunciación, editable.</summary>
+public sealed partial class FilaPronunciacion : ObservableObject
+{
+    [ObservableProperty] public partial string Escrito { get; set; } = "";
+    [ObservableProperty] public partial string Dicho { get; set; } = "";
 }
 
 public sealed record OpcionProyecto(string Id, string Nombre);
@@ -168,6 +184,17 @@ public sealed partial class NarrarViewModel : ObservableObject
 
     /// <summary>Explica el motor elegido, o cómo conseguir el otro.</summary>
     [ObservableProperty] public partial string? AyudaMotor { get; set; }
+
+    /// <summary>Otras voces de la biblioteca, para insertar [voz: …].</summary>
+    public ObservableCollection<EtiquetaVariante> OtrasVoces { get; } = [];
+
+    /// <summary>Efectos de «Mis sonidos», para insertar [sfx: …].</summary>
+    public ObservableCollection<EtiquetaVariante> Efectos { get; } = [];
+
+    // --- Diccionario de pronunciación ---
+    public ObservableCollection<FilaPronunciacion> Diccionario { get; } = [];
+    [ObservableProperty] public partial bool MostrarDiccionario { get; set; }
+    private DispatcherTimer? _demoraDiccionario;
 
     /// <summary>Etiquetas de las variantes de la voz elegida (además de [whispers]).</summary>
     public ObservableCollection<EtiquetaVariante> EtiquetasVoz { get; } = [];
@@ -331,10 +358,17 @@ public sealed partial class NarrarViewModel : ObservableObject
         if (_proyecto is null)
             return;
         var ajustes = AjustesActuales();
+        var proyecto = _proyecto with { Ajustes = ajustes };
         var voz = await _narracion.VozAsync(VozId);
-        var bloques = Guion.Leer(TextoGuion, ajustes.Pausa, ajustes.PausaLarga, voz?.IdsVariantes);
         ActualizarEtiquetas(voz);
         var modelo = await _narracion.ModeloAsync(ajustes.Motor);
+        Narrador? narrador = null;
+        if (voz is not null && modelo is not null)
+        {
+            try { narrador = await _narracion.NarradorAsync(voz, modelo, esperarSonidos: false); }
+            catch (MotorNoDisponibleException) { }
+        }
+        var bloques = narrador?.Leer(proyecto, TextoGuion) ?? Guion.Leer(TextoGuion, ajustes.Pausa, ajustes.PausaLarga, voz?.IdsVariantes);
         var salida = (await _narracion.AlmacenAsync()).CarpetaSalida(_proyecto.Id);
         Salida = salida;
         var estados = _proyecto.Bloques.ToDictionary(b => b.Indice);
@@ -345,9 +379,7 @@ public sealed partial class NarrarViewModel : ObservableObject
             var fila = new FilaBloque(b.Indice, b.Nombre, b.Vacio ? "(solo silencio)" : Recortar(b.TextoLeido, 160));
             if (estados.TryGetValue(b.Indice, out var e) && File.Exists(Path.Combine(salida, e.Archivo)))
             {
-                var huella = voz is { } v && modelo is not null
-                    ? Huellas.DeBloque(b, ajustes, v.Firma, modelo)
-                    : null;
+                var huella = narrador?.Huella(proyecto, b);
                 fila.Estado = huella == e.Huella ? EstadoBloqueVista.Generado : EstadoBloqueVista.Desactualizado;
                 fila.Archivo = Path.Combine(salida, e.Archivo);
                 fila.Duracion = Segundos(e.Duracion);
@@ -360,6 +392,7 @@ public sealed partial class NarrarViewModel : ObservableObject
             Bloques.Add(fila);
         }
 
+        await ActualizarInsertablesAsync(voz);
         var completo = Path.Combine(salida, Narrador.ArchivoCompleto(_proyecto with { Ajustes = ajustes }));
         Completo = File.Exists(completo) ? completo : null;
         var generados = Bloques.Count(f => f.Estado == EstadoBloqueVista.Generado);
@@ -370,6 +403,174 @@ public sealed partial class NarrarViewModel : ObservableObject
             : $"{Bloques.Count} bloques · {generados} generados" +
               (porActualizar > 0 ? $" · {porActualizar} por actualizar" : "") +
               (duracion > 0 ? $" · {Duracion(duracion)} de audio" : "");
+    }
+
+    private async Task ActualizarInsertablesAsync(VozParaNarrar? voz)
+    {
+        OtrasVoces.Clear();
+        foreach (var v in await _narracion.OtrasVocesAsync(voz?.Voz.Id))
+            OtrasVoces.Add(new EtiquetaVariante(v.Nombre, $"[voz: {v.Nombre}] "));
+        Efectos.Clear();
+        foreach (var e in (await _narracion.SonidosAsync(esperar: false)).ListaEfectos)
+            Efectos.Add(new EtiquetaVariante(e.Nombre, $"[sfx: {e.Nombre}] "));
+    }
+
+    // --- Diccionario de pronunciación ------------------------------------------------------------
+
+    [RelayCommand]
+    private async Task AlternarDiccionarioAsync()
+    {
+        MostrarDiccionario = !MostrarDiccionario;
+        if (!MostrarDiccionario)
+            return;
+        foreach (var f in Diccionario)
+            f.PropertyChanged -= AlCambiarPronunciacion;
+        Diccionario.Clear();
+        foreach (var p in await _narracion.DiccionarioAsync())
+            AnadirFila(new FilaPronunciacion { Escrito = p.Escrito, Dicho = p.Dicho });
+        if (Diccionario.Count == 0)
+            AnadirFila(new FilaPronunciacion());
+    }
+
+    [RelayCommand]
+    private void AnadirPronunciacion() => AnadirFila(new FilaPronunciacion());
+
+    [RelayCommand]
+    private void QuitarPronunciacion(FilaPronunciacion fila)
+    {
+        fila.PropertyChanged -= AlCambiarPronunciacion;
+        Diccionario.Remove(fila);
+        ProgramarDiccionario();
+    }
+
+    private void AnadirFila(FilaPronunciacion fila)
+    {
+        fila.PropertyChanged += AlCambiarPronunciacion;
+        Diccionario.Add(fila);
+    }
+
+    private void AlCambiarPronunciacion(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => ProgramarDiccionario();
+
+    /// <summary>Se guarda solo, poco después de dejar de escribir; los bloques afectados pasan a «Por actualizar».</summary>
+    private void ProgramarDiccionario()
+    {
+        if (_demoraDiccionario is null)
+        {
+            _demoraDiccionario = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
+            _demoraDiccionario.Tick += async (_, _) =>
+            {
+                _demoraDiccionario.Stop();
+                await _narracion.GuardarDiccionarioAsync(Diccionario.Select(f => new Pronunciacion(f.Escrito, f.Dicho)));
+                await RefrescarBloquesAsync();
+            };
+        }
+        _demoraDiccionario.Stop();
+        _demoraDiccionario.Start();
+    }
+
+    // --- Otras tomas -------------------------------------------------------------------------------
+
+    private async Task<Narrador?> NarradorActualAsync()
+    {
+        if (await _narracion.VozAsync(VozId) is not { } voz || await _narracion.ModeloAsync(MotorVoz) is not { } modelo)
+            return null;
+        return await _narracion.NarradorAsync(voz, modelo);
+    }
+
+    [RelayCommand]
+    private async Task OtrasTomasAsync(FilaBloque fila)
+    {
+        fila.MostrarTomas = !fila.MostrarTomas;
+        if (fila.MostrarTomas && _proyecto is not null && await NarradorActualAsync() is { } narrador)
+            CargarTomas(fila, narrador.TomasDe(_proyecto, TextoGuion, fila.Indice));
+    }
+
+    private static void CargarTomas(FilaBloque fila, IEnumerable<Toma> tomas)
+    {
+        fila.Tomas.Clear();
+        var n = 1;
+        foreach (var t in tomas)
+            fila.Tomas.Add(new FilaToma(fila.Indice, t.Semilla, t.Archivo, Segundos(t.Duracion), $"Toma {n++}"));
+        fila.MensajeTomas = fila.Tomas.Count == 0 ? "Aún no hay otras tomas de este bloque." : null;
+    }
+
+    [RelayCommand]
+    private async Task GenerarTomasAsync(FilaBloque fila)
+    {
+        if (_proyecto is null || Generando)
+            return;
+        Error = null;
+        await GuardarYRefrescarAsync();
+        var actual = Bloques.FirstOrDefault(f => f.Indice == fila.Indice) ?? fila;
+        actual.MostrarTomas = true;
+        if (await NarradorActualAsync() is not { } narrador)
+        {
+            Error = "Elige una voz y comprueba que el motor está instalado.";
+            return;
+        }
+        Reproductor.Detener();
+        Generando = true;
+        actual.GenerandoTomas = true;
+        actual.MensajeTomas = "Generando dos tomas nuevas…";
+        _cancelacion = new CancellationTokenSource();
+        try
+        {
+            var progreso = new Progress<EventoNarracion>(e => { Mensaje = e.Mensaje; Fraccion = e.Fraccion; });
+            await narrador.GenerarTomasAsync(_proyecto, TextoGuion, actual.Indice, 2, progreso, _cancelacion.Token);
+            CargarTomas(actual, narrador.TomasDe(_proyecto, TextoGuion, actual.Indice));
+            Mensaje = "Escucha las tomas y quédate con la que mejor suene.";
+        }
+        catch (OperationCanceledException)
+        {
+            actual.MensajeTomas = "Cancelado.";
+        }
+        catch (Exception e)
+        {
+            Error = ServicioMotor.Explicar(e);
+            actual.MensajeTomas = null;
+        }
+        finally
+        {
+            actual.GenerandoTomas = false;
+            Generando = false;
+            _cancelacion?.Dispose();
+            _cancelacion = null;
+        }
+    }
+
+    [RelayCommand]
+    private void EscucharToma(FilaToma toma) => Alternar(toma.Archivo);
+
+    /// <summary>La toma pasa a ser el audio del bloque (la anterior queda como otra toma) y se vuelve a montar el completo.</summary>
+    [RelayCommand]
+    private async Task UsarTomaAsync(FilaToma toma)
+    {
+        if (_proyecto is null || Generando || await NarradorActualAsync() is not { } narrador)
+            return;
+        Reproductor.Detener();
+        Generando = true;
+        Mensaje = "Usando la toma elegida…";
+        try
+        {
+            _proyecto = await narrador.ElegirTomaAsync(_proyecto, TextoGuion, toma.Indice, toma.Semilla, CancellationToken.None);
+            var r = await narrador.NarrarAsync(_proyecto, TextoGuion, null, false, new Progress<EventoNarracion>(_ => { }), CancellationToken.None);
+            _proyecto = r.Proyecto;
+            Mensaje = "Listo: el bloque usa la toma elegida.";
+        }
+        catch (Exception e)
+        {
+            Error = ServicioMotor.Explicar(e);
+        }
+        finally
+        {
+            Generando = false;
+            await RefrescarBloquesAsync();
+            if (Bloques.FirstOrDefault(f => f.Indice == toma.Indice) is { } fila)
+            {
+                fila.MostrarTomas = true;
+                CargarTomas(fila, narrador.TomasDe(_proyecto!, TextoGuion, toma.Indice));
+            }
+        }
     }
 
     private void ActualizarEtiquetas(VozParaNarrar? voz)

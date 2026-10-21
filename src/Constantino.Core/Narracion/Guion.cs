@@ -7,9 +7,27 @@ public abstract record Evento;
 
 /// <param name="Susurro">Se lee con la variante de susurro (o más bajo si no la hay).</param>
 /// <param name="Variante">Variante de la voz con la que se lee (null = la voz normal). Con susurro, «susurro».</param>
-public sealed record EventoVoz(string Texto, bool Susurro = false, string? Variante = null) : Evento;
+/// <param name="VozId">Otra voz de la biblioteca ([voz: …]); null = la voz del proyecto.</param>
+public sealed record EventoVoz(string Texto, bool Susurro = false, string? Variante = null, string? VozId = null) : Evento;
 
 public sealed record EventoSilencio(double Segundos) : Evento;
+
+/// <summary>Un efecto de sonido ([sfx: trueno]) que suena en ese punto, con la voz en pausa.</summary>
+public sealed record EventoEfecto(string Nombre) : Evento;
+
+/// <summary>Una sustitución del diccionario de pronunciación: cómo se escribe → cómo debe sonar.</summary>
+public sealed record Pronunciacion(string Escrito, string Dicho);
+
+/// <summary>Lo que el guion necesita saber del proyecto para entender sus etiquetas.</summary>
+/// <param name="Variantes">Ids de las variantes de la voz del proyecto.</param>
+/// <param name="Voces">Otras voces utilizables con [voz: …]: nombre o id normalizado (slug) → id.</param>
+/// <param name="Efectos">Efectos disponibles para [sfx: …] (nombres normalizados).</param>
+/// <param name="Diccionario">Sustituciones de pronunciación (palabras completas, sin distinguir mayúsculas).</param>
+public sealed record ContextoGuion(
+    IReadOnlyCollection<string>? Variantes = null,
+    IReadOnlyDictionary<string, string>? Voces = null,
+    IReadOnlyCollection<string>? Efectos = null,
+    IReadOnlyList<Pronunciacion>? Diccionario = null);
 
 /// <summary>Un bloque del guion: un párrafo, que da un archivo de audio.</summary>
 /// <param name="Nombre">De la línea «# nombre»; «bloque» si no la hay.</param>
@@ -31,7 +49,9 @@ public sealed record Bloque(int Indice, string Nombre, string Texto, IReadOnlyLi
 /// <item>Las líneas que empiezan por «//» son comentarios.</item>
 /// <item>[pause] y [long pause] son silencios; [whispers] afecta al texto siguiente hasta otra etiqueta,
 /// el final de la línea o [/whispers]. Las etiquetas con el nombre de una variante de la voz ([tenso], [alegre]…)
-/// funcionan igual. Cualquier otra etiqueta se quita y se avisa.</item>
+/// funcionan igual. [voz: Nombre] lee con otra voz de la biblioteca hasta el final de la línea; [normal] vuelve a la
+/// voz del proyecto. [sfx: nombre] inserta un efecto de sonido. Cualquier otra etiqueta se quita y se avisa.</item>
+/// <item>El diccionario de pronunciación sustituye palabras antes de leerlas.</item>
 /// </list>
 /// </summary>
 public static partial class Guion
@@ -41,19 +61,24 @@ public static partial class Guion
 
     /// <param name="variantes">Ids de las variantes de la voz: sus etiquetas se reconocen en el guion.</param>
     public static IReadOnlyList<Bloque> Leer(string texto, double pausa = 0.6, double pausaLarga = 1.5,
-        IReadOnlyCollection<string>? variantes = null)
+        IReadOnlyCollection<string>? variantes = null) =>
+        Leer(texto, pausa, pausaLarga, new ContextoGuion(variantes));
+
+    public static IReadOnlyList<Bloque> Leer(string texto, double pausa, double pausaLarga, ContextoGuion contexto)
     {
         var lineas = texto.TrimStart('﻿').Replace("\r\n", "\n").Split('\n')
             .Where(l => !l.TrimStart().StartsWith("//", StringComparison.Ordinal));
         var trozos = SeparadorBloques().Split(string.Join("\n", lineas).Trim());
         var bloques = new List<Bloque>();
         foreach (var trozo in trozos.Where(t => t.Trim().Length > 0))
-            bloques.Add(LeerBloque(bloques.Count + 1, trozo.Trim().Split('\n'), pausa, pausaLarga, variantes ?? []));
+            bloques.Add(LeerBloque(bloques.Count + 1, trozo.Trim().Split('\n'), pausa, pausaLarga, contexto));
         return bloques;
     }
 
-    private static Bloque LeerBloque(int indice, string[] lineas, double pausa, double pausaLarga, IReadOnlyCollection<string> variantes)
+    private static Bloque LeerBloque(int indice, string[] lineas, double pausa, double pausaLarga, ContextoGuion contexto)
     {
+        var variantes = contexto.Variantes ?? [];
+        var diccionario = contexto.Diccionario ?? [];
         var nombre = "bloque";
         if (lineas.Length > 0 && lineas[0].TrimStart().StartsWith('#'))
         {
@@ -64,17 +89,40 @@ public static partial class Guion
         var avisos = new List<string>();
         foreach (var linea in lineas)
         {
-            // Un salto de línea vuelve a la voz normal.
+            // Un salto de línea vuelve a la voz normal (y a la voz del proyecto).
             var susurro = false;
             string? variante = null;
+            string? voz = null;
             var pos = 0;
             foreach (Match m in Etiqueta().Matches(linea))
             {
-                AnadirVoz(eventos, linea[pos..m.Index], susurro, variante);
+                AnadirVoz(eventos, linea[pos..m.Index], susurro, variante, voz, diccionario);
                 pos = m.Index + m.Length;
                 var etiqueta = NormalizarEtiqueta(m.Groups[1].Value);
                 var comoVariante = Textos.Slug(etiqueta.TrimStart('/'), "");
-                if (etiqueta == "pause" || etiqueta == "long pause")
+                if (Parametro(etiqueta, "voz") is { } nombreVoz)
+                {
+                    var clave = Textos.Slug(nombreVoz, "");
+                    if (clave is "normal" or "principal" or "narrador")
+                        voz = null;
+                    else if (contexto.Voces is not null && contexto.Voces.TryGetValue(clave, out var id))
+                        voz = id;
+                    else
+                    {
+                        voz = null;
+                        avisos.Add($"Voz desconocida en [{m.Groups[1].Value}]: se lee con la voz del proyecto.");
+                    }
+                    (susurro, variante) = (false, null);
+                }
+                else if ((Parametro(etiqueta, "sfx") ?? Parametro(etiqueta, "efecto")) is { } nombreEfecto)
+                {
+                    var efecto = Textos.Slug(nombreEfecto, "");
+                    if (contexto.Efectos?.Contains(efecto) == true)
+                        eventos.Add(new EventoEfecto(efecto));
+                    else
+                        avisos.Add($"Efecto desconocido eliminado: [{m.Groups[1].Value}]");
+                }
+                else if (etiqueta == "pause" || etiqueta == "long pause")
                 {
                     AnadirSilencio(eventos, etiqueta == "pause" ? pausa : pausaLarga);
                     (susurro, variante) = (false, null);
@@ -86,6 +134,8 @@ public static partial class Guion
                 else if (EtiquetasFinSusurro.Contains(etiqueta) || (etiqueta.StartsWith('/') && variantes.Contains(comoVariante)))
                 {
                     (susurro, variante) = (false, null);
+                    if (etiqueta == "normal")
+                        voz = null;
                 }
                 else if (variantes.Contains(comoVariante))
                 {
@@ -96,21 +146,37 @@ public static partial class Guion
                     avisos.Add($"Etiqueta desconocida eliminada: [{m.Groups[1].Value}]");
                 }
             }
-            AnadirVoz(eventos, linea[pos..], susurro, variante);
+            AnadirVoz(eventos, linea[pos..], susurro, variante, voz, diccionario);
         }
         return new Bloque(indice, nombre, string.Join("\n", lineas).Trim(), eventos, avisos);
     }
 
-    private static void AnadirVoz(List<Evento> eventos, string texto, bool susurro, string? variante)
+    private static void AnadirVoz(List<Evento> eventos, string texto, bool susurro, string? variante, string? voz,
+        IReadOnlyList<Pronunciacion> diccionario)
     {
         texto = Espacios().Replace(texto, " ").Trim();
         if (texto.Length == 0)
             return;
-        if (eventos.Count > 0 && eventos[^1] is EventoVoz anterior && anterior.Susurro == susurro && anterior.Variante == variante)
+        texto = Pronunciar(texto, diccionario);
+        if (eventos.Count > 0 && eventos[^1] is EventoVoz anterior && anterior.Susurro == susurro && anterior.Variante == variante
+            && anterior.VozId == voz)
             eventos[^1] = anterior with { Texto = anterior.Texto + " " + texto };
         else
-            eventos.Add(new EventoVoz(texto, susurro, variante));
+            eventos.Add(new EventoVoz(texto, susurro, variante, voz));
     }
+
+    /// <summary>Aplica el diccionario: palabras completas, sin distinguir mayúsculas.</summary>
+    public static string Pronunciar(string texto, IReadOnlyList<Pronunciacion> diccionario)
+    {
+        foreach (var p in diccionario.Where(p => !string.IsNullOrWhiteSpace(p.Escrito)))
+            texto = Regex.Replace(texto, $@"(?<![\w]){Regex.Escape(p.Escrito.Trim())}(?![\w])", p.Dicho.Trim(),
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        return texto;
+    }
+
+    /// <summary>«voz: anciano» → «anciano» si la etiqueta es de ese tipo; null si no.</summary>
+    private static string? Parametro(string etiqueta, string tipo) =>
+        etiqueta.StartsWith(tipo + ":", StringComparison.Ordinal) ? etiqueta[(tipo.Length + 1)..].Trim() : null;
 
     private static void AnadirSilencio(List<Evento> eventos, double segundos)
     {

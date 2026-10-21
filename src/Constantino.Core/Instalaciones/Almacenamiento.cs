@@ -10,6 +10,7 @@ public static class Almacenamiento
     [
         new("Mis narraciones", "Tus proyectos. El audio de cada uno está en su carpeta «Audio».", rutas.Narraciones, Tamano(rutas.Narraciones)),
         new("Mis voces", "Las voces de tu biblioteca y sus variantes.", rutas.Voces, Tamano(rutas.Voces)),
+        new("Mis sonidos", "Efectos, ambientes y música. Puedes añadir tus propios audios.", rutas.Sonidos, Tamano(rutas.Sonidos)),
         new("Modelos de voz", "Lo que genera la voz. Se instalan y se quitan desde Componentes.", rutas.Modelos, Tamano(rutas.Modelos)),
         // Los entornos de los motores comparten sus archivos con la caché (enlaces): contarlos dos veces daría
         // un total inflado, así que se mide todo lo interno salvo los entornos.

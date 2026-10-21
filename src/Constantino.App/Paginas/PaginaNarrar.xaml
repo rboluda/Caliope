@@ -92,6 +92,15 @@
                             <ui:Button Margin="6,0,0,0" Click="AlInsertar" Content="Pausa larga" Tag="[long pause] " ToolTip="Pausa larga [long pause]" />
                             <ui:Button Margin="6,0,0,0" Click="AlInsertar" Content="Susurro" Tag="[whispers] " ToolTip="Susurra hasta el final de la línea [whispers]" />
                             <ui:Button Margin="6,0,0,0" Click="AlInsertarBloque" Content="Nuevo bloque" ToolTip="Empieza un párrafo nuevo con nombre" />
+                            <ui:Button
+                                Margin="6,0,0,0"
+                                Command="{Binding ViewModel.AlternarDiccionarioCommand}"
+                                Content="Pronunciación"
+                                ToolTip="Palabras que la voz dice mal: escribe cómo deben sonar">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="BookLetter24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
                             <ItemsControl ItemsSource="{Binding ViewModel.EtiquetasVoz}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -111,6 +120,90 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </WrapPanel>
+                        <StackPanel DockPanel.Dock="Top">
+                            <WrapPanel Margin="0,0,0,8" Visibility="{Binding ViewModel.OtrasVoces.Count, Converter={StaticResource NumeroAVisibilidad}}">
+                                <TextBlock Margin="0,0,4,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Otra voz:" />
+                                <ItemsControl ItemsSource="{Binding ViewModel.OtrasVoces}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <ui:Button Margin="4,0,0,0" Appearance="Transparent" Click="AlInsertar" Content="{Binding Nombre}" Tag="{Binding Etiqueta}"
+                                                       ToolTip="Lee con esta voz hasta el final de la línea ([normal] vuelve a la tuya)" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </WrapPanel>
+                            <WrapPanel Margin="0,0,0,8" Visibility="{Binding ViewModel.Efectos.Count, Converter={StaticResource NumeroAVisibilidad}}">
+                                <TextBlock Margin="0,0,4,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Efecto:" />
+                                <ItemsControl ItemsSource="{Binding ViewModel.Efectos}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <ui:Button Margin="4,0,0,0" Appearance="Transparent" Click="AlInsertar" Content="{Binding Nombre}" Tag="{Binding Etiqueta}"
+                                                       ToolTip="Suena en ese punto, con la voz en pausa" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </WrapPanel>
+
+                            <!--  Diccionario de pronunciación  -->
+                            <Border
+                                Margin="0,0,0,8"
+                                Padding="12"
+                                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                CornerRadius="6"
+                                Visibility="{Binding ViewModel.MostrarDiccionario, Converter={StaticResource BoolAVisibilidad}}">
+                                <StackPanel>
+                                    <TextBlock FontWeight="SemiBold" Text="Pronunciación" />
+                                    <TextBlock
+                                        Margin="0,2,0,8"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        Text="Si la voz dice mal una palabra (un nombre, una sigla…), escribe cómo debe sonar. Sirve para todos tus proyectos y se guarda solo."
+                                        TextWrapping="Wrap" />
+                                    <ItemsControl ItemsSource="{Binding ViewModel.Diccionario}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <ui:TextBox PlaceholderText="Se escribe (p. ej. ONU)" Text="{Binding Escrito, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="1" Margin="8,0" VerticalAlignment="Center" Text="→" />
+                                                    <ui:TextBox Grid.Column="2" PlaceholderText="Suena (p. ej. o ene u)" Text="{Binding Dicho, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <ui:Button
+                                                        Grid.Column="3"
+                                                        Margin="6,0,0,0"
+                                                        Appearance="Transparent"
+                                                        Command="{Binding DataContext.ViewModel.QuitarPronunciacionCommand, ElementName=Raiz}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Quitar">
+                                                        <ui:Button.Icon>
+                                                            <ui:SymbolIcon Symbol="Delete24" />
+                                                        </ui:Button.Icon>
+                                                    </ui:Button>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <ui:Button Command="{Binding ViewModel.AnadirPronunciacionCommand}" Content="Añadir palabra">
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Add24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                         <TextBlock
                             DockPanel.Dock="Bottom"
                             Margin="0,8,0,0"
@@ -366,6 +459,11 @@
                                         </ContextMenu>
                                     </Border.ContextMenu>
                                     <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
@@ -414,7 +512,67 @@
                                                     <ui:SymbolIcon Symbol="ArrowClockwise24" />
                                                 </ui:Button.Icon>
                                             </ui:Button>
+                                            <ui:Button
+                                                Margin="6,0,0,0"
+                                                Command="{Binding DataContext.ViewModel.OtrasTomasCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Otras tomas: escucha versiones distintas de este bloque y quédate con la mejor">
+                                                <ui:Button.Icon>
+                                                    <ui:SymbolIcon Symbol="Layer24" />
+                                                </ui:Button.Icon>
+                                            </ui:Button>
                                         </StackPanel>
+                                    </Grid>
+                                    <StackPanel Grid.Row="1" Margin="0,8,0,0" Visibility="{Binding MostrarTomas, Converter={StaticResource BoolAVisibilidad}}">
+                                        <Separator Margin="0,0,0,8" />
+                                        <TextBlock
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="Cada toma lee el mismo texto con otra interpretación. Escúchalas y quédate con la que mejor suene: la actual se guarda como una toma más."
+                                            TextWrapping="Wrap" />
+                                        <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding Tomas}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,2" Orientation="Horizontal">
+                                                        <TextBlock Width="70" VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding Titulo}" />
+                                                        <TextBlock Width="60" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Duracion}" />
+                                                        <ui:Button
+                                                            Command="{Binding DataContext.ViewModel.EscucharTomaCommand, ElementName=Raiz}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip="Escuchar esta toma">
+                                                            <ui:Button.Icon>
+                                                                <ui:SymbolIcon Symbol="Play24" />
+                                                            </ui:Button.Icon>
+                                                        </ui:Button>
+                                                        <ui:Button
+                                                            Margin="6,0,0,0"
+                                                            Command="{Binding DataContext.ViewModel.UsarTomaCommand, ElementName=Raiz}"
+                                                            CommandParameter="{Binding}"
+                                                            Content="Usar esta"
+                                                            IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock
+                                            Margin="0,4,0,0"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="{Binding MensajeTomas}"
+                                            Visibility="{Binding MensajeTomas, Converter={StaticResource NoNuloAVisibilidad}}" />
+                                        <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                                            <ui:Button
+                                                Appearance="Primary"
+                                                Command="{Binding DataContext.ViewModel.GenerarTomasCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                Content="Generar 2 tomas"
+                                                IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}" />
+                                            <ui:ProgressRing
+                                                Width="18"
+                                                Height="18"
+                                                Margin="12,0,0,0"
+                                                IsIndeterminate="True"
+                                                Visibility="{Binding GenerandoTomas, Converter={StaticResource BoolAVisibilidad}}" />
+                                        </StackPanel>
+                                    </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

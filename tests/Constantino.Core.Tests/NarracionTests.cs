@@ -299,6 +299,30 @@ public sealed class NarradorTests : IDisposable
     }
 
     [Fact]
+    public void Lee_otras_voces_efectos_y_el_diccionario()
+    {
+        var contexto = new ContextoGuion(
+            Voces: new Dictionary<string, string> { ["anciano"] = "abuelo-1", ["maria"] = "maria" },
+            Efectos: ["trueno"],
+            Diccionario: [new Pronunciacion("Calíope", "Ca-lí-o-pe"), new Pronunciacion("ONU", "o ene u")]);
+
+        var b = Guion.Leer("[voz: Anciano] Hola, onu. [sfx: trueno] Sigue. [normal] Fin.\n[voz: maría] Y la ONUS de Calíope. [voz: nadie] x [sfx: gato]",
+            0.6, 1.5, contexto)[0];
+
+        Assert.Equal(
+        [
+            new EventoVoz("Hola, o ene u.", VozId: "abuelo-1"),
+            new EventoEfecto("trueno"),
+            new EventoVoz("Sigue.", VozId: "abuelo-1"),
+            new EventoVoz("Fin."),
+            new EventoVoz("Y la ONUS de Ca-lí-o-pe.", VozId: "maria"),
+            new EventoVoz("x"),
+        ], b.Eventos);
+        Assert.Contains(b.Avisos, a => a.Contains("Voz desconocida"));
+        Assert.Contains(b.Avisos, a => a.Contains("Efecto desconocido"));
+    }
+
+    [Fact]
     public void La_huella_no_cambia_por_ajustes_nuevos_con_su_valor_por_defecto()
     {
         var bloque = Guion.Leer("Hola. [whispers] Adiós.")[0];
@@ -353,16 +377,23 @@ public sealed class NarradorTests : IDisposable
         public string FirmaVoz => "voz-falsa";
         public string Modelo => "modelo-falso";
         public IReadOnlyCollection<string> Variantes { get; set; } = [];
+        public IReadOnlyDictionary<string, string> OtrasVoces { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Firmas { get; } = [];
+        public string FirmaDeVoz(string vozId) => Firmas.GetValueOrDefault(vozId, vozId);
 
         /// <summary>Con qué variante se leyó cada texto (null = voz normal).</summary>
         public List<(string Texto, string? Variante)> Lecturas { get; } = [];
 
-        public Task<string> SintetizarAsync(string texto, string? variante, AjustesNarracion ajustes, string salida, CancellationToken ct)
+        /// <summary>Con qué voz y semilla se leyó cada texto.</summary>
+        public List<(string Texto, string? Voz, int Semilla)> Voces { get; } = [];
+
+        public Task<string> SintetizarAsync(string texto, string? variante, string? vozId, AjustesNarracion ajustes, string salida, CancellationToken ct)
         {
             if (texto == FallarCon)
                 throw new InvalidOperationException("fallo provocado");
             Textos.Add(texto);
             Lecturas.Add((texto, variante));
+            Voces.Add((texto, vozId, ajustes.Semilla));
             const int sr = 24000;
             var voz = (int)(sr * (Recortar ? 0.3 : Duracion(texto)));
             var muestras = new float[voz + 2 * (int)(0.3 * sr)];
@@ -391,6 +422,100 @@ public sealed class NarradorTests : IDisposable
             File.Copy(wav, destino, overwrite: true);
             return Task.CompletedTask;
         }
+
+        /// <summary>Un «efecto» de medio segundo.</summary>
+        public Task ConvertirAsync(string origen, string destinoWav, int frecuencia, CancellationToken ct)
+        {
+            var muestras = new float[frecuencia / 2];
+            Array.Fill(muestras, 0.5f);
+            new Pcm(muestras, frecuencia).EscribirWav(destinoWav);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class SonidosFalsos(string carpeta) : ISonidos
+    {
+        public IReadOnlyCollection<string> Efectos => ["trueno"];
+
+        public string? RutaEfecto(string nombre)
+        {
+            if (nombre != "trueno")
+                return null;
+            var ruta = Path.Combine(carpeta, "trueno.wav");
+            if (!File.Exists(ruta))
+            {
+                Directory.CreateDirectory(carpeta);
+                File.WriteAllText(ruta, "x");
+            }
+            return ruta;
+        }
+    }
+
+    // --- Otras voces, efectos y tomas ---------------------------------------------------------
+
+    [Fact]
+    public async Task Lee_cada_linea_con_su_voz_y_mete_los_efectos()
+    {
+        _sintetizador.OtrasVoces = new Dictionary<string, string> { ["anciano"] = "abuelo-1" };
+        const string guion = "Narra el narrador. [sfx: trueno]\n[voz: Anciano] No abras. [normal] Y abrió.";
+        var p = _almacen.Crear("p", Ajustes, guion);
+        var narrador = new Narrador(_almacen, _sintetizador, _procesador, new SonidosFalsos(Path.Combine(_carpeta, "sonidos")));
+
+        var r = await narrador.NarrarAsync(p, guion, null, false, Sin, CancellationToken.None);
+
+        Assert.Equal([("Narra el narrador.", null), ("No abras.", "abuelo-1"), ("Y abrió.", null)],
+            _sintetizador.Voces.Select(v => (v.Texto, v.Voz)));
+        // El efecto (0,5 s) ocupa su sitio en el bloque; tras él no hay pausa entre frases, solo entre las dos últimas.
+        var sinEfecto = 0.1 + Duracion("Narra el narrador.") + Duracion("No abras.") + Duracion("Y abrió.") + Ajustes.PausaEntreFrases + 0.2 + 6 * 0.05;
+        Assert.Equal(sinEfecto + 0.5, r.Proyecto.Bloques[0].Duracion, 1);
+    }
+
+    [Fact]
+    public async Task La_huella_cambia_si_cambia_la_otra_voz_pero_no_la_de_los_bloques_sin_ella()
+    {
+        _sintetizador.OtrasVoces = new Dictionary<string, string> { ["anciano"] = "abuelo-1" };
+        const string guion = "Solo narrador.\n\n[voz: anciano] Otra voz.";
+        var p = _almacen.Crear("p", Ajustes, guion);
+        var r1 = await Narrador().NarrarAsync(p, guion, null, false, Sin, CancellationToken.None);
+
+        _sintetizador.Firmas["abuelo-1"] = "grabacion-nueva";
+        var r2 = await Narrador().NarrarAsync(r1.Proyecto, guion, null, false, Sin, CancellationToken.None);
+
+        Assert.Equal((1, 1), (r2.Generados, r2.SinCambios));
+    }
+
+    [Fact]
+    public async Task Otras_tomas_y_elegir_una_sin_regenerar_el_resto()
+    {
+        var p = _almacen.Crear("p", Ajustes, GuionTres);
+        var r1 = await Narrador().NarrarAsync(p, GuionTres, null, false, Sin, CancellationToken.None);
+        _sintetizador.Voces.Clear();
+
+        var tomas = await Narrador().GenerarTomasAsync(r1.Proyecto, GuionTres, 2, 2, Sin, CancellationToken.None);
+
+        Assert.Equal(2, tomas.Count);
+        Assert.Equal(2, tomas.Select(t => t.Semilla).Distinct().Count());
+        Assert.DoesNotContain(Ajustes.Semilla, tomas.Select(t => t.Semilla));
+        Assert.All(tomas, t => Assert.True(File.Exists(t.Archivo)));
+        Assert.All(_sintetizador.Voces, v => Assert.NotEqual(Ajustes.Semilla, v.Semilla));
+
+        var elegida = tomas[1].Semilla;
+        var p2 = await Narrador().ElegirTomaAsync(r1.Proyecto, GuionTres, 2, elegida, CancellationToken.None);
+
+        Assert.Equal(elegida, Assert.Single(p2.Tomas!).Value);
+        // La toma anterior queda entre las alternativas y la elegida deja de estarlo.
+        var restantes = Narrador().TomasDe(p2, GuionTres, 2).Select(t => t.Semilla).ToList();
+        Assert.Contains(Ajustes.Semilla, restantes);
+        Assert.DoesNotContain(elegida, restantes);
+
+        _sintetizador.Voces.Clear();
+        var r3 = await Narrador().NarrarAsync(p2, GuionTres, null, false, Sin, CancellationToken.None);
+        Assert.Equal((0, 3), (r3.Generados, r3.SinCambios));
+        Assert.NotNull(r3.Completo);
+
+        // Volver a la toma original quita la elección.
+        var p3 = await Narrador().ElegirTomaAsync(r3.Proyecto, GuionTres, 2, Ajustes.Semilla, CancellationToken.None);
+        Assert.Empty(p3.Tomas!);
     }
 }
 

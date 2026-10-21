@@ -22,9 +22,31 @@ public interface ISintetizador
     /// </summary>
     IReadOnlyCollection<string> Variantes { get; }
 
-    /// <summary>Lee <paramref name="texto"/> con la voz (o su <paramref name="variante"/>) y devuelve la ruta de un WAV.</summary>
-    Task<string> SintetizarAsync(string texto, string? variante, AjustesNarracion ajustes, string salida, CancellationToken ct);
+    /// <summary>Otras voces de la biblioteca para [voz: …]: nombre o id normalizado → id.</summary>
+    IReadOnlyDictionary<string, string> OtrasVoces => new Dictionary<string, string>();
+
+    /// <summary>Firma de otra voz (cambia si cambia su grabación).</summary>
+    string FirmaDeVoz(string vozId) => vozId;
+
+    /// <summary>
+    /// Lee <paramref name="texto"/> con la voz del proyecto (o su <paramref name="variante"/>), o con otra voz de la
+    /// biblioteca si se indica <paramref name="vozId"/>, y devuelve la ruta de un WAV.
+    /// </summary>
+    Task<string> SintetizarAsync(string texto, string? variante, string? vozId, AjustesNarracion ajustes, string salida, CancellationToken ct);
 }
+
+/// <summary>Sonidos para [sfx: …] (en la app, la carpeta «Mis sonidos»).</summary>
+public interface ISonidos
+{
+    /// <summary>Nombres normalizados de los efectos disponibles.</summary>
+    IReadOnlyCollection<string> Efectos { get; }
+
+    string? RutaEfecto(string nombre);
+}
+
+/// <summary>Una versión alternativa de un bloque, generada con otra semilla.</summary>
+/// <param name="Archivo">WAV ya normalizado, listo para escuchar.</param>
+public sealed record Toma(int Semilla, string Archivo, double Duracion, IReadOnlyList<string> Avisos);
 
 /// <summary>Volumen y formato final (en la app, ffmpeg).</summary>
 public interface IProcesadorAudio
@@ -37,6 +59,9 @@ public interface IProcesadorAudio
 
     /// <summary>Convierte un WAV al formato de salida (MP3 o WAV).</summary>
     Task CodificarAsync(string wav, string destino, AjustesNarracion ajustes, CancellationToken ct);
+
+    /// <summary>Convierte cualquier audio (un efecto) a WAV mono a <paramref name="frecuencia"/>.</summary>
+    Task ConvertirAsync(string origen, string destinoWav, int frecuencia, CancellationToken ct);
 }
 
 public enum TipoEventoNarracion
@@ -58,8 +83,21 @@ public sealed record ResultadoNarracion(Proyecto Proyecto, int Generados, int Si
 /// susurros, normaliza y codifica. Los bloques cuya huella no ha cambiado se conservan. Al final une todo en un
 /// archivo completo y escribe un manifiesto con la duración y el inicio de cada bloque para el montaje de vídeo.
 /// </summary>
-public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sintetizador, IProcesadorAudio procesador)
+public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sintetizador, IProcesadorAudio procesador,
+    ISonidos? sonidos = null, IReadOnlyList<Pronunciacion>? diccionario = null)
 {
+    private const string CarpetaTomas = ".tomas";
+
+    /// <summary>Lee el guion con todo lo que sabe el narrador: variantes, otras voces, efectos y pronunciaciones.</summary>
+    public IReadOnlyList<Bloque> Leer(Proyecto p, string guion) =>
+        Guion.Leer(guion, p.Ajustes.Pausa, p.Ajustes.PausaLarga,
+            new ContextoGuion(sintetizador.Variantes, sintetizador.OtrasVoces, sonidos?.Efectos, diccionario));
+
+    /// <summary>La huella con la que se compara un bloque ya generado (la misma en pantalla y al generar).</summary>
+    public string Huella(Proyecto p, Bloque b) =>
+        Huellas.DeBloque(b, p.AjustesDe(b), sintetizador.FirmaVoz, sintetizador.Modelo,
+            sintetizador.FirmaDeVoz, nombre => Huellas.FirmaArchivo(sonidos?.RutaEfecto(nombre)));
+
     /// <summary>Letras por segundo habituales: para detectar frases que el modelo ha cortado o alargado.</summary>
     private const double LetrasPorSegundo = 13.5;
     private const string CarpetaNormalizados = ".normalizados", CarpetaTemporal = ".tmp";
@@ -75,7 +113,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         IProgress<EventoNarracion> progreso, CancellationToken ct)
     {
         var a = proyecto.Ajustes;
-        var bloques = Guion.Leer(guion, a.Pausa, a.PausaLarga, sintetizador.Variantes);
+        var bloques = Leer(proyecto, guion);
         var salida = almacen.CarpetaSalida(proyecto.Id);
         var normalizados = Path.Combine(salida, CarpetaNormalizados);
         var temporal = Path.Combine(salida, CarpetaTemporal);
@@ -96,7 +134,8 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             {
                 ct.ThrowIfCancellationRequested();
                 var b = bloques[i];
-                var huella = Huellas.DeBloque(b, a, sintetizador.FirmaVoz, sintetizador.Modelo);
+                var ab = proyecto.AjustesDe(b);
+                var huella = Huella(proyecto, b);
                 var final = Path.Combine(salida, $"{b.Archivo}.{Extension(a)}");
                 var normalizado = Path.Combine(normalizados, $"{b.Archivo}.wav");
                 previos.TryGetValue(b.Indice, out var previo);
@@ -124,7 +163,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 var inicioBloque = hecho;
                 progreso.Report(new EventoNarracion(TipoEventoNarracion.Bloque, b.Indice, bloques.Count,
                     $"Generando el bloque {b.Indice} de {bloques.Count}", hecho / pesoTotal));
-                var (montaje, medida, avisos) = await GenerarBloqueAsync(b, a, temporal, (fraccion, texto) =>
+                var (montaje, medida, avisos) = await GenerarBloqueAsync(b, ab, temporal, (fraccion, texto) =>
                     progreso.Report(new EventoNarracion(TipoEventoNarracion.Frase, b.Indice, bloques.Count, texto,
                         (inicioBloque + pesos[i] * fraccion) / pesoTotal)), ct).ConfigureAwait(false);
 
@@ -132,8 +171,8 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 var wavMedida = Path.Combine(temporal, $"{b.Archivo}_medida.wav");
                 montaje.EscribirWav(wav);
                 medida.EscribirWav(wavMedida);
-                await procesador.NormalizarAsync(wav, wavMedida, normalizado, a, ct).ConfigureAwait(false);
-                await procesador.CodificarAsync(normalizado, final, a, ct).ConfigureAwait(false);
+                await procesador.NormalizarAsync(wav, wavMedida, normalizado, ab, ct).ConfigureAwait(false);
+                await procesador.CodificarAsync(normalizado, final, ab, ct).ConfigureAwait(false);
 
                 // Si el bloque cambió de nombre, sobran los archivos con el nombre anterior.
                 if (previo is not null && previo.Archivo != Path.GetFileName(final))
@@ -195,10 +234,22 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 anteriorVoz = false;
                 continue;
             }
+            if (evento is EventoEfecto efecto)
+            {
+                if (sonidos?.RutaEfecto(efecto.Nombre) is { } rutaEfecto)
+                {
+                    var wavEfecto = Path.Combine(temporal, $"{b.Archivo}_{partes.Count:000}_efecto.wav");
+                    await procesador.ConvertirAsync(rutaEfecto, wavEfecto, frecuencia ?? FrecuenciaPorDefecto, ct).ConfigureAwait(false);
+                    partes.Add((Pcm.LeerWav(wavEfecto), 0));
+                }
+                anteriorVoz = false;
+                continue;
+            }
             var v = (EventoVoz)evento;
             avance((double)letrasHechas / totalLetras, $"Bloque {b.Indice}: «{Resumen(v.Texto)}»");
-            var variante = v.Variante is { } id && sintetizador.Variantes.Contains(id) ? id : null;
-            var ruta = await sintetizador.SintetizarAsync(v.Texto, variante, a,
+            // Las variantes son de la voz del proyecto; otra voz se lee con su grabación principal.
+            var variante = v.VozId is null && v.Variante is { } id && sintetizador.Variantes.Contains(id) ? id : null;
+            var ruta = await sintetizador.SintetizarAsync(v.Texto, variante, v.VozId, a,
                 Path.Combine(temporal, $"{b.Archivo}_{partes.Count:000}.wav"), ct).ConfigureAwait(false);
             var audio = Pcm.LeerWav(ruta);
             if (a.RecortarSilencios)
@@ -206,16 +257,18 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             if (frecuencia is null)
             {
                 frecuencia = audio.Frecuencia;
-                // Los silencios añadidos antes de conocer la frecuencia del modelo se rehacen con la correcta.
+                // Lo añadido antes de conocer la frecuencia del modelo (silencios, efectos) se rehace con la correcta.
                 for (var i = 0; i < partes.Count; i++)
-                    partes[i] = (Pcm.Silencio(partes[i].Audio.Segundos, audio.Frecuencia), 0);
+                    if (partes[i].Audio.Frecuencia != audio.Frecuencia)
+                        partes[i] = (Pcm.Silencio(partes[i].Audio.Segundos, audio.Frecuencia), 0);
             }
             var esperado = v.Texto.Length / LetrasPorSegundo;
             if (audio.Segundos > 2.5 * esperado + 1 || audio.Segundos < 0.4 * esperado)
                 avisos.Add($"Duración anómala ({audio.Segundos:0.0} s, se esperaban ~{esperado:0.0} s): «{Resumen(v.Texto)}». Revisa cómo suena.");
             if (anteriorVoz)
                 partes.Add((Pcm.Silencio(a.PausaEntreFrases, audio.Frecuencia), 0));
-            partes.Add((audio, v.Susurro ? gananciaSusurro : 0));
+            // Otra voz no sabemos si tiene variante de susurro: se simula bajando el volumen.
+            partes.Add((audio, v.Susurro ? (v.VozId is null ? gananciaSusurro : a.SusurroDb) : 0));
             anteriorVoz = true;
             letrasHechas += v.Texto.Length;
         }
@@ -258,6 +311,100 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         return (destino, new JsonObject { ["archivo"] = Path.GetFileName(destino), ["duracion_s"] = Math.Round(t, 2), ["bloques"] = inicios });
     }
 
+    // --- Otras tomas ---------------------------------------------------------------------------
+
+    /// <summary>Genera <paramref name="cantidad"/> versiones nuevas del bloque con semillas al azar, para escoger la mejor.</summary>
+    public async Task<IReadOnlyList<Toma>> GenerarTomasAsync(Proyecto proyecto, string guion, int indice, int cantidad,
+        IProgress<EventoNarracion> progreso, CancellationToken ct)
+    {
+        var b = Leer(proyecto, guion).FirstOrDefault(x => x.Indice == indice)
+                ?? throw new InvalidOperationException($"No hay bloque {indice}.");
+        var carpeta = CarpetaTomasDe(proyecto, b);
+        var temporal = Path.Combine(almacen.CarpetaSalida(proyecto.Id), CarpetaTemporal);
+        Directory.CreateDirectory(carpeta);
+        Directory.CreateDirectory(temporal);
+        var usadas = new HashSet<int>(TomasDe(proyecto, guion, indice).Select(t => t.Semilla)) { proyecto.AjustesDe(b).Semilla };
+        var tomas = new List<Toma>();
+        for (var k = 0; k < cantidad; k++)
+        {
+            ct.ThrowIfCancellationRequested();
+            int semilla;
+            do semilla = Random.Shared.Next(1, 100_000); while (!usadas.Add(semilla));
+            var ab = proyecto.AjustesDe(b) with { Semilla = semilla };
+            var (montaje, medida, avisos) = await GenerarBloqueAsync(b, ab, temporal, (f, texto) =>
+                progreso.Report(new EventoNarracion(TipoEventoNarracion.Frase, b.Indice, cantidad,
+                    $"Toma {k + 1} de {cantidad}: {texto}", (k + f) / cantidad)), ct).ConfigureAwait(false);
+            var wav = Path.Combine(temporal, $"toma_{semilla}.wav");
+            var wavMedida = Path.Combine(temporal, $"toma_{semilla}_medida.wav");
+            montaje.EscribirWav(wav);
+            medida.EscribirWav(wavMedida);
+            var destino = Path.Combine(carpeta, $"{semilla}.wav");
+            await procesador.NormalizarAsync(wav, wavMedida, destino, ab, ct).ConfigureAwait(false);
+            tomas.Add(new Toma(semilla, destino, Math.Round(Voces.BibliotecaVoces.DuracionWav(destino), 2), avisos));
+        }
+        return tomas;
+    }
+
+    /// <summary>Las tomas ya generadas de un bloque (sin la que está en uso).</summary>
+    public IReadOnlyList<Toma> TomasDe(Proyecto proyecto, string guion, int indice)
+    {
+        if (Leer(proyecto, guion).FirstOrDefault(x => x.Indice == indice) is not { } b)
+            return [];
+        var carpeta = CarpetaTomasDe(proyecto, b);
+        if (!Directory.Exists(carpeta))
+            return [];
+        return Directory.EnumerateFiles(carpeta, "*.wav")
+            .Select(f => int.TryParse(Path.GetFileNameWithoutExtension(f), out var s) ? new Toma(s, f, Math.Round(Voces.BibliotecaVoces.DuracionWav(f), 2), []) : null)
+            .OfType<Toma>()
+            .Where(t => t.Semilla != proyecto.AjustesDe(b).Semilla)
+            .OrderBy(t => File.GetCreationTimeUtc(t.Archivo))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Usa la toma <paramref name="semilla"/> para el bloque: pasa a ser su audio y queda apuntada en el proyecto.
+    /// La toma que había se guarda como una más, por si se quiere volver a ella. Después hay que volver a montar el
+    /// audio completo (<see cref="NarrarAsync"/>, que no regenera nada).
+    /// </summary>
+    public async Task<Proyecto> ElegirTomaAsync(Proyecto proyecto, string guion, int indice, int semilla, CancellationToken ct)
+    {
+        var b = Leer(proyecto, guion).FirstOrDefault(x => x.Indice == indice)
+                ?? throw new InvalidOperationException($"No hay bloque {indice}.");
+        var carpeta = CarpetaTomasDe(proyecto, b);
+        var origen = Path.Combine(carpeta, $"{semilla}.wav");
+        if (!File.Exists(origen))
+            throw new InvalidOperationException("Esa toma ya no existe.");
+        var salida = almacen.CarpetaSalida(proyecto.Id);
+        var normalizado = Path.Combine(salida, CarpetaNormalizados, $"{b.Archivo}.wav");
+        // La toma actual se conserva entre las alternativas.
+        var actual = proyecto.AjustesDe(b).Semilla;
+        if (File.Exists(normalizado))
+            File.Copy(normalizado, Path.Combine(carpeta, $"{actual}.wav"), overwrite: true);
+
+        var tomas = new Dictionary<string, int>(proyecto.Tomas ?? new Dictionary<string, int>());
+        var clave = Huellas.ClaveBloque(b);
+        if (semilla == proyecto.Ajustes.Semilla)
+            tomas.Remove(clave);
+        else
+            tomas[clave] = semilla;
+        var nuevo = proyecto with { Tomas = tomas };
+        var ab = nuevo.AjustesDe(b);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(normalizado)!);
+        File.Copy(origen, normalizado, overwrite: true);
+        var final = Path.Combine(salida, $"{b.Archivo}.{Extension(ab)}");
+        await procesador.CodificarAsync(normalizado, final, ab, ct).ConfigureAwait(false);
+        File.Delete(origen);
+
+        var estado = new EstadoBloque(b.Indice, b.Nombre, Huella(nuevo, b), Path.GetFileName(final),
+            Math.Round(Voces.BibliotecaVoces.DuracionWav(normalizado), 2), b.Avisos, DateTimeOffset.Now);
+        var estados = new SortedDictionary<int, EstadoBloque> { [b.Indice] = estado };
+        return almacen.Guardar(nuevo with { Bloques = Fusionar(nuevo.Bloques, estados, Leer(nuevo, guion).Count) });
+    }
+
+    private string CarpetaTomasDe(Proyecto p, Bloque b) =>
+        Path.Combine(almacen.CarpetaSalida(p.Id), CarpetaTomas, Huellas.ClaveBloque(b));
+
     private string EscribirManifiesto(Proyecto p, IReadOnlyList<Bloque> bloques, IDictionary<int, EstadoBloque> estados, JsonObject? completo)
     {
         var lista = new JsonArray();
@@ -273,7 +420,8 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 ["texto"] = b.Texto,
                 ["eventos"] = new JsonArray(b.Eventos.Select(ev => (JsonNode)(ev switch
                 {
-                    EventoVoz v => new JsonObject { ["tipo"] = "voz", ["texto"] = v.Texto, ["susurro"] = v.Susurro, ["variante"] = v.Variante },
+                    EventoVoz v => new JsonObject { ["tipo"] = "voz", ["texto"] = v.Texto, ["susurro"] = v.Susurro, ["variante"] = v.Variante, ["voz"] = v.VozId },
+                    EventoEfecto ef => new JsonObject { ["tipo"] = "efecto", ["nombre"] = ef.Nombre },
                     EventoSilencio s => new JsonObject { ["tipo"] = "silencio", ["segundos"] = s.Segundos },
                     _ => new JsonObject(),
                 })).ToArray()),
@@ -371,6 +519,14 @@ public sealed partial class ProcesadorFfmpeg(string ffmpeg, IEjecutorProcesos ej
         Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
         string[] codec = a.Formato == FormatoSalida.Wav ? ["-c:a", "pcm_s16le"] : ["-c:a", "libmp3lame", "-b:a", a.Bitrate];
         return Ejecutar(["-y", "-i", wav, "-ar", a.Frecuencia.ToString(CultureInfo.InvariantCulture), "-ac", "1", .. codec, destino], ct);
+    }
+
+    public Task ConvertirAsync(string origen, string destinoWav, int frecuencia, CancellationToken ct)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(destinoWav)!);
+        // Un efecto añadido por el usuario puede venir a cualquier volumen: se iguala al de una voz.
+        return Ejecutar(["-y", "-i", origen, "-af", "loudnorm=I=-20:TP=-2:LRA=11",
+            "-ar", frecuencia.ToString(CultureInfo.InvariantCulture), "-ac", "1", "-c:a", "pcm_s16le", destinoWav], ct);
     }
 
     private async Task<string> Ejecutar(string[] argumentos, CancellationToken ct)

@@ -16,6 +16,7 @@
             <controles:BoolInversoAVisibilidad x:Key="BoolInversoAVisibilidad" />
             <controles:NoNuloAVisibilidad x:Key="NoNuloAVisibilidad" />
             <controles:NegarBool x:Key="NegarBool" />
+            <controles:NumeroAVisibilidad x:Key="NumeroAVisibilidad" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
