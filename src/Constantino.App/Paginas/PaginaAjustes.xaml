@@ -86,6 +86,30 @@
 
             <ui:CardControl Margin="0,8,0,0">
                 <ui:CardControl.Icon>
+                    <ui:SymbolIcon Symbol="ArrowSync24" />
+                </ui:CardControl.Icon>
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Actualizaciones" />
+                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Avisar al arrancar cuando haya una versión nueva de Calíope (se instala con un botón)." TextWrapping="Wrap" />
+                        <TextBlock
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Binding ViewModel.EstadoActualizacion}"
+                            Visibility="{Binding ViewModel.EstadoActualizacion, Converter={StaticResource NoNuloAVisibilidad}}" />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:Button
+                        Margin="0,0,12,0"
+                        Command="{Binding ViewModel.BuscarAhoraCommand}"
+                        Content="Buscar ahora"
+                        IsEnabled="{Binding ViewModel.Buscando, Converter={StaticResource NegarBool}}" />
+                    <ui:ToggleSwitch IsChecked="{Binding ViewModel.BuscarActualizaciones}" />
+                </StackPanel>
+            </ui:CardControl>
+
+            <ui:CardControl Margin="0,8,0,0">
+                <ui:CardControl.Icon>
                     <ui:ImageIcon Width="32" Height="32" Source="pack://application:,,,/Recursos/caliope.png" />
                 </ui:CardControl.Icon>
                 <ui:CardControl.Header>

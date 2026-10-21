@@ -30,6 +30,8 @@ public partial class App : Application
         s.AddSingleton<ServicioReproductor>();
         s.AddSingleton<ServicioNarracion>();
         s.AddSingleton<ServicioGrabacion>();
+        s.AddSingleton<ServicioActualizaciones>();
+        s.AddSingleton<AvisosViewModel>();
         s.AddSingleton<INavigationViewPageProvider, ProveedorPaginas>();
         s.AddSingleton<INavigationService, NavigationService>();
 

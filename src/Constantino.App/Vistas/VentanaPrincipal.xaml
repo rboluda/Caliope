@@ -17,6 +17,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -26,9 +27,58 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
+        <!--  Aviso de versión nueva o de mejoras para componentes  -->
+        <Border
+            x:Name="Aviso"
+            Grid.Row="1"
+            Margin="12,4,12,8"
+            Padding="16,10"
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource AccentFillColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="6"
+            Visibility="{Binding Visible, Converter={StaticResource BoolAVisibilidad}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:SymbolIcon VerticalAlignment="Center" FontSize="22" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Symbol="ArrowCircleUp24" />
+                <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Titulo}" />
+                    <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Mensaje}" TextWrapping="Wrap" />
+                    <ProgressBar Margin="0,6,0,0" Maximum="1" Value="{Binding Progreso}" Visibility="{Binding Ocupado, Converter={StaticResource BoolAVisibilidad}}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
+                    <ui:Button
+                        Margin="0,0,6,0"
+                        Appearance="Transparent"
+                        Command="{Binding VerNovedadesCommand}"
+                        Content="Novedades"
+                        Visibility="{Binding HayNovedades, Converter={StaticResource BoolAVisibilidad}}" />
+                    <ui:Button
+                        Appearance="Primary"
+                        Command="{Binding AccionCommand}"
+                        Content="{Binding TextoBoton}"
+                        IsEnabled="{Binding Ocupado, Converter={StaticResource NegarBool}}" />
+                    <ui:Button
+                        Margin="6,0,0,0"
+                        Appearance="Transparent"
+                        Command="{Binding CerrarCommand}"
+                        IsEnabled="{Binding Ocupado, Converter={StaticResource NegarBool}}"
+                        ToolTip="Ahora no">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Dismiss24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <ui:NavigationView
             x:Name="Navegacion"
-            Grid.Row="1"
+            Grid.Row="2"
             IsBackButtonVisible="Collapsed"
             IsPaneToggleVisible="True"
             OpenPaneLength="220"

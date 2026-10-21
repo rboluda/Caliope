@@ -17,7 +17,9 @@ public sealed record AjustesApp(
     TemaApp Tema = TemaApp.Sistema,
     string? CarpetaDatos = null,
     bool AsistenteCompletado = false,
-    string? VozPredeterminada = null);
+    string? VozPredeterminada = null,
+    bool BuscarActualizaciones = true,
+    DateTimeOffset? UltimaComprobacion = null);
 
 /// <summary>Preferencias del usuario, en %LOCALAPPDATA%\Caliope\ajustes.json (fuera de la carpeta de datos, que puede cambiar).</summary>
 public sealed class ServicioAjustes

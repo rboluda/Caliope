@@ -13,9 +13,10 @@ namespace Constantino.App.Vistas;
 public partial class VentanaPrincipal : FluentWindow
 {
     public VentanaPrincipal(INavigationService navegacion, INavigationViewPageProvider paginas, ServicioAjustes ajustes,
-        IServiceProvider servicios)
+        IServiceProvider servicios, AvisosViewModel avisos)
     {
         InitializeComponent();
+        Aviso.DataContext = avisos;
         Navegacion.SetPageProviderService(paginas);
         navegacion.SetNavigationControl(Navegacion);
         Loaded += async (_, _) =>
@@ -30,6 +31,14 @@ public partial class VentanaPrincipal : FluentWindow
             if (captura?.Pagina is { } nombre)
                 inicial = typeof(PaginaInicio).Assembly.GetType($"{typeof(PaginaInicio).Namespace}.{nombre}") ?? inicial;
             navegacion.Navigate(inicial);
+
+            // Versión nueva o mejoras para componentes (sin estorbar al arrancar ni en las capturas).
+            if (captura is null && ajustes.Actual.AsistenteCompletado)
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(3));
+                    await Dispatcher.InvokeAsync(() => avisos.ComprobarAsync()).Task.Unwrap();
+                });
 
             if (captura is not null)
             {

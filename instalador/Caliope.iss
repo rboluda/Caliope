@@ -93,6 +93,7 @@ Name: "{autodesktop}\{#Nombre}"; Filename: "{app}\{#Exe}"; Tasks: escritorio
 
 [Run]
 Filename: "{app}\{#Exe}"; Description: "{cm:Abrir}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#Exe}"; Flags: nowait; Check: WizardSilent
 
 [UninstallDelete]
 ; Restos que la aplicación crea junto al ejecutable (caché de Python del motor).

@@ -19,6 +19,8 @@ public sealed partial class AjustesViewModel : ObservableObject
 {
     private readonly ServicioAjustes _ajustes;
     private readonly ServicioInstalacion _instalacion;
+    private readonly ServicioActualizaciones _actualizaciones;
+    private readonly AvisosViewModel _avisos;
 
     public IReadOnlyList<OpcionTema> Temas { get; } =
     [
@@ -27,14 +29,44 @@ public sealed partial class AjustesViewModel : ObservableObject
         new(TemaApp.Oscuro, "Oscuro"),
     ];
 
-    public AjustesViewModel(ServicioAjustes ajustes, ServicioInstalacion instalacion)
+    public AjustesViewModel(ServicioAjustes ajustes, ServicioInstalacion instalacion, ServicioActualizaciones actualizaciones,
+        AvisosViewModel avisos)
     {
         _ajustes = ajustes;
         _instalacion = instalacion;
+        _actualizaciones = actualizaciones;
+        _avisos = avisos;
+        BuscarActualizaciones = ajustes.Actual.BuscarActualizaciones;
         Tema = ajustes.Actual.Tema;
     }
 
     [ObservableProperty] public partial TemaApp Tema { get; set; }
+
+    [ObservableProperty] public partial bool BuscarActualizaciones { get; set; }
+    [ObservableProperty] public partial string? EstadoActualizacion { get; set; }
+    [ObservableProperty] public partial bool Buscando { get; set; }
+
+    partial void OnBuscarActualizacionesChanged(bool value)
+    {
+        if (value != _ajustes.Actual.BuscarActualizaciones)
+            _ajustes.Guardar(_ajustes.Actual with { BuscarActualizaciones = value });
+    }
+
+    [RelayCommand]
+    private async Task BuscarAhoraAsync()
+    {
+        Buscando = true;
+        EstadoActualizacion = "Buscando…";
+        var v = await _actualizaciones.ComprobarAsync(forzar: true);
+        Buscando = false;
+        if (v is null)
+        {
+            EstadoActualizacion = $"Tienes la última versión ({Version}).";
+            return;
+        }
+        EstadoActualizacion = $"Hay una versión nueva: {v.Version.ToString(3)}. Mira el aviso de arriba.";
+        _avisos.MostrarVersion(v);
+    }
 
     public string CarpetaDatos => _ajustes.CarpetaDatosEfectiva;
 
