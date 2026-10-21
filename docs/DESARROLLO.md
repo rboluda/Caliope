@@ -39,7 +39,9 @@ La app lanza `python -m constantino_motor` con el Python del entorno de cada mot
 
 ### Dónde instala
 
-En la carpeta de datos elegida en el asistente (por defecto `%LOCALAPPDATA%\Constantino`): `herramientas`, `python`, `entornos`, `modelos`, `cache`, `registros` y `estado.json`. Las preferencias van aparte, en `%LOCALAPPDATA%\Constantino\ajustes.json`. Los pasos de cada componente están en `catalogo/catalogo.json`.
+En la carpeta de datos elegida en el asistente (por defecto `%LOCALAPPDATA%\Caliope`), con la estructura de `EstructuraDatos`: `Mis narraciones`, `Mis voces`, `Modelos de voz` (HF_HOME) y `Programas internos` (`herramientas`, `python`, `entornos`, `cache`, `descargas`, `registros`, `tmp`, `estado.json`), más un `LÉEME.txt`. Las preferencias van aparte, en `%LOCALAPPDATA%\Caliope\ajustes.json`. Los pasos de cada componente están en `catalogo/catalogo.json`.
+
+Las carpetas de versiones anteriores (todo suelto en la raíz) se migran solas al arrancar, moviendo carpetas en el mismo disco. Los entornos de uv guardan la ruta absoluta del Python base en tres sitios y la migración corrige los tres: `pyvenv.cfg` (`home`), la unión de versión menor de `python\` (`cpython-3.11-…` → `cpython-3.11.17-…`) y el propio `Scripts\python.exe`, un lanzador de uv con la ruta grabada como recurso, que se sustituye por el de un entorno temporal recién creado. Si algo falla al mover, se deshace y se sigue con la estructura antigua.
 
 ## Compilar y ejecutar
 
