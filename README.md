@@ -19,6 +19,8 @@
 
 ## ¿Para qué sirve?
 
+> **Calíope es una suite que reúne herramientas de código abierto de terceros** —[Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS), [Chatterbox](https://github.com/resemble-ai/chatterbox), [Whisper](https://github.com/openai/whisper), [PyTorch](https://pytorch.org), [FFmpeg](https://ffmpeg.org) y otras— y las hace fáciles de usar: las instala, las coordina y les pone una interfaz sencilla. Los motores y modelos de voz son obra de sus autores; Calíope no los incluye, los descarga de sus fuentes oficiales cuando lo pides. Ver [créditos](#créditos-y-licencias).
+
 Calíope convierte texto en voz con modelos de inteligencia artificial que **se ejecutan en tu propio equipo**. Está pensado para quien necesita locuciones a menudo: vídeos de YouTube o TikTok, pódcast, audiolibros, cuentos, cursos, presentaciones o videojuegos. Es una alternativa local a servicios como ElevenLabs.
 
 - 🎨 **Diseña voces nuevas** describiéndolas con palabras: «hombre de 40 años, voz grave y cálida, ritmo pausado, tono misterioso, castellano de España».
@@ -155,6 +157,20 @@ pwsh instalador/crear-instalador.ps1   # crea el instalador (necesita Inno Setup
 
 Hay más detalles en [docs/DESARROLLO.md](docs/DESARROLLO.md) (estructura, protocolo del motor, historia) y en [docs/DISENO.md](docs/DISENO.md) (diseño completo).
 
-## Licencia
+## Créditos y licencias
 
-El código de Calíope se publica bajo la [licencia MIT](LICENSE). Los motores y modelos que descarga tienen sus propias licencias, y la aplicación te muestra cada una antes de instalar: Qwen3-TTS (Apache 2.0), Chatterbox (MIT), Whisper (MIT), PyTorch (BSD-3) y ffmpeg (GPL).
+Calíope existe gracias al trabajo de otros. Las piezas principales:
+
+| Herramienta | Autor | Licencia | Para qué |
+|---|---|---|---|
+| [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) | Alibaba (equipo Qwen) | Apache 2.0 | Motor de voz principal: clonar, diseñar y narrar |
+| [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) | Resemble AI | MIT | Motor alternativo con control de la emoción |
+| [Whisper](https://github.com/openai/whisper) | OpenAI | MIT | Transcripción y revisión automática |
+| [PyTorch](https://pytorch.org) | PyTorch Foundation | BSD-3 | Ejecutar los modelos |
+| [FFmpeg](https://ffmpeg.org) y [Rubber Band](https://breakfastquay.com/rubberband/) | FFmpeg · Breakfast Quay | GPL | Audio: volumen, velocidad, tono, mezcla |
+| [uv](https://github.com/astral-sh/uv) y [Python](https://www.python.org) | Astral · PSF | MIT/Apache 2.0 · PSF | Entornos de los motores |
+| [WPF-UI](https://github.com/lepoco/wpfui), [.NET](https://dotnet.microsoft.com), [NAudio](https://github.com/naudio/NAudio) | lepo.co · Microsoft · Mark Heath | MIT | La aplicación |
+
+La lista completa, con lo que hace cada una, está en [TERCEROS.md](TERCEROS.md) y dentro de la aplicación, en *Ajustes → Acerca de Calíope*. Calíope no redistribuye los motores ni los modelos: los descarga de sus fuentes oficiales y te muestra cada licencia antes de instalar.
+
+El código de Calíope, su logotipo y los sonidos que crea se publican bajo la [licencia MIT](LICENSE). Hecho por [rboluda](https://github.com/rboluda).

@@ -8,6 +8,14 @@ public static class Marca
 {
     public const string Nombre = "Calíope";
 
+    // Autor y enlaces: lo que se muestra en «Acerca de Calíope».
+    public const string Autor = "rboluda";
+    public const string UrlAutor = "https://github.com/rboluda";
+    public const string UrlRepositorio = "https://github.com/rboluda/Caliope";
+    public const string UrlNovedades = UrlRepositorio + "/releases";
+    public const string UrlProblemas = UrlRepositorio + "/issues";
+    public const string Licencia = "MIT";
+
     /// <summary>Azul marino del perfil del logotipo.</summary>
     public static readonly Color AzulMarino = Color.FromRgb(0x01, 0x21, 0x5E);
 

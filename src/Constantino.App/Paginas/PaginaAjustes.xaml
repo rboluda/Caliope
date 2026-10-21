@@ -108,19 +108,70 @@
                 </StackPanel>
             </ui:CardControl>
 
-            <ui:CardControl Margin="0,8,0,0">
-                <ui:CardControl.Icon>
-                    <ui:ImageIcon Width="32" Height="32" Source="pack://application:,,,/Recursos/caliope.png" />
-                </ui:CardControl.Icon>
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="Acerca de Calíope" />
-                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                            <Run Text="Versión " /><Run Text="{Binding ViewModel.Version, Mode=OneWay}" />
+            <ui:Card Margin="0,8,0,0">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Image Width="64" Height="64" VerticalAlignment="Top" Source="pack://application:,,,/Recursos/caliope.png" />
+                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                            <TextBlock FontSize="18" FontWeight="SemiBold" Text="Acerca de Calíope" />
+                            <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                <Run Text="Versión " /><Run Text="{Binding ViewModel.Version, Mode=OneWay}" />
+                            </TextBlock>
+                            <TextBlock Margin="0,6,0,0" TextWrapping="Wrap">
+                                <Run Text="Creado por " /><Hyperlink Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlAutor}"><Run Text="{Binding ViewModel.Autor, Mode=OneWay}" /></Hyperlink>
+                            </TextBlock>
+                            <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.Copyright, Mode=OneWay}" />
+                            <WrapPanel Margin="0,8,0,0">
+                                <ui:Button Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlAutor}" Content="Mi GitHub">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Person24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                                <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="{Binding ViewModel.UrlRepositorio}" Content="Código y novedades">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Code24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                                <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AbrirEnlaceCommand}" CommandParameter="https://github.com/rboluda/Caliope/issues" Content="Avisar de un problema">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Bug24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Grid>
+                    <Border
+                        Margin="0,16,0,0"
+                        Padding="14,10"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        CornerRadius="6">
+                        <TextBlock LineHeight="20" TextWrapping="Wrap">
+                            <Run FontWeight="SemiBold" Text="Calíope es una suite que reúne herramientas de código abierto de terceros" /><Run Text=" y las hace fáciles de usar: las instala, las coordina y les pone una interfaz sencilla. Los motores y modelos de voz no son obra de Calíope; pertenecen a sus autores, que merecen todo el reconocimiento, y se usan según sus licencias. Calíope no incluye ninguno: los descarga de sus fuentes oficiales cuando lo pides, y te muestra cada licencia antes de instalar." />
                         </TextBlock>
-                    </StackPanel>
-                </ui:CardControl.Header>
-            </ui:CardControl>
+                    </Border>
+                    <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="Herramientas de terceros que usa Calíope" />
+                    <ItemsControl ItemsSource="{Binding ViewModel.Creditos}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,8">
+                                    <TextBlock>
+                                        <Hyperlink Command="{Binding DataContext.ViewModel.AbrirEnlaceCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding Url}"><Run FontWeight="SemiBold" Text="{Binding Nombre, Mode=OneWay}" /></Hyperlink>
+                                        <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Autor, Mode=OneWay, StringFormat=' · {0}'}" />
+                                        <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Licencia, Mode=OneWay, StringFormat=' · Licencia {0}'}" />
+                                    </TextBlock>
+                                    <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Uso}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Margin="0,4,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"
+                               Text="Los efectos y ambientes de «Mis sonidos» los crea Calíope con FFmpeg: no son grabaciones de terceros. La lista completa, con versiones y licencias, está en el archivo TERCEROS.md del repositorio." />
+                </StackPanel>
+            </ui:Card>
         </StackPanel>
     </ScrollViewer>
 </Page>

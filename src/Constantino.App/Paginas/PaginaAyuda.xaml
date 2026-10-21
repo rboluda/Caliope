@@ -38,7 +38,7 @@
                 <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
                     <TextBlock FontSize="28" FontWeight="SemiBold" Text="Ayuda" />
                     <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                               Text="Calíope convierte textos en voz en tu propio ordenador: crea voces, clónalas y narra guiones completos sin conexión, sin cuentas y sin pagar por minuto." />
+                               Text="Calíope convierte textos en voz en tu propio ordenador: crea voces, clónalas y narra guiones completos sin conexión, sin cuentas y sin pagar por minuto. Es una suite que reúne herramientas de código abierto de terceros (Qwen3-TTS, Chatterbox, Whisper, FFmpeg…) y las hace fáciles de usar; los créditos completos están en Ajustes → Acerca de Calíope." />
                 </StackPanel>
             </Grid>
 
