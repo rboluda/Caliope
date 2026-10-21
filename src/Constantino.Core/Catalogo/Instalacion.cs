@@ -37,12 +37,17 @@ public sealed record PasoExtraer(
 
 /// <summary>Ejecuta un programa. Falla si termina con error o si su salida no contiene <paramref name="DebeContener"/>.</summary>
 /// <param name="Progreso">Si se indica, el avance se estima por lo que crecen esas carpetas.</param>
+/// <param name="ToleraError">
+/// Si termina con error y su salida contiene este texto, se anota y se sigue: es un fallo conocido que no impide
+/// lo que se quería (el paso siguiente debe comprobarlo).
+/// </param>
 public sealed record PasoEjecutar(
     string Descripcion,
     string Programa,
     IReadOnlyList<string> Argumentos,
     string? DebeContener = null,
-    MedidaProgreso? Progreso = null) : PasoInstalacion(Descripcion);
+    MedidaProgreso? Progreso = null,
+    string? ToleraError = null) : PasoInstalacion(Descripcion);
 
 /// <summary>
 /// Estimación del avance de un proceso que no lo informa (p. ej. uv): se mide cuánto crece la mayor

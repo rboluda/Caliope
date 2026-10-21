@@ -77,6 +77,10 @@ public sealed partial class RutasDatos
         ["UV_CACHE_DIR"] = Path.Combine(Cache, "uv"),
         ["UV_NO_CONFIG"] = "1",
         ["UV_NO_PROGRESS"] = "1",
+        // Sin dejar nada fuera de la carpeta de datos: ni python3.11.exe en %USERPROFILE%\.local\bin ni el registro.
+        ["UV_PYTHON_INSTALL_BIN"] = "0",
+        ["UV_PYTHON_INSTALL_REGISTRY"] = "0",
+        ["UV_PYTHON_NO_REGISTRY"] = "1",
         ["HF_HOME"] = Modelos,
         ["HF_HUB_DISABLE_XET"] = "1",
         ["HF_HUB_DISABLE_TELEMETRY"] = "1",

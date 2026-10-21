@@ -58,7 +58,8 @@
               "python",
               "install",
               "3.11"
-            ]
+            ],
+            "toleraError": "minor version link"
           },
           {
             "tipo": "ejecutar",

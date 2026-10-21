@@ -300,7 +300,14 @@ public sealed class Instalador
             }
         }
 
-        if (r.CodigoSalida != 0)
+        if (r.CodigoSalida != 0 && e.ToleraError is { } tolerado && r.Salida.Contains(tolerado, StringComparison.OrdinalIgnoreCase))
+        {
+            // p. ej. uv instala Python pero Windows no le deja crear el enlace «cpython-3.11-…» (os error 448): sin
+            // ese enlace todo funciona, pero si ha quedado uno que no se puede recorrer se quita.
+            Registrar($"[{c.Id}]   (error conocido, se sigue: «{tolerado}»)");
+            EstructuraDatos.QuitarUnionesInaccesibles(_rutas.Python);
+        }
+        else if (r.CodigoSalida != 0)
         {
             throw new InstalacionFallidaException(c.Id, e.Descripcion,
                 $"{e.Descripcion}: {DiagnosticoErrores.Explicar(r.Salida)}", UltimasLineas(r.Salida));

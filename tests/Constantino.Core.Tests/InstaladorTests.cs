@@ -137,6 +137,34 @@ public sealed class InstaladorTests : IDisposable
     }
 
     [Fact]
+    public async Task Un_error_conocido_y_tolerado_no_detiene_la_instalacion()
+    {
+        var catalogo = CatalogoComponentes.Leer("""
+            { "version": 1, "componentes": [
+              { "id": "base", "nombre": "Base", "grupo": "G", "necesidad": "imprescindible", "resumen": "r", "detalle": "d",
+                "tamano": { "conGpuGb": 1, "sinGpuGb": 1 }, "requisitos": {},
+                "instalacion": { "version": "1",
+                  "pasos": [ { "tipo": "ejecutar", "descripcion": "Python", "programa": "{uv}", "argumentos": ["python", "install", "3.11"],
+                               "toleraError": "minor version link" } ],
+                  "rutas": ["{python}"], "comprobar": ["{python}"] } } ] }
+            """);
+        Directory.CreateDirectory(Rutas.Python);
+        _ejecutor.CodigoPara = _ => 1;
+        _ejecutor.SalidaPara = _ => "error: Failed to create Python minor version link directory\n  cause: (os error 448)";
+
+        var instalador = Instalador(catalogo);
+        await instalador.InstalarAsync(["base"], Progreso, CancellationToken.None);
+
+        Assert.Equal(EstadoComponente.Instalado, instalador.EstadoDe("base"));
+        Assert.Contains("error conocido", File.ReadAllText(instalador.ArchivoRegistro));
+
+        // Otro error en el mismo paso sí la detiene.
+        _ejecutor.SalidaPara = _ => "error: no hay conexión";
+        await Assert.ThrowsAsync<InstalacionFallidaException>(() =>
+            Instalador(catalogo).InstalarAsync(["base"], Progreso, CancellationToken.None, forzar: true));
+    }
+
+    [Fact]
     public async Task Falla_si_la_salida_no_contiene_lo_esperado()
     {
         _ejecutor.SalidaPara = _ => "dispositivo=cpu";

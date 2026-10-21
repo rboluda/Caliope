@@ -139,6 +139,31 @@ public static class EstructuraDatos
         }
     }
 
+    /// <summary>
+    /// Quita las uniones de <paramref name="carpeta"/> que Windows no deja recorrer (os error 448, «punto de montaje
+    /// no confiable»): uv las crea por versión menor, y si no se pueden abrir, los entornos nuevos tienen que apuntar
+    /// directamente a la versión que hay detrás. Solo se borra la unión, nunca lo que hay dentro.
+    /// </summary>
+    public static void QuitarUnionesInaccesibles(string carpeta)
+    {
+        if (!Directory.Exists(carpeta))
+            return;
+        foreach (var enlace in Directory.EnumerateDirectories(carpeta))
+        {
+            if (new DirectoryInfo(enlace).LinkTarget is null)
+                continue;
+            try
+            {
+                _ = Directory.EnumerateFileSystemEntries(enlace).Any();
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                try { Directory.Delete(enlace); }
+                catch (Exception e2) when (e2 is IOException or UnauthorizedAccessException) { }
+            }
+        }
+    }
+
     /// <summary>Una unión de directorio (no necesita permisos de administrador, a diferencia de los enlaces simbólicos).</summary>
     private static void CrearUnion(string enlace, string destino)
     {
