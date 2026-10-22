@@ -99,8 +99,11 @@ Name: "{group}\{#Nombre}"; Filename: "{app}\{#Exe}"
 Name: "{autodesktop}\{#Nombre}"; Filename: "{app}\{#Exe}"; Tasks: escritorio
 
 [Run]
-Filename: "{app}\{#Exe}"; Description: "{cm:Abrir}"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\{#Exe}"; Flags: nowait; Check: WizardSilent
+; Calíope se abre siempre como el usuario normal, nunca con los permisos de administrador del instalador (al
+; instalar para todos los usuarios o al actualizarse sola): como administrador, Windows no deja a los motores usar
+; los enlaces de Python creados por el usuario y no arrancan.
+Filename: "{app}\{#Exe}"; Description: "{cm:Abrir}"; Flags: nowait postinstall skipifsilent runasoriginaluser
+Filename: "{app}\{#Exe}"; Flags: nowait runasoriginaluser; Check: WizardSilent
 
 [UninstallDelete]
 ; Restos que la aplicación crea junto al ejecutable (caché de Python del motor).
