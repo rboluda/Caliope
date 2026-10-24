@@ -40,6 +40,7 @@ public sealed partial class RutasDatos
     public string Narraciones => Path.Combine(Raiz, EstructuraAntigua ? "proyectos" : EstructuraDatos.Narraciones);
     public string Voces => Path.Combine(Raiz, EstructuraAntigua ? "voces" : EstructuraDatos.Voces);
     public string Sonidos => Path.Combine(Raiz, EstructuraDatos.Sonidos);
+    public string Doblajes => Path.Combine(Raiz, EstructuraDatos.Doblajes);
     public string Modelos => Path.Combine(Raiz, EstructuraAntigua ? "modelos" : EstructuraDatos.Modelos);
 
     // Lo interno, todo junto en «Programas internos».

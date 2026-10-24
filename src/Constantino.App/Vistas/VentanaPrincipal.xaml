@@ -116,6 +116,12 @@
                         <ui:SymbolIcon Symbol="BookOpen24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItemSeparator />
+                <ui:NavigationViewItem Content="{l:T 'Doblar'}" TargetPageType="{x:Type paginas:PaginaDoblar}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="VideoClip24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
                 <ui:NavigationViewItem Content="{l:T 'Ayuda'}" TargetPageType="{x:Type paginas:PaginaAyuda}">

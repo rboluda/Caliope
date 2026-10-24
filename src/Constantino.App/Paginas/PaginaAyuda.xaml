@@ -177,6 +177,22 @@
                 </StackPanel>
             </ui:CardExpander>
 
+            <!--  Doblar  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="VideoClip24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Doblar vídeos'}" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Doblar» eliges un vídeo en inglés y Calíope lo devuelve en castellano con la voz de la misma persona: separa la voz de la música y los efectos, transcribe frase a frase, traduce con una IA en tu ordenador y vuelve a decir cada frase. La música y el ambiente originales se conservan.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'El timbre sale de la persona del vídeo y la pronunciación, de una voz castellana de «Mis voces» que eliges tú. Si se usara solo la voz original, el resultado tendría un acento inglés muy marcado.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Cada frase tiene que caber en el tiempo que ocupaba en el vídeo. Si se pasa un poco, se acelera sin cambiar el tono; si se pasa mucho, la IA propone una frase más corta. Puedes corregir cualquier traducción a mano y pulsar otra vez «Doblar vídeo»: solo se rehace lo que has cambiado.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Hace falta instalar en «Componentes» el motor castellano, la transcripción automática, el separador de voz y el traductor. De momento, vídeos de una sola persona y de hasta 10 minutos. Dobla solo vídeos y voces que tengas derecho a usar.'}" />
+                </StackPanel>
+            </ui:CardExpander>
+
             <!--  Motores  -->
             <ui:CardExpander Margin="0,8,0,0">
                 <ui:CardExpander.Icon>

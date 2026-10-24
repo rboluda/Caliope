@@ -1,0 +1,194 @@
+<Page
+    x:Class="Constantino.App.Paginas.PaginaDoblar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Constantino.App.ViewModels"
+    x:Name="Raiz"
+    ScrollViewer.CanContentScroll="False"
+    Title="{l:T 'Doblar'}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,32,32" MaxWidth="1040">
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Doblar'}" />
+            <TextBlock
+                Margin="0,4,0,16"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="{l:T 'Dobla un vídeo en inglés al castellano conservando la voz de quien habla: Calíope separa la voz de la música, transcribe, traduce y vuelve a decir cada frase con el timbre original y pronunciación castellana. De momento, vídeos de una persona y de hasta 10 minutos.'}"
+                TextWrapping="Wrap" />
+
+            <!--  Falta algo por instalar  -->
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.Faltan, Converter={StaticResource TextoNoVacio}}"
+                Message="{Binding ViewModel.Faltan}"
+                Severity="Warning"
+                Title="{l:T 'Falta instalar algo'}" />
+            <ui:Button
+                Margin="0,0,0,12"
+                Command="{Binding ViewModel.IrAComponentesCommand}"
+                Content="{l:T 'Ir a Componentes'}"
+                Visibility="{Binding ViewModel.Faltan, Converter={StaticResource NoNuloAVisibilidad}}" />
+
+            <!--  Proyecto  -->
+            <ui:Card>
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox
+                            DisplayMemberPath="Nombre"
+                            IsEnabled="{Binding ViewModel.Libre}"
+                            ItemsSource="{Binding ViewModel.Proyectos}"
+                            SelectedItem="{Binding ViewModel.ProyectoSeleccionado}"
+                            ToolTip="{l:T 'Proyecto de doblaje'}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <ui:Button Margin="8,0,0,0" Appearance="Primary" Command="{Binding ViewModel.NuevoCommand}" Content="{l:T 'Nuevo doblaje…'}" IsEnabled="{Binding ViewModel.Libre}" />
+                            <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AbrirCarpetaCommand}" IsEnabled="{Binding ViewModel.HayProyecto}" ToolTip="{l:T 'Abrir la carpeta del doblaje'}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="FolderOpen24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.BorrarCommand}" IsEnabled="{Binding ViewModel.HayProyecto}" ToolTip="{l:T 'Borrar el doblaje'}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Delete24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{Binding ViewModel.Resumen}"
+                        TextWrapping="Wrap"
+                        Visibility="{Binding ViewModel.Resumen, Converter={StaticResource NoNuloAVisibilidad}}" />
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{l:T 'Empieza con «Nuevo doblaje…» y elige un vídeo.'}"
+                        Visibility="{Binding ViewModel.HayProyecto, Converter={StaticResource BoolInversoAVisibilidad}}" />
+                </StackPanel>
+            </ui:Card>
+
+            <!--  Ajustes y acción  -->
+            <ui:Card Margin="0,8,0,0" Visibility="{Binding ViewModel.HayProyecto, Converter={StaticResource BoolAVisibilidad}}">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Voz de pronunciación'}" />
+                    <TextBlock
+                        Margin="0,2,0,6"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{l:T 'Una voz castellana de «Mis voces»: de ella sale cómo se pronuncia. El timbre es siempre el de la persona del vídeo. Así no se cuela el acento inglés.'}"
+                        TextWrapping="Wrap" />
+                    <ComboBox
+                        MaxWidth="360"
+                        HorizontalAlignment="Left"
+                        DisplayMemberPath="Nombre"
+                        IsEnabled="{Binding ViewModel.Libre}"
+                        ItemsSource="{Binding ViewModel.Voces}"
+                        SelectedValue="{Binding ViewModel.VozPronunciacion}"
+                        SelectedValuePath="Id" />
+                    <CheckBox
+                        Margin="0,12,0,0"
+                        Content="{l:T 'Dejar la voz original muy baja de fondo (estilo documental)'}"
+                        IsChecked="{Binding ViewModel.VozOriginalDeFondo}"
+                        IsEnabled="{Binding ViewModel.Libre}" />
+
+                    <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
+                        <ui:Button Appearance="Primary" Command="{Binding ViewModel.DoblarCommand}" IsEnabled="{Binding ViewModel.Libre}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Margin="0,0,8,0" Symbol="Play24" />
+                                <TextBlock Text="{l:T 'Doblar vídeo'}" />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Command="{Binding ViewModel.PrepararCommand}"
+                            Content="{l:T 'Solo preparar el guion'}"
+                            IsEnabled="{Binding ViewModel.Libre}"
+                            ToolTip="{l:T 'Separa, transcribe y traduce sin generar voces, para revisar la traducción antes.'}" />
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Command="{Binding ViewModel.CancelarCommand}"
+                            Content="{l:T 'Cancelar'}"
+                            Visibility="{Binding ViewModel.Ocupado, Converter={StaticResource BoolAVisibilidad}}" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,12,0,0" Visibility="{Binding ViewModel.Mensaje, Converter={StaticResource NoNuloAVisibilidad}}">
+                        <TextBlock Text="{Binding ViewModel.Mensaje}" TextWrapping="Wrap" />
+                        <ProgressBar
+                            Height="4"
+                            Margin="0,6,0,0"
+                            Maximum="1"
+                            Visibility="{Binding ViewModel.Ocupado, Converter={StaticResource BoolAVisibilidad}}"
+                            Value="{Binding ViewModel.Fraccion, Mode=OneWay}" />
+                    </StackPanel>
+                    <ui:Button
+                        Margin="0,10,0,0"
+                        Command="{Binding ViewModel.AbrirVideoCommand}"
+                        Content="{l:T 'Ver el vídeo doblado'}"
+                        Visibility="{Binding ViewModel.VideoExportado, Converter={StaticResource NoNuloAVisibilidad}}" />
+                    <ui:InfoBar
+                        Margin="0,12,0,0"
+                        IsClosable="False"
+                        IsOpen="{Binding ViewModel.Error, Converter={StaticResource TextoNoVacio}}"
+                        Message="{Binding ViewModel.Error}"
+                        Severity="Error"
+                        Title="{l:T 'No se ha podido doblar'}" />
+                </StackPanel>
+            </ui:Card>
+
+            <!--  Frases  -->
+            <ItemsControl Margin="0,12,0,0" ItemsSource="{Binding ViewModel.Frases}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:FilaFrase}">
+                        <ui:Card Margin="0,0,0,6" Padding="12,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="48" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Tiempo}" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Original}" TextWrapping="Wrap" />
+                                    <ui:TextBox
+                                        Margin="0,4,0,0"
+                                        IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}"
+                                        Text="{Binding Traduccion, UpdateSourceTrigger=LostFocus}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
+                                    <ui:Badge Appearance="{Binding Apariencia}" Content="{Binding Estado}" />
+                                    <ui:Button
+                                        Margin="8,0,0,0"
+                                        Command="{Binding DataContext.ViewModel.EscucharCommand, ElementName=Raiz}"
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding Generada}"
+                                        ToolTip="{l:T 'Escuchar la frase doblada'}">
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Play24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                    <ui:Button
+                                        Margin="6,0,0,0"
+                                        Command="{Binding DataContext.ViewModel.RegenerarCommand, ElementName=Raiz}"
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}"
+                                        ToolTip="{l:T 'Volver a doblar esta frase'}">
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="ArrowClockwise24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                </StackPanel>
+                            </Grid>
+                        </ui:Card>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

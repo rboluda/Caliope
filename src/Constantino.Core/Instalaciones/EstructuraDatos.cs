@@ -25,6 +25,7 @@ public static class EstructuraDatos
     public const string Narraciones = "Mis narraciones";
     public const string Voces = "Mis voces";
     public const string Sonidos = "Mis sonidos";
+    public const string Doblajes = "Mis doblajes";
     public const string Modelos = "Modelos de voz";
     public const string Interno = "Programas internos";
     public const string Leeme = "LÉEME.txt";
@@ -304,6 +305,9 @@ public static class EstructuraDatos
             .AppendLine()
             .AppendLine($"{Sonidos}\\")
             .AppendLine(Sangrar(T("Efectos, ambientes y música para tus narraciones. Puedes añadir tus propios audios a cada carpeta.")))
+            .AppendLine()
+            .AppendLine($"{Doblajes}\\")
+            .AppendLine(Sangrar(T("Tus vídeos doblados. Dentro de cada uno, la carpeta «Audio» tiene el vídeo doblado, su audio\ny los subtítulos.")))
             .AppendLine()
             .AppendLine($"{Modelos}\\")
             .AppendLine(Sangrar(T("Los modelos que generan la voz. Es lo que más ocupa. Se instalan y se quitan desde\nCalíope → Componentes.")))

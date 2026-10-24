@@ -30,6 +30,7 @@ public partial class App : Application
         s.AddSingleton<ServicioVoces>();
         s.AddSingleton<ServicioReproductor>();
         s.AddSingleton<ServicioNarracion>();
+        s.AddSingleton<ServicioDoblaje>();
         s.AddSingleton<ServicioGrabacion>();
         s.AddSingleton<ServicioActualizaciones>();
         s.AddSingleton<AvisosViewModel>();
@@ -54,6 +55,8 @@ public partial class App : Application
         s.AddSingleton<ClonarViewModel>();
         s.AddSingleton<PaginaNarrar>();
         s.AddSingleton<NarrarViewModel>();
+        s.AddSingleton<PaginaDoblar>();
+        s.AddSingleton<DoblarViewModel>();
 
         return builder.Build();
     }

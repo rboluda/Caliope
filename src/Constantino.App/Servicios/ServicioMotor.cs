@@ -118,6 +118,26 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             motor.TranscribirAsync(new ParametrosTranscripcion(audio, idioma), progreso, ct), ct);
     }
 
+    // --- Doblaje ---------------------------------------------------------------------------------
+
+    public const string ComponenteSeparador = "separador-voz";
+
+    /// <summary>Divide <paramref name="audio"/> en la voz y el fondo (separador de voz).</summary>
+    public Task<ResultadoSeparacion> SepararAsync(string audio, string voces, string fondo, CancellationToken ct = default) =>
+        EjecutarAsync(ComponenteSeparador, (motor, progreso) =>
+            motor.SepararAsync(new ParametrosSeparacion(audio, voces, fondo), progreso, ct), ct);
+
+    /// <summary>Frases con su inicio y fin: corta la voz por sus pausas y transcribe cada trozo (Whisper).</summary>
+    public Task<ResultadoTramos> TranscribirTramosAsync(string audio, string idioma, CancellationToken ct = default) =>
+        EjecutarAsync(ModeloWhisper, (motor, progreso) =>
+            motor.TranscribirTramosAsync(new ParametrosTramos(audio, idioma), progreso, ct), ct);
+
+    /// <summary>Una frase doblada: pronunciación de la voz nativa y timbre de la original (motor castellano).</summary>
+    public Task<ResultadoSintesis> SintetizarDoblajeAsync(string texto, string pronunciacion, string timbre, string salida, int semilla,
+        CancellationToken ct = default) =>
+        EjecutarAsync(MotoresDeVoz.Componente(MotoresDeVoz.Chatterbox), (motor, progreso) =>
+            motor.SintetizarDoblajeAsync(new ParametrosDoblaje(texto, pronunciacion, timbre, salida, semilla), progreso, ct), ct);
+
     /// <summary>Una operación a la vez, con el modelo que necesite ya cargado.</summary>
     private async Task<TResultado> EjecutarAsync<TResultado>(string modelo, Func<MotorQwen, IProgress<EventoMotor>, Task<TResultado>> trabajo, CancellationToken ct)
     {
@@ -184,16 +204,19 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     private async Task<MotorQwen> PrepararAsync(string modelo, CancellationToken ct)
     {
         var instalador = await instalacion.InstaladorAsync();
-        var motorId = MotoresDeVoz.DeComponente(modelo) ?? MotoresDeVoz.Qwen;
-        if (!instalador.EstaInstalado(MotoresDeVoz.Componente(motorId)))
-            throw new MotorNoDisponibleException(T("Falta el motor {0}: instálalo desde Componentes.", MotoresDeVoz.Nombre(motorId)));
+        // El separador de voz es un motor más (su propio proceso y entorno), aunque no lea textos.
+        var separador = modelo == ComponenteSeparador;
+        var motorId = separador ? "separador" : MotoresDeVoz.DeComponente(modelo) ?? MotoresDeVoz.Qwen;
+        var nombre = separador ? T("separador de voz") : MotoresDeVoz.Nombre(motorId);
+        if (!instalador.EstaInstalado(separador ? modelo : MotoresDeVoz.Componente(motorId)))
+            throw new MotorNoDisponibleException(T("Falta el motor {0}: instálalo desde Componentes.", nombre));
 
         if (_motor is null || !_motor.Cliente.Vivo || _motorVivo != motorId)
         {
             // Dos motores no caben a la vez en la tarjeta: se cierra el que hubiera.
             await CerrarAsync();
             Estado = EstadoMotor.Arrancando;
-            Descripcion = T("Arrancando el motor {0}…", MotoresDeVoz.Nombre(motorId));
+            Descripcion = T("Arrancando el motor {0}…", nombre);
             var rutas = instalador.Rutas;
             var entorno = new Dictionary<string, string>(rutas.EntornoProcesos) { ["HF_HUB_OFFLINE"] = "1" };
             // Los mensajes de error y de progreso del motor, en el idioma de la interfaz.
@@ -204,7 +227,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
                 entorno["TQDM_DISABLE"] = "1"; // sin barras de progreso en el registro de diagnóstico
             }
             var cliente = await ClienteMotor.ArrancarAsync(
-                Path.Combine(rutas.Entornos, MotoresDeVoz.Entorno(motorId), "Scripts", "python.exe"),
+                Path.Combine(rutas.Entornos, separador ? "demucs" : MotoresDeVoz.Entorno(motorId), "Scripts", "python.exe"),
                 Path.Combine(AppContext.BaseDirectory, "motores"),
                 entorno, TimeSpan.FromMinutes(2), ct);
             _motor = new MotorQwen(cliente);
@@ -221,6 +244,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
                 ModeloWhisper => T("Preparando la transcripción (unos segundos)…"),
                 "chatterbox" => T("Preparando el motor castellano (unos segundos)…"),
                 "voxcpm2" => T("Preparando el motor de máximo parecido (medio minuto)…"),
+                ComponenteSeparador => T("Preparando el separador de voz (unos segundos)…"),
                 _ => T("Preparando la voz (unos segundos la primera vez)…"),
             };
             var paso = instalacion.Catalogo[modelo].Instalacion!.Pasos.OfType<PasoModelo>().First();
