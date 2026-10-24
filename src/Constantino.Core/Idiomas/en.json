@@ -147,6 +147,7 @@
   "Carpeta en uso": "Folder in use",
   "casi listo": "almost done",
   "Casi siempre es la transcripción de la voz: corrígela en «Voces → Editar transcripción» o déjala vacía para imitar solo el timbre.": "It's almost always the voice's transcript: fix it in “Voices → Edit transcript” or leave it empty to imitate only the timbre.",
+  "castellano": "Spanish",
   "Castellano de España": "Spanish from Spain",
   "Castellano rápido (Chatterbox)": "Fast Spanish (Chatterbox)",
   "Castellano rápido (Chatterbox, de Resemble AI, licencia MIT): versión afinada para el castellano de España. Es el más rápido (tarda menos de lo que dura el audio), deja ajustar la intensidad emocional y marca lo que genera con una marca de agua inaudible. Solo lee en español, pide 4,5 GB de tarjeta y todavía no funciona con las RTX 50.": "Fast Spanish (Chatterbox, by Resemble AI, MIT license): a version tuned for Spanish from Spain. It's the fastest (it takes less time than the audio lasts), lets you adjust the emotional intensity and marks what it generates with an inaudible watermark. It only reads Spanish, needs a graphics card with 4.5 GB and doesn't work with RTX 50 cards yet.",

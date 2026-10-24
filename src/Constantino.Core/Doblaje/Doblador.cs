@@ -225,12 +225,10 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
         var listas = p.ListaFrases.Where(f => f.Encaje != EncajeFrase.SinGenerar && File.Exists(ArchivoFrase(p, f.Id))).ToList();
         if (listas.Count == 0)
             throw new InvalidOperationException(T("Todavía no hay ninguna frase doblada."));
-        var salida = almacen.Salida(p.Id);
-        Directory.CreateDirectory(salida);
-        var nombre = Textos.NombreDeArchivo(p.Nombre, "doblaje");
-        var wav = Path.Combine(salida, $"{nombre} (castellano).wav");
-        var mp4 = Path.Combine(salida, $"{nombre} (castellano).mp4");
-        var srt = Path.Combine(salida, $"{nombre} (castellano).srt");
+        Directory.CreateDirectory(almacen.Salida(p.Id));
+        var wav = almacen.Exportado(p, "wav");
+        var mp4 = almacen.Exportado(p, "mp4");
+        var srt = almacen.Exportado(p, "srt");
         progreso.Report(new EventoDoblaje(T("Mezclando las voces con el fondo"), 0.2));
         await audio.MontarAsync(Fondo(p), p.VozOriginalDeFondo ? Voces(p) : null,
             listas.Select(f => (f.Inicio, ArchivoFrase(p, f.Id))).ToList(), p.Duracion, wav, ct).ConfigureAwait(false);

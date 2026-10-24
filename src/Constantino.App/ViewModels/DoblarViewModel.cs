@@ -115,7 +115,8 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
         _cargando = true;
         _proyecto = p;
         Frases.Clear();
-        VideoExportado = null;
+        // El botón «Ver el vídeo doblado» aparece siempre que exista, también al volver a abrir el proyecto.
+        VideoExportado = p is not null && _almacen is not null && File.Exists(_almacen.Exportado(p, "mp4")) ? _almacen.Exportado(p, "mp4") : null;
         if (p is not null && _almacen is not null)
         {
             foreach (var f in p.ListaFrases)

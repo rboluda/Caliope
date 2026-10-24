@@ -90,6 +90,10 @@ public sealed class AlmacenDoblajes(string carpeta)
     public string Frases(string id) => Path.Combine(CarpetaDe(id), "frases");
     public string Salida(string id) => Path.Combine(CarpetaDe(id), "Audio");
 
+    /// <summary>Lo que se exporta: «&lt;nombre&gt; (castellano).mp4», .wav y .srt en la carpeta «Audio».</summary>
+    public string Exportado(ProyectoDoblaje p, string extension) =>
+        Path.Combine(Salida(p.Id), $"{Textos.NombreDeArchivo(p.Nombre, "doblaje")} ({T("castellano")}).{extension}");
+
     public ProyectoDoblaje Crear(string video, double duracion)
     {
         if (duracion > DuracionMaxima.TotalSeconds)
