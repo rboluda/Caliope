@@ -14,7 +14,21 @@ public sealed record TamanoDescarga(double ConGpuGb, double SinGpuGb)
 }
 
 /// <param name="SinRtx50">No funciona con las tarjetas RTX 50 (su PyTorch es anterior a esa generación).</param>
-public sealed record Requisitos(double? VramMinimaGb = null, double? VramRecomendadaGb = null, bool FuncionaEnCpu = true, bool SinRtx50 = false);
+/// <param name="MediaPrecision">
+/// La memoria indicada es en media precisión (bfloat16/float16). En las tarjetas antiguas va en float32 y ocupa el doble.
+/// </param>
+public sealed record Requisitos(
+    double? VramMinimaGb = null,
+    double? VramRecomendadaGb = null,
+    bool FuncionaEnCpu = true,
+    bool SinRtx50 = false,
+    bool MediaPrecision = false)
+{
+    /// <summary>Los requisitos en una tarjeta concreta: en las antiguas, lo que va en media precisión ocupa el doble.</summary>
+    public Requisitos En(bool gpuAntigua) => gpuAntigua && MediaPrecision
+        ? this with { VramMinimaGb = VramMinimaGb * 2, VramRecomendadaGb = VramRecomendadaGb * 2 }
+        : this;
+}
 
 public sealed record Licencia(string Nombre, string Url);
 

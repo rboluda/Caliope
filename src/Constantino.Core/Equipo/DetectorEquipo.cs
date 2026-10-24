@@ -28,10 +28,18 @@ public static class DetectorEquipo
     /// <summary>Consulta nvidia-smi, que instala el driver de NVIDIA. Sin él no hay CUDA.</summary>
     private static async Task<IReadOnlyList<Gpu>> DetectarNvidiaAsync(CancellationToken ct)
     {
+        // Los drivers antiguos no conocen «compute_cap»: entonces se pregunta sin él.
+        return await ConsultarNvidiaSmiAsync("name,memory.total,memory.used,driver_version,compute_cap", ct).ConfigureAwait(false)
+            ?? await ConsultarNvidiaSmiAsync("name,memory.total,memory.used,driver_version", ct).ConfigureAwait(false)
+            ?? [];
+    }
+
+    /// <summary>Null si nvidia-smi no existe, no responde o no entiende la consulta.</summary>
+    private static async Task<IReadOnlyList<Gpu>?> ConsultarNvidiaSmiAsync(string campos, CancellationToken ct)
+    {
         try
         {
-            var inicio = new ProcessStartInfo("nvidia-smi",
-                "--query-gpu=name,memory.total,memory.used,driver_version --format=csv,noheader,nounits")
+            var inicio = new ProcessStartInfo("nvidia-smi", $"--query-gpu={campos} --format=csv,noheader,nounits")
             {
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -40,21 +48,21 @@ public static class DetectorEquipo
             };
             using var proceso = Process.Start(inicio);
             if (proceso is null)
-                return [];
+                return null;
             using var limite = CancellationTokenSource.CreateLinkedTokenSource(ct);
             limite.CancelAfter(TimeSpan.FromSeconds(10));
             var salida = await proceso.StandardOutput.ReadToEndAsync(limite.Token).ConfigureAwait(false);
             await proceso.WaitForExitAsync(limite.Token).ConfigureAwait(false);
-            return proceso.ExitCode == 0 ? LeerSalidaNvidiaSmi(salida) : [];
+            return proceso.ExitCode == 0 ? LeerSalidaNvidiaSmi(salida) : null;
         }
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or OperationCanceledException or InvalidOperationException)
         {
             // nvidia-smi no existe (no hay NVIDIA o falta el driver) o no respondió.
-            return [];
+            return null;
         }
     }
 
-    /// <summary>Interpreta «nombre, MiB totales, MiB usados, driver» por línea.</summary>
+    /// <summary>Interpreta «nombre, MiB totales, MiB usados, driver[, capacidad CUDA]» por línea.</summary>
     internal static IReadOnlyList<Gpu> LeerSalidaNvidiaSmi(string salida)
     {
         var gpus = new List<Gpu>();
@@ -69,11 +77,14 @@ public static class DetectorEquipo
                 Mib(campos[1]) / MibPorGib,
                 Mib(campos[2]) / MibPorGib,
                 campos[3],
-                CompatibleCuda: true));
+                CompatibleCuda: true,
+                campos.Length > 4 ? Numero(campos[4]) : null));
         }
         return gpus;
 
-        static double? Mib(string texto) =>
+        static double? Mib(string texto) => Numero(texto);
+
+        static double? Numero(string texto) =>
             double.TryParse(texto, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : null;
     }
 

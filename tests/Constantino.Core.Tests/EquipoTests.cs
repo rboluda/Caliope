@@ -18,6 +18,20 @@ public class EquipoTests
     }
 
     [Fact]
+    public void Lee_la_capacidad_cuda_y_reconoce_las_tarjetas_antiguas()
+    {
+        var gpus = DetectorEquipo.LeerSalidaNvidiaSmi("""
+            NVIDIA GeForce GTX 1070, 8192, 1600, 582.78, 6.1
+            NVIDIA GeForce RTX 3050, 8192, 500, 617.42, 8.6
+            NVIDIA GeForce GTX 1660, 6144, 500, 617.42, 7.5
+            NVIDIA GeForce RTX 2060, 6144, 500, 471.11
+            """);
+
+        Assert.Equal([6.1, 8.6, 7.5, null], gpus.Select(g => g.CapacidadCuda));
+        Assert.Equal([true, false, false, false], gpus.Select(g => g.Antigua));
+    }
+
+    [Fact]
     public void Lee_varias_gpus_e_ignora_lineas_rotas()
     {
         var gpus = DetectorEquipo.LeerSalidaNvidiaSmi("""

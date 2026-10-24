@@ -49,6 +49,10 @@ INGLES = {
         "VoxCPM2 doesn't design voices in Calíope: use the voice designer.",
     "VoxCPM2 no transcribe: usa la transcripción automática.":
         "VoxCPM2 doesn't transcribe: use automatic transcription.",
+    "Este motor se instaló con una versión que no funciona con tu {gpu}. Abre «Componentes» y pulsa «Actualizar» "
+    "en el motor: Calíope instalará la versión adecuada para tu tarjeta.":
+        "This engine was installed with a version that doesn't work with your {gpu}. Open “Components” and click "
+        "“Update” on the engine: Calíope will install the right version for your card.",
 }
 
 

@@ -4,6 +4,7 @@ import os
 import random
 import time
 
+from . import tarjeta
 from .servidor import ErrorMotor
 from .textos import t
 
@@ -23,6 +24,7 @@ class MotorQwen:
         self._cargado = None  # (repositorio, revision)
         self._prompts = {}  # caché de prompts de clonado por referencia
         self.dispositivo = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self._media_precision = tarjeta.media_precision(torch)
 
     # --- operaciones -------------------------------------------------------------------------
 
@@ -41,6 +43,7 @@ class MotorQwen:
 
     def op_cargar(self, params, progreso):
         """Carga un modelo de voz (tipo «tts») o de transcripción (tipo «asr»). Solo hay uno en memoria a la vez."""
+        tarjeta.comprobar(self._torch)
         repositorio, revision = params["repositorio"], params["revision"]
         tipo = params.get("tipo") or "tts"
         if self._cargado == (repositorio, revision):
@@ -60,11 +63,10 @@ class MotorQwen:
             from qwen_tts import Qwen3TTSModel
 
             torch = self._torch
-            en_gpu = self.dispositivo.startswith("cuda")
             self._modelo = Qwen3TTSModel.from_pretrained(
                 ruta,
                 device_map=self.dispositivo,
-                dtype=torch.bfloat16 if en_gpu else torch.float32,
+                dtype=torch.bfloat16 if self._media_precision else torch.float32,
                 attn_implementation="sdpa",
             )
             self._tipo = self._modelo.model.tts_model_type
@@ -75,7 +77,7 @@ class MotorQwen:
         from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
         torch = self._torch
-        dtype = torch.float16 if self.dispositivo.startswith("cuda") else torch.float32
+        dtype = torch.float16 if self._media_precision else torch.float32
         modelo = AutoModelForSpeechSeq2Seq.from_pretrained(ruta, dtype=dtype, low_cpu_mem_usage=True).to(self.dispositivo)
         procesador = AutoProcessor.from_pretrained(ruta)
         return pipeline("automatic-speech-recognition", model=modelo, tokenizer=procesador.tokenizer,

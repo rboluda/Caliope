@@ -251,7 +251,8 @@
       "requisitos": {
         "vramMinimaGb": 5.5,
         "vramRecomendadaGb": 6.0,
-        "funcionaEnCpu": true
+        "funcionaEnCpu": true,
+        "mediaPrecision": true
       },
       "licencias": [
         {
@@ -304,7 +305,8 @@
       "requisitos": {
         "vramMinimaGb": 3.0,
         "vramRecomendadaGb": 4.0,
-        "funcionaEnCpu": true
+        "funcionaEnCpu": true,
+        "mediaPrecision": true
       },
       "licencias": [
         {
@@ -582,7 +584,8 @@
       "requisitos": {
         "vramMinimaGb": 7.5,
         "vramRecomendadaGb": 10.0,
-        "funcionaEnCpu": false
+        "funcionaEnCpu": false,
+        "mediaPrecision": true
       },
       "licencias": [
         {
@@ -770,7 +773,8 @@
       "requisitos": {
         "vramMinimaGb": 5.5,
         "vramRecomendadaGb": 6.0,
-        "funcionaEnCpu": true
+        "funcionaEnCpu": true,
+        "mediaPrecision": true
       },
       "licencias": [
         {
@@ -821,7 +825,8 @@
       "requisitos": {
         "vramMinimaGb": 2.0,
         "vramRecomendadaGb": 3.0,
-        "funcionaEnCpu": true
+        "funcionaEnCpu": true,
+        "mediaPrecision": true
       },
       "licencias": [
         {

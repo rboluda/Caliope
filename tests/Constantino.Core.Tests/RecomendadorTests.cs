@@ -173,6 +173,31 @@ public class RecomendadorTests
         Assert.DoesNotContain("los tres", GuiaMotores.Consejo(Equipo(gpu)));
     }
 
+    [Fact]
+    public void En_una_tarjeta_antigua_cuenta_el_doble_de_memoria_para_lo_que_va_en_media_precision()
+    {
+        var gpu = new Gpu("NVIDIA GeForce GTX 1070", "NVIDIA", 8, 1.6, "582.78", CompatibleCuda: true, CapacidadCuda: 6.1);
+
+        var r = Recomendador.Recomendar(Catalogo, Equipo(gpu));
+
+        Assert.True(r.UsaGpu);
+        Assert.True(r.GpuAntigua);
+        // En float32 la voz de alta calidad (1.7B) y el diseñador no caben en 8 GB; la ligera sí.
+        Assert.Equal(NivelRecomendacion.Imprescindible, Nivel(r, "modelo-qwen-base-0.6b"));
+        Assert.Equal(NivelRecomendacion.NoRecomendado, Nivel(r, "modelo-qwen-base-1.7b"));
+        Assert.Equal(NivelRecomendacion.NoRecomendado, Nivel(r, "modelo-qwen-voicedesign"));
+        Assert.Equal(NivelRecomendacion.NoRecomendado, Nivel(r, "voxcpm2"));
+        // El motor castellano ya va en float32: su memoria no cambia.
+        Assert.Equal(NivelRecomendacion.Opcional, Nivel(r, "chatterbox"));
+        Assert.Equal(NivelRecomendacion.Opcional, Nivel(r, "whisper"));
+        Assert.Contains(r.Avisos, a => a.Mensaje.Contains("GTX 1070"));
+        Assert.Contains("no cabe", GuiaMotores.Consejo(Equipo(gpu)));
+
+        var moderna = Recomendador.Recomendar(Catalogo, Equipo(gpu with { Nombre = "RTX 3070", CapacidadCuda = 8.6 }));
+        Assert.False(moderna.GpuAntigua);
+        Assert.Equal(NivelRecomendacion.Imprescindible, Nivel(moderna, "modelo-qwen-base-1.7b"));
+    }
+
     [Theory]
     [InlineData(0, "Quédate con el motor principal")]
     [InlineData(4, "los otros no caben")]

@@ -8,10 +8,12 @@ namespace Constantino.Core.Instalaciones;
 /// </summary>
 public sealed partial class RutasDatos
 {
-    public RutasDatos(string raiz, bool usaGpu)
+    /// <param name="gpuAntigua">Una GTX 10xx o anterior: necesita PyTorch para CUDA 12.6 (el de 12.8 ya no trae código para ella).</param>
+    public RutasDatos(string raiz, bool usaGpu, bool gpuAntigua = false)
     {
         Raiz = Path.GetFullPath(raiz);
         UsaGpu = usaGpu;
+        VarianteTorch = !usaGpu ? "cpu" : gpuAntigua ? "cu126" : "cu128";
         EstructuraAntigua = EstructuraDatos.EsAntigua(Raiz);
         Interno = EstructuraAntigua ? Raiz : Path.Combine(Raiz, EstructuraDatos.Interno);
         Variables = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -26,7 +28,7 @@ public sealed partial class RutasDatos
             ["uv"] = Uv,
             ["ffmpeg"] = Ffmpeg,
             ["dispositivo"] = usaGpu ? "cuda" : "cpu",
-            ["indiceTorch"] = usaGpu ? "https://download.pytorch.org/whl/cu128" : "https://download.pytorch.org/whl/cpu",
+            ["indiceTorch"] = $"https://download.pytorch.org/whl/{VarianteTorch}",
             // Chatterbox fija torch 2.6, que no tiene versión para CUDA 12.8.
             ["indiceTorchCu124"] = usaGpu ? "https://download.pytorch.org/whl/cu124" : "https://download.pytorch.org/whl/cpu",
         };
@@ -34,6 +36,9 @@ public sealed partial class RutasDatos
 
     public string Raiz { get; }
     public bool UsaGpu { get; }
+
+    /// <summary>Qué PyTorch se instala en los motores que usan {indiceTorch}: «cu128», «cu126» (tarjetas antiguas) o «cpu».</summary>
+    public string VarianteTorch { get; }
     public bool EstructuraAntigua { get; }
 
     // Lo del usuario, a la vista.

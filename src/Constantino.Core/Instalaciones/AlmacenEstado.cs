@@ -3,7 +3,8 @@ using System.Text.Json;
 namespace Constantino.Core.Instalaciones;
 
 /// <summary>Qué se instaló, en qué versión y para qué dispositivo.</summary>
-public sealed record RegistroInstalacion(string Version, DateTimeOffset Fecha, string Dispositivo);
+/// <param name="Torch">La variante de PyTorch («cu128», «cu126», «cpu»). Null en lo instalado antes de la 1.2.2: era «cu128» con GPU.</param>
+public sealed record RegistroInstalacion(string Version, DateTimeOffset Fecha, string Dispositivo, string? Torch = null);
 
 /// <summary>estado.json de la carpeta de datos.</summary>
 public sealed class AlmacenEstado(string ruta)

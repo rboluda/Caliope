@@ -9,6 +9,7 @@ import os
 import random
 import time
 
+from . import tarjeta
 from .servidor import ErrorMotor
 from .textos import t
 
@@ -42,6 +43,7 @@ class MotorVoxCpm:
         return info
 
     def op_cargar(self, params, progreso):
+        tarjeta.comprobar(self._torch)
         repositorio, revision = params["repositorio"], params["revision"]
         if (params.get("tipo") or "tts") != "tts":
             raise ErrorMotor("no_soportado", t("VoxCPM2 solo genera voz."))

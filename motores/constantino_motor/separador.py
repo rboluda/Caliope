@@ -7,6 +7,7 @@ import gc
 import os
 import time
 
+from . import tarjeta
 from .servidor import ErrorMotor
 from .textos import t
 
@@ -35,6 +36,7 @@ class MotorSeparador:
         return info
 
     def op_cargar(self, params, progreso):
+        tarjeta.comprobar(self._torch)
         repositorio, revision = params["repositorio"], params["revision"]
         if self._cargado == (repositorio, revision):
             return {"segundos": 0.0, "ya_cargado": True}

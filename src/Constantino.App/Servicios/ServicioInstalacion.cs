@@ -90,7 +90,7 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
         // La primera vez que se usa una carpeta en esta sesión se pasa a la estructura clara (y se deja su LÉEME).
         if (_carpetasRevisadas.Add(carpeta))
             Migracion = await Task.Run(() => EstructuraDatos.Migrar(carpeta));
-        return new Instalador(Catalogo, new RutasDatos(carpeta, rec.UsaGpu), new EjecutorProcesos(), new Descargador(Http));
+        return new Instalador(Catalogo, new RutasDatos(carpeta, rec.UsaGpu, rec.GpuAntigua), new EjecutorProcesos(), new Descargador(Http));
     }
 
     public async Task<EstadoComponente> EstadoDeAsync(string id) => (await InstaladorAsync()).EstadoDe(id);

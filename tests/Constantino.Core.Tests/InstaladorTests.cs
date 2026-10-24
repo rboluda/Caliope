@@ -289,6 +289,40 @@ public sealed class InstaladorTests : IDisposable
     }
 
     [Fact]
+    public async Task En_una_tarjeta_antigua_se_reinstala_lo_que_se_instalo_con_pytorch_para_cuda_12_8()
+    {
+        await Instalador().InstalarAsync(["motor"], Progreso, CancellationToken.None);
+        Assert.Equal("cu128", Instalador().Estado.Leer()["motor"].Torch);
+
+        var antigua = new Instalador(Catalogo(), new RutasDatos(_datos, usaGpu: true, gpuAntigua: true), _ejecutor, _descargador,
+            TimeSpan.FromMilliseconds(10));
+        Assert.Equal("https://download.pytorch.org/whl/cu126", antigua.Rutas.Expandir("{indiceTorch}"));
+        // Lo que no lleva PyTorch sigue valiendo; el motor hay que reinstalarlo.
+        Assert.Equal(EstadoComponente.Instalado, antigua.EstadoDe("base"));
+        Assert.Equal(EstadoComponente.Actualizable, antigua.EstadoDe("motor"));
+
+        await antigua.InstalarAsync(["motor"], Progreso, CancellationToken.None);
+
+        Assert.Equal(EstadoComponente.Instalado, antigua.EstadoDe("motor"));
+        Assert.Equal("cu126", antigua.Estado.Leer()["motor"].Torch);
+    }
+
+    [Fact]
+    public void Lo_instalado_antes_de_la_1_2_2_cuenta_como_cuda_12_8()
+    {
+        var instalador = Instalador();
+        Directory.CreateDirectory(Path.Combine(Rutas.Entornos, "m"));
+        File.WriteAllText(Path.Combine(Rutas.Entornos, "m", "python.exe"), "");
+        instalador.Estado.Registrar("motor", new RegistroInstalacion("1", DateTimeOffset.Now, "cuda"));
+
+        Assert.Equal(EstadoComponente.Instalado, instalador.EstadoDe("motor"));
+        Assert.Equal(EstadoComponente.Actualizable,
+            new Instalador(Catalogo(), new RutasDatos(_datos, true, gpuAntigua: true), _ejecutor, _descargador).EstadoDe("motor"));
+        // Con el procesador no se toca: no usaba la tarjeta.
+        Assert.Equal(EstadoComponente.Instalado, Instalador(usaGpu: false).EstadoDe("motor"));
+    }
+
+    [Fact]
     public void Todas_las_variables_del_catalogo_real_existen()
     {
         var rutas = new RutasDatos(_datos, usaGpu: true);

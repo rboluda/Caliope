@@ -71,12 +71,14 @@ public static class GuiaMotores
                      "Los otros dos no te aportarían nada.");
         var castellano = !EsRtx50(gpu.Nombre) && vram >= VramCastellanoGb;
         var tarjeta = T("tu {0} ({1})", gpu.Nombre, Formato.Gb(vram));
-        if (vram < VramParecidoGb)
+        // El de máximo parecido va en media precisión; en las tarjetas antiguas, en float32, ocupa el doble.
+        var vramParecido = gpu.Antigua ? vram / 2 : vram;
+        if (vramParecido < VramParecidoGb)
             return castellano
                 ? T("Usa el motor principal. Si narras en castellano y quieres ir más rápido o ajustar la emoción, añade el castellano rápido: cabe en {0}. " +
                     "El de máximo parecido no cabe.", tarjeta) + " " + basta
                 : T("Usa el motor principal: los otros no caben en {0}.", tarjeta);
-        if (vram < VramParecidoHolgadoGb)
+        if (vramParecido < VramParecidoHolgadoGb)
             return T("Usa el motor principal.") + " " +
                    (castellano ? T("Si quieres rapidez, el castellano rápido va unas 3 veces más deprisa.") + " " : "") +
                    T("El de máximo parecido funciona en {0}, pero justo: va más lento y la tarjeta se queda llena.", tarjeta) + " " +

@@ -24,12 +24,14 @@ public sealed record Recomendacion(NivelRecomendacion Nivel, string Motivo);
 
 public sealed record Aviso(SeveridadAviso Severidad, string Titulo, string Mensaje);
 
+/// <param name="GpuAntigua">La tarjeta que se usará es una GTX 10xx o anterior (ver <see cref="Gpu.Antigua"/>).</param>
 public sealed record InformeRecomendacion(
     bool UsaGpu,
     string ResumenDispositivo,
     IReadOnlyDictionary<string, Recomendacion> PorComponente,
     IReadOnlyList<Aviso> Avisos,
-    double DescargaPropuestaGb)
+    double DescargaPropuestaGb,
+    bool GpuAntigua = false)
 {
     public Recomendacion Para(string id) => PorComponente[id];
 
@@ -53,15 +55,16 @@ public static class Recomendador
         var gpu = equipo.GpuPrincipal;
         var vram = gpu?.VramTotalGb ?? 0;
         var usaGpu = gpu is not null && vram >= VramMinimaParaGpuGb;
+        var antigua = usaGpu && gpu!.Antigua;
         var avisos = new List<Aviso>();
         var resultado = new Dictionary<string, Recomendacion>(StringComparer.Ordinal);
 
         foreach (var c in catalogo.Componentes.Where(c => c.GrupoExclusivo is null))
-            resultado[c.Id] = RecomendarIndividual(c, usaGpu, vram, gpu?.Nombre);
+            resultado[c.Id] = RecomendarIndividual(c, usaGpu, antigua, vram, gpu?.Nombre);
 
         foreach (var grupo in catalogo.Componentes.Where(c => c.GrupoExclusivo is not null).GroupBy(c => c.GrupoExclusivo!))
         {
-            foreach (var (id, r) in RecomendarGrupo(grupo.ToList(), usaGpu, vram))
+            foreach (var (id, r) in RecomendarGrupo(grupo.ToList(), usaGpu, antigua, vram))
                 resultado[id] = r;
         }
 
@@ -70,6 +73,11 @@ public static class Recomendador
             .Sum(c => c.Tamano.Para(usaGpu));
 
         AvisosDeGpu(equipo, gpu, usaGpu, avisos);
+        if (antigua)
+        {
+            avisos.Add(new Aviso(SeveridadAviso.Informacion, T("Tarjeta de una generación anterior"),
+                T("Tu {0} es anterior a 2018. Calíope instalará la versión de los motores que funciona con ella, pero los modelos ocupan el doble de memoria en la tarjeta: por eso se recomiendan los más ligeros.", gpu!.Nombre)));
+        }
         AvisosDeDisco(equipo.Disco, descarga, avisos);
         if (equipo.RamGb is > 0 and < 12)
             avisos.Add(new Aviso(SeveridadAviso.Atencion, T("Poca memoria RAM"),
@@ -79,23 +87,24 @@ public static class Recomendador
             ? T("Se usará tu tarjeta {0} ({1} de memoria) para generar la voz.", gpu!.Nombre, Formato.Gb(vram))
             : T("No hay una tarjeta NVIDIA utilizable: la voz se generará con el procesador, bastante más despacio.");
 
-        return new InformeRecomendacion(usaGpu, resumen, resultado, avisos, descarga);
+        return new InformeRecomendacion(usaGpu, resumen, resultado, avisos, descarga, antigua);
     }
 
-    private static Recomendacion RecomendarIndividual(Componente c, bool usaGpu, double vram, string? gpu)
+    private static Recomendacion RecomendarIndividual(Componente c, bool usaGpu, bool antigua, double vram, string? gpu)
     {
-        if (usaGpu && c.Requisitos.SinRtx50 && GuiaMotores.EsRtx50(gpu))
+        var requisitos = c.Requisitos.En(antigua);
+        if (usaGpu && requisitos.SinRtx50 && GuiaMotores.EsRtx50(gpu))
             return new(NivelRecomendacion.NoRecomendado, T("Todavía no funciona con las tarjetas RTX 50 como la tuya."));
-        var minima = c.Requisitos.VramMinimaGb;
+        var minima = requisitos.VramMinimaGb;
         if (usaGpu && minima is { } min && vram < min)
         {
-            return c.Requisitos.FuncionaEnCpu
+            return requisitos.FuncionaEnCpu
                 ? new(NivelRecomendacion.NoRecomendado,
                     T("Necesita {0} de memoria en la tarjeta y la tuya tiene {1}. Funcionaría con el procesador, pero muy despacio.", Formato.Gb(min), Formato.Gb(vram)))
                 : new(NivelRecomendacion.NoRecomendado,
                     T("Necesita {0} de memoria en la tarjeta y la tuya tiene {1}.", Formato.Gb(min), Formato.Gb(vram)));
         }
-        if (!usaGpu && minima is not null && !c.Requisitos.FuncionaEnCpu)
+        if (!usaGpu && minima is not null && !requisitos.FuncionaEnCpu)
             return new(NivelRecomendacion.NoRecomendado, T("Necesita una tarjeta NVIDIA y este equipo no tiene una utilizable."));
 
         var nivel = c.Necesidad switch
@@ -123,16 +132,18 @@ public static class Recomendador
     /// De un grupo de alternativas se propone una sola: con GPU, la de mayor calidad que quepa con holgura;
     /// sin GPU, la más ligera.
     /// </summary>
-    private static IEnumerable<(string, Recomendacion)> RecomendarGrupo(List<Componente> alternativas, bool usaGpu, double vram)
+    private static IEnumerable<(string, Recomendacion)> RecomendarGrupo(List<Componente> alternativas, bool usaGpu, bool antigua,
+        double vram)
     {
         Componente elegida;
         string motivoElegida;
+        Requisitos R(Componente c) => c.Requisitos.En(antigua);
         if (usaGpu)
         {
-            var holgadas = alternativas.Where(c => vram >= (c.Requisitos.VramRecomendadaGb ?? 0)).ToList();
-            var caben = alternativas.Where(c => vram >= (c.Requisitos.VramMinimaGb ?? 0)).ToList();
+            var holgadas = alternativas.Where(c => vram >= (R(c).VramRecomendadaGb ?? 0)).ToList();
+            var caben = alternativas.Where(c => vram >= (R(c).VramMinimaGb ?? 0)).ToList();
             var candidatas = holgadas.Count > 0 ? holgadas : caben.Count > 0 ? caben : alternativas;
-            elegida = candidatas.MaxBy(c => c.Requisitos.VramRecomendadaGb ?? 0)!;
+            elegida = candidatas.MaxBy(c => R(c).VramRecomendadaGb ?? 0)!;
             motivoElegida = holgadas.Contains(elegida)
                 ? T("La mejor opción que cabe con holgura en tu tarjeta ({0}).", Formato.Gb(vram))
                 : T("La opción que mejor encaja en tu tarjeta ({0}), aunque irá algo justa.", Formato.Gb(vram));
@@ -150,11 +161,11 @@ public static class Recomendador
                 yield return (c.Id, new(NivelRecomendacion.Imprescindible, motivoElegida));
                 continue;
             }
-            var cabe = !usaGpu || vram >= (c.Requisitos.VramMinimaGb ?? 0);
+            var cabe = !usaGpu || vram >= (R(c).VramMinimaGb ?? 0);
             yield return (c.Id, cabe
                 ? new(NivelRecomendacion.Opcional, T("Alternativa a «{0}». Solo hace falta una de las dos.", elegida.Nombre))
                 : new(NivelRecomendacion.NoRecomendado,
-                    T("Necesita {0} de memoria en la tarjeta y la tuya tiene {1}.", Formato.Gb(c.Requisitos.VramMinimaGb ?? 0), Formato.Gb(vram))));
+                    T("Necesita {0} de memoria en la tarjeta y la tuya tiene {1}.", Formato.Gb(R(c).VramMinimaGb ?? 0), Formato.Gb(vram))));
         }
     }
 

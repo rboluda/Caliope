@@ -46,8 +46,20 @@ public sealed class Instalador
             return EstadoComponente.NoInstalado;
         if (!completo)
             return EstadoComponente.Danado;
-        return registro.Version == inst.Version ? EstadoComponente.Instalado : EstadoComponente.Actualizable;
+        return registro.Version == inst.Version && !OtraVarianteDeTorch(inst, registro)
+            ? EstadoComponente.Instalado
+            : EstadoComponente.Actualizable;
     }
+
+    /// <summary>
+    /// Se instaló con la GPU, pero con un PyTorch que no es el que necesita esta tarjeta (p. ej. el de CUDA 12.8 en una
+    /// GTX 1070): hay que reinstalarlo, o falla con «no kernel image is available for execution on the device».
+    /// </summary>
+    private bool OtraVarianteDeTorch(Instalacion inst, RegistroInstalacion registro) =>
+        _rutas.UsaGpu
+        && registro.Dispositivo == "cuda"
+        && (registro.Torch ?? "cu128") != _rutas.VarianteTorch
+        && inst.Pasos.OfType<PasoEjecutar>().Any(p => p.Argumentos.Any(a => a.Contains("{indiceTorch}", StringComparison.Ordinal)));
 
     public bool EstaInstalado(string id) => EstadoDe(id) is EstadoComponente.Instalado or EstadoComponente.Actualizable;
 
@@ -276,7 +288,7 @@ public sealed class Instalador
             throw new InstalacionFallidaException(c.Id, T("Comprobación final"),
                 T("La instalación de «{0}» terminó, pero faltan archivos: {1}", c.Nombre, string.Join(", ", faltan)));
         }
-        Estado.Registrar(c.Id, new RegistroInstalacion(inst.Version, DateTimeOffset.Now, _rutas.Variables["dispositivo"]));
+        Estado.Registrar(c.Id, new RegistroInstalacion(inst.Version, DateTimeOffset.Now, _rutas.Variables["dispositivo"], _rutas.VarianteTorch));
         progreso.Report(new EventoInstalacion(TipoEvento.ComponenteCompletado, c.Id, T("{0} instalado", c.Nombre), 1, total, total));
     }
 
