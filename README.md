@@ -68,12 +68,12 @@ El instalador solo ocupa unos 50 MB. Los motores y modelos se descargan después
 
 | Componente | ¿Hace falta? | Para qué | Tamaño |
 |---|---|---|---|
-| Núcleo (uv, Python, ffmpeg) | Imprescindible | La base de todo lo demás | 0,3 GB |
-| Motor Qwen3-TTS | Imprescindible | Genera la voz | 1,2–5 GB |
-| Modelo Base 1.7B **o** 0.6B | Imprescindible (uno de los dos) | Clonar voces y narrar | 4,3 / 2,4 GB |
-| Modelo VoiceDesign | Recomendado | Diseñar voces nuevas | 4,3 GB |
-| Whisper | Opcional | Transcribir grabaciones al clonar | 1,6 GB |
-| Motor castellano rápido (Chatterbox) | Opcional | Más rapidez y control de la emoción; solo castellano | 4,9–8,4 GB |
+| Herramientas básicas (uv, Python y FFmpeg) | Imprescindible | La base de todo lo demás | 0,3 GB |
+| Motor de voz (Qwen3-TTS) | Imprescindible | Genera la voz | 1,2–5 GB |
+| Voz de alta calidad (Qwen3-TTS 1.7B) **o** Voz ligera (Qwen3-TTS 0.6B) | Imprescindible (uno de los dos) | Clonar voces y narrar | 4,3 / 2,4 GB |
+| Diseñador de voces (Qwen3-TTS VoiceDesign) | Recomendado | Diseñar voces nuevas | 4,3 GB |
+| Transcripción automática (Whisper) | Opcional | Transcribir grabaciones al clonar | 1,6 GB |
+| Motor castellano (Chatterbox) | Opcional | Más rapidez y control de la emoción; solo castellano | 4,9–8,4 GB |
 | Motor de máximo parecido (VoxCPM2) | Opcional | La voz más parecida a la original; pide 8 GB de tarjeta | 10,5 GB |
 | Separador de voz y música (Demucs) | Para doblar | Separa la voz del fondo del vídeo | 1,3–5 GB |
 | Traductor con IA (llama.cpp + Qwen3-4B) | Para doblar | Traduce el guion sin internet | 2,6 GB |

@@ -3,7 +3,7 @@
   "componentes": [
     {
       "id": "nucleo",
-      "nombre": "Herramientas básicas",
+      "nombre": "Herramientas básicas (uv, Python y FFmpeg)",
       "grupo": "Lo básico",
       "necesidad": "imprescindible",
       "resumen": "Lo que Calíope necesita para funcionar y para preparar el audio final.",
@@ -118,7 +118,7 @@
     },
     {
       "id": "motor-qwen",
-      "nombre": "Motor de voz",
+      "nombre": "Motor de voz (Qwen3-TTS)",
       "grupo": "Lo básico",
       "necesidad": "imprescindible",
       "resumen": "El programa que convierte el texto en voz. Sin él, Calíope no puede hablar.",
@@ -231,7 +231,7 @@
     },
     {
       "id": "modelo-qwen-base-1.7b",
-      "nombre": "Voz de alta calidad",
+      "nombre": "Voz de alta calidad (Qwen3-TTS 1.7B)",
       "grupo": "Calidad de la voz",
       "necesidad": "imprescindible",
       "grupoExclusivo": "modelo-base",
@@ -284,7 +284,7 @@
     },
     {
       "id": "modelo-qwen-base-0.6b",
-      "nombre": "Voz ligera",
+      "nombre": "Voz ligera (Qwen3-TTS 0.6B)",
       "grupo": "Calidad de la voz",
       "necesidad": "imprescindible",
       "grupoExclusivo": "modelo-base",
@@ -752,7 +752,7 @@
     },
     {
       "id": "modelo-qwen-voicedesign",
-      "nombre": "Diseñador de voces",
+      "nombre": "Diseñador de voces (Qwen3-TTS VoiceDesign)",
       "grupo": "Más funciones",
       "necesidad": "recomendado",
       "resumen": "Crea voces nuevas a partir de una descripción escrita.",
@@ -803,7 +803,7 @@
     },
     {
       "id": "whisper",
-      "nombre": "Transcripción automática",
+      "nombre": "Transcripción automática (Whisper)",
       "grupo": "Más funciones",
       "necesidad": "opcional",
       "resumen": "Escribe solo lo que se dice en una grabación.",
@@ -854,7 +854,7 @@
     },
     {
       "id": "separador-voz",
-      "nombre": "Separador de voz y música",
+      "nombre": "Separador de voz y música (Demucs)",
       "grupo": "Doblaje de vídeo",
       "necesidad": "opcional",
       "resumen": "Separa la voz de un vídeo de su música y sus efectos, para cambiar solo la voz al doblarlo.",
@@ -1003,7 +1003,7 @@
     },
     {
       "id": "traductor",
-      "nombre": "Traductor con IA",
+      "nombre": "Traductor con IA (llama.cpp + Qwen3-4B)",
       "grupo": "Doblaje de vídeo",
       "necesidad": "opcional",
       "resumen": "Traduce en tu ordenador, sin internet, el guion de un vídeo al castellano para doblarlo.",

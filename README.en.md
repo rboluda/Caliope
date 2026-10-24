@@ -70,12 +70,12 @@ The installer is only about 50 MB. The engines and models are downloaded later, 
 
 | Component | Do I need it? | What for | Size |
 |---|---|---|---|
-| Core (uv, Python, ffmpeg) | Essential | The base for everything else | 0.3 GB |
-| Qwen3-TTS engine | Essential | Generates the voice | 1.2–5 GB |
-| Base 1.7B **or** 0.6B model | Essential (one of the two) | Cloning voices and narrating | 4.3 / 2.4 GB |
-| VoiceDesign model | Recommended | Designing new voices | 4.3 GB |
-| Whisper | Optional | Transcribing recordings when cloning | 1.6 GB |
-| Fast Spanish engine (Chatterbox) | Optional | More speed and control over emotion; Spanish only | 4.9–8.4 GB |
+| Basic tools (uv, Python and FFmpeg) | Essential | The base for everything else | 0.3 GB |
+| Voice engine (Qwen3-TTS) | Essential | Generates the voice | 1.2–5 GB |
+| High-quality voice (Qwen3-TTS 1.7B) **or** Light voice (Qwen3-TTS 0.6B) | Essential (one of the two) | Cloning voices and narrating | 4.3 / 2.4 GB |
+| Voice designer (Qwen3-TTS VoiceDesign) | Recommended | Designing new voices | 4.3 GB |
+| Automatic transcription (Whisper) | Optional | Transcribing recordings when cloning | 1.6 GB |
+| Spanish engine (Chatterbox) | Optional | More speed and control over emotion; Spanish only | 4.9–8.4 GB |
 | Closest-match engine (VoxCPM2) | Optional | The voice closest to the original; needs an 8 GB graphics card | 10.5 GB |
 | Voice and music separator (Demucs) | For dubbing | Separates the voice from the video's background | 1.3–5 GB |
 | AI translator (llama.cpp + Qwen3-4B) | For dubbing | Translates the script offline | 2.6 GB |
