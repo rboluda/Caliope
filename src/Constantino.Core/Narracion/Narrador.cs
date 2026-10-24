@@ -91,7 +91,10 @@ public enum TipoEventoNarracion
 }
 
 /// <param name="Fraccion">Avance global, de 0 a 1.</param>
-public sealed record EventoNarracion(TipoEventoNarracion Tipo, int Bloque, int TotalBloques, string Mensaje, double Fraccion);
+/// <param name="FraccionAlTerminar">Al empezar una frase: el avance global cuando termine.</param>
+/// <param name="Letras">Al empezar una frase: sus letras (para estimar lo que tardará).</param>
+public sealed record EventoNarracion(TipoEventoNarracion Tipo, int Bloque, int TotalBloques, string Mensaje, double Fraccion,
+    double? FraccionAlTerminar = null, int Letras = 0);
 
 /// <param name="Avisos">Lo que conviene saber del resultado (revisión, duración…).</param>
 public sealed record ResultadoNarracion(Proyecto Proyecto, int Generados, int SinCambios, string? Completo, string Manifiesto,
@@ -187,9 +190,10 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 var inicioBloque = hecho;
                 progreso.Report(new EventoNarracion(TipoEventoNarracion.Bloque, b.Indice, bloques.Count,
                     T("Generando el bloque {0} de {1}", b.Indice, bloques.Count), hecho / pesoTotal));
-                var (montaje, medida, avisos) = await GenerarBloqueAsync(b, ab, temporal, (fraccion, texto) =>
+                var (montaje, medida, avisos) = await GenerarBloqueAsync(b, ab, temporal, (desde, hasta, letras, texto) =>
                     progreso.Report(new EventoNarracion(TipoEventoNarracion.Frase, b.Indice, bloques.Count, texto,
-                        (inicioBloque + pesos[i] * fraccion) / pesoTotal)), ct).ConfigureAwait(false);
+                        (inicioBloque + pesos[i] * desde) / pesoTotal, (inicioBloque + pesos[i] * hasta) / pesoTotal, letras)),
+                    ct).ConfigureAwait(false);
 
                 var wav = Path.Combine(temporal, $"{b.Archivo}.wav");
                 var wavMedida = Path.Combine(temporal, $"{b.Archivo}_medida.wav");
@@ -305,8 +309,9 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             Bloques = p.Bloques.Select(e => e.Indice == indice ? e with { Avisos = [.. e.Avisos, aviso] } : e).ToList(),
         });
 
+    /// <param name="avance">Al empezar cada frase: avance del bloque al empezarla y al terminarla, sus letras y qué se lee.</param>
     private async Task<(Pcm Montaje, Pcm Medida, List<string> Avisos)> GenerarBloqueAsync(
-        Bloque b, AjustesNarracion a, string temporal, Action<double, string> avance, CancellationToken ct)
+        Bloque b, AjustesNarracion a, string temporal, Action<double, double, int, string> avance, CancellationToken ct)
     {
         var trozos = b.Eventos.SelectMany(e => e is EventoVoz v
                 ? Guion.PartirEnFrases(v.Texto, a.MaxCaracteres).Select(t => (Evento)(v with { Texto = t }))
@@ -340,7 +345,8 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 continue;
             }
             var v = (EventoVoz)evento;
-            avance((double)letrasHechas / totalLetras, T("Bloque {0}: «{1}»", b.Indice, Resumen(v.Texto)));
+            avance((double)letrasHechas / totalLetras, (double)(letrasHechas + v.Texto.Length) / totalLetras, v.Texto.Length,
+                T("Bloque {0}: «{1}»", b.Indice, Resumen(v.Texto)));
             // Las variantes son de la voz del proyecto; otra voz se lee con su grabación principal.
             var variante = v.VozId is null && v.Variante is { } id && sintetizador.Variantes.Contains(id) ? id : null;
             var ruta = await sintetizador.SintetizarAsync(v.Texto, variante, v.VozId, a,
@@ -374,7 +380,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             piezas.Add(Pcm.Silencio(a.SilencioFin, sr));
             return Pcm.Unir(piezas, sr);
         }
-        avance(1, T("Bloque {0}: ajustando el volumen", b.Indice));
+        avance(1, 1, 0, T("Bloque {0}: ajustando el volumen", b.Indice));
         return (Montar(true), Montar(false), avisos);
     }
 
@@ -464,9 +470,10 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             int semilla;
             do semilla = Random.Shared.Next(1, 100_000); while (!usadas.Add(semilla));
             var ab = proyecto.AjustesDe(b) with { Semilla = semilla };
-            var (montaje, medida, avisos) = await GenerarBloqueAsync(b, ab, temporal, (f, texto) =>
+            var (montaje, medida, avisos) = await GenerarBloqueAsync(b, ab, temporal, (desde, hasta, letras, texto) =>
                 progreso.Report(new EventoNarracion(TipoEventoNarracion.Frase, b.Indice, cantidad,
-                    T("Toma {0} de {1}: {2}", k + 1, cantidad, texto), (k + f) / cantidad)), ct).ConfigureAwait(false);
+                    T("Toma {0} de {1}: {2}", k + 1, cantidad, texto), (k + desde) / cantidad, (k + hasta) / cantidad, letras)),
+                ct).ConfigureAwait(false);
             var wav = Path.Combine(temporal, $"toma_{semilla}.wav");
             var wavMedida = Path.Combine(temporal, $"toma_{semilla}_medida.wav");
             montaje.EscribirWav(wav);

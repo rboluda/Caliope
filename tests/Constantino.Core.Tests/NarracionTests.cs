@@ -184,6 +184,13 @@ public sealed class NarradorTests : IDisposable
         Assert.Equal(b1 + 0.5, (double)completo["bloques"]![1]!["inicio_s"]!, 2);
         Assert.Equal(r.Proyecto.Bloques.Sum(b => b.Duracion) + 1.0, (double)completo["duracion_s"]!, 2);
         Assert.Equal(1, eventos[^1].Fraccion);
+        // Cada frase dice dónde acabará en la barra y cuántas letras tiene, para que la barra avance mientras se lee;
+        // la siguiente empieza justo donde acaba la anterior.
+        var frases = eventos.Where(e => e.Tipo == TipoEventoNarracion.Frase && e.Letras > 0).ToList();
+        Assert.Equal([23, 8, 11, 6], frases.Select(e => e.Letras));
+        Assert.All(frases, e => Assert.True(e.FraccionAlTerminar > e.Fraccion));
+        Assert.Equal(frases[0].FraccionAlTerminar!.Value, frases[1].Fraccion, 6);
+        Assert.Equal(1, frases[^1].FraccionAlTerminar!.Value, 6);
         Assert.False(Directory.Exists(Path.Combine(salida, ".tmp")));
     }
 

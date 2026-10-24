@@ -238,7 +238,9 @@ public sealed partial class NarrarViewModel : ObservableObject
 
     public bool Libre => !Generando;
 
-    [ObservableProperty] public partial double Fraccion { get; set; }
+    /// <summary>La barra de avance y la línea de estado de lo que se está generando.</summary>
+    public AvanceSuave Avance { get; } = new();
+
     [ObservableProperty] public partial string Mensaje { get; set; } = "";
     [ObservableProperty] public partial string? Error { get; set; }
     [ObservableProperty] public partial string Resumen { get; set; } = "";
@@ -589,9 +591,14 @@ public sealed partial class NarrarViewModel : ObservableObject
         actual.GenerandoTomas = true;
         actual.MensajeTomas = T("Generando dos tomas nuevas…");
         _cancelacion = new CancellationTokenSource();
+        Avance.Empezar();
         try
         {
-            var progreso = new Progress<EventoNarracion>(e => { Mensaje = e.Mensaje; Fraccion = e.Fraccion; });
+            var progreso = new Progress<EventoNarracion>(e =>
+            {
+                Mensaje = e.Mensaje;
+                Avance.Informar(e.Fraccion, e.FraccionAlTerminar, e.Letras);
+            });
             await narrador.GenerarTomasAsync(_proyecto, TextoGuion, actual.Indice, 2, progreso, _cancelacion.Token);
             CargarTomas(actual, narrador.TomasDe(_proyecto, TextoGuion, actual.Indice));
             Mensaje = T("Escucha las tomas y quédate con la que mejor suene.");
@@ -607,6 +614,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         }
         finally
         {
+            Avance.Terminar();
             actual.GenerandoTomas = false;
             Generando = false;
             _cancelacion?.Dispose();
@@ -873,12 +881,12 @@ public sealed partial class NarrarViewModel : ObservableObject
         // Un audio que suena no se puede sobrescribir.
         Reproductor.Detener();
         Generando = true;
-        Fraccion = 0;
+        Avance.Empezar();
         Mensaje = T("Preparando…");
         _cancelacion = new CancellationTokenSource();
         var progreso = new Progress<EventoNarracion>(e =>
         {
-            Fraccion = e.Fraccion;
+            Avance.Informar(e.Fraccion, e.FraccionAlTerminar, e.Letras);
             Mensaje = e.Mensaje;
             if (Bloques.FirstOrDefault(f => f.Indice == e.Bloque) is { } fila)
             {
@@ -910,6 +918,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         }
         finally
         {
+            Avance.Terminar();
             Generando = false;
             _cancelacion.Dispose();
             _cancelacion = null;

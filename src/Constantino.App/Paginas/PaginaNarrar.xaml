@@ -391,7 +391,12 @@
                                 </ui:Button.Icon>
                             </ui:Button>
                             <StackPanel Margin="0,10,0,0" Visibility="{Binding ViewModel.Generando, Converter={StaticResource BoolAVisibilidad}}">
-                                <ProgressBar Height="6" Maximum="1" Value="{Binding ViewModel.Fraccion, Mode=OneWay}" />
+                                <ProgressBar Height="6" Maximum="1" Value="{Binding ViewModel.Avance.Fraccion, Mode=OneWay}" />
+                                <TextBlock
+                                    Margin="0,6,0,0"
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding ViewModel.Avance.Estado}" />
                                 <ui:Button Margin="0,8,0,0" Command="{Binding ViewModel.CancelarCommand}" Content="{l:T 'Cancelar'}" />
                             </StackPanel>
                             <TextBlock Margin="0,8,0,0" Text="{Binding ViewModel.Mensaje}" TextWrapping="Wrap" />
