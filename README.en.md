@@ -28,6 +28,7 @@ Calíope turns text into speech with artificial intelligence models that **run o
 - 🎨 **Design new voices** by describing them in words: “40-year-old man, deep and warm voice, slow pace, mysterious tone, Spanish from Spain”.
 - 🎙️ **Clone a voice** from 10 to 20 seconds of recording: your own, or that of someone who has given you permission. You can record it with your microphone right in the app, and with Whisper the transcript writes itself.
 - 📖 **Narrate long scripts** paragraph by paragraph, with pauses, whispers and changes of emotion marked in the text. If you change a sentence, only that paragraph is generated again.
+- 🎬 **Dub videos from English into Spanish** keeping the speaker's voice: Calíope separates the voice from the music, transcribes, translates with an AI on your computer and says each sentence again with the original timbre and Spanish pronunciation, without an English accent. For now, videos with one person and up to 10 minutes long.
 - 🎭 **Variants of the same voice**: whispering, tense, frightened, sad, cheerful or shouting.
 - 🎚️ **Fine-tune the result**: expressiveness, speed and pitch (independent of each other), pauses and volume leveled for video or podcasts.
 - 📤 **Get the audio as MP3 or WAV**, or drag it straight into your video editor.
@@ -76,6 +77,8 @@ The installer is only about 50 MB. The engines and models are downloaded later, 
 | Whisper | Optional | Transcribing recordings when cloning | 1.6 GB |
 | Fast Spanish engine (Chatterbox) | Optional | More speed and control over emotion; Spanish only | 4.9–8.4 GB |
 | Closest-match engine (VoxCPM2) | Optional | The voice closest to the original; needs an 8 GB graphics card | 10.5 GB |
+| Voice and music separator (Demucs) | For dubbing | Separates the voice from the video's background | 1.3–5 GB |
+| AI translator (llama.cpp + Qwen3-4B) | For dubbing | Translates the script offline | 2.6 GB |
 
 ## How to use it
 
@@ -185,6 +188,8 @@ Calíope exists thanks to the work of others. The main pieces:
 | [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) | Alibaba (Qwen team) | Apache 2.0 | Main voice engine: cloning, designing and narrating |
 | [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) and its Spanish package | Resemble AI | MIT | Fast Spanish engine, with control over emotion |
 | [VoxCPM2](https://github.com/OpenBMB/VoxCPM) | OpenBMB | Apache 2.0 | Closest-match engine |
+| [Demucs](https://github.com/adefossez/demucs) | Meta | MIT | Separating the voice from the music when dubbing |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) and [Qwen3-4B](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | ggml-org · Alibaba Qwen | MIT · Apache 2.0 | Translating videos |
 | [Whisper](https://github.com/openai/whisper) | OpenAI | MIT | Automatic transcription and check |
 | [PyTorch](https://pytorch.org) | PyTorch Foundation | BSD-3 | Running the models |
 | [FFmpeg](https://ffmpeg.org) and [Rubber Band](https://breakfastquay.com/rubberband/) | FFmpeg · Breakfast Quay | GPL | Audio: volume, speed, pitch, mixing |

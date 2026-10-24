@@ -28,6 +28,7 @@ Calíope convierte texto en voz con modelos de inteligencia artificial que **se 
 - 🎨 **Diseña voces nuevas** describiéndolas con palabras: «hombre de 40 años, voz grave y cálida, ritmo pausado, tono misterioso, castellano de España».
 - 🎙️ **Clona una voz** a partir de 10 a 20 segundos de grabación: la tuya o la de alguien que te haya dado permiso. Puedes grabarla con el micrófono desde la propia aplicación, y con Whisper la transcripción se escribe sola.
 - 📖 **Narra guiones largos** por párrafos, con pausas, susurros y cambios de emoción marcados en el texto. Si cambias una frase, solo se vuelve a generar ese párrafo.
+- 🎬 **Dobla vídeos del inglés al castellano** conservando la voz de quien habla: Calíope separa la voz de la música, transcribe, traduce con una IA en tu ordenador y vuelve a decir cada frase con el timbre original y pronunciación castellana, sin acento inglés. De momento, vídeos de una persona y de hasta 10 minutos.
 - 🎭 **Variantes de una misma voz**: susurrando, tensa, asustada, triste, alegre o gritando.
 - 🎚️ **Afina el resultado**: expresividad, velocidad y tono (independientes entre sí), pausas y volumen normalizado para vídeo o pódcast.
 - 📤 **Saca el audio en MP3 o WAV** o arrástralo directamente a tu editor de vídeo.
@@ -74,6 +75,8 @@ El instalador solo ocupa unos 50 MB. Los motores y modelos se descargan después
 | Whisper | Opcional | Transcribir grabaciones al clonar | 1,6 GB |
 | Motor castellano rápido (Chatterbox) | Opcional | Más rapidez y control de la emoción; solo castellano | 4,9–8,4 GB |
 | Motor de máximo parecido (VoxCPM2) | Opcional | La voz más parecida a la original; pide 8 GB de tarjeta | 10,5 GB |
+| Separador de voz y música (Demucs) | Para doblar | Separa la voz del fondo del vídeo | 1,3–5 GB |
+| Traductor con IA (llama.cpp + Qwen3-4B) | Para doblar | Traduce el guion sin internet | 2,6 GB |
 
 ## Cómo se usa
 
@@ -180,6 +183,8 @@ Calíope existe gracias al trabajo de otros. Las piezas principales:
 | [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) | Alibaba (equipo Qwen) | Apache 2.0 | Motor de voz principal: clonar, diseñar y narrar |
 | [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) y su paquete de castellano | Resemble AI | MIT | Motor castellano rápido, con control de la emoción |
 | [VoxCPM2](https://github.com/OpenBMB/VoxCPM) | OpenBMB | Apache 2.0 | Motor de máximo parecido |
+| [Demucs](https://github.com/adefossez/demucs) | Meta | MIT | Separar la voz de la música al doblar |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) y [Qwen3-4B](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | ggml-org · Alibaba Qwen | MIT · Apache 2.0 | Traducir los vídeos |
 | [Whisper](https://github.com/openai/whisper) | OpenAI | MIT | Transcripción y revisión automática |
 | [PyTorch](https://pytorch.org) | PyTorch Foundation | BSD-3 | Ejecutar los modelos |
 | [FFmpeg](https://ffmpeg.org) y [Rubber Band](https://breakfastquay.com/rubberband/) | FFmpeg · Breakfast Quay | GPL | Audio: volumen, velocidad, tono, mezcla |

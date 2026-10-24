@@ -13,6 +13,9 @@ Calíope **does not redistribute** the engines or the models: it downloads them 
 | [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS): Base 1.7B / 0.6B and VoiceDesign 1.7B models | Alibaba (Qwen team) | Apache 2.0 | The main voice engine: cloning voices, designing them from a description and reading the scripts. |
 | [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) v3 and its [Spanish (from Spain) package](https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-es) | Resemble AI | MIT | The fast Spanish engine, with control over emotional intensity. |
 | [VoxCPM2](https://github.com/OpenBMB/VoxCPM) | OpenBMB | Apache 2.0 | The closest-match engine: it imitates the voice most faithfully and produces 48 kHz audio. |
+| [Demucs](https://github.com/adefossez/demucs) with the htdemucs model | Meta (Alexandre Défossez) | MIT | Separates the voice from the music and effects when dubbing a video. |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) | ggml-org | MIT | Runs the model that translates videos on your computer. |
+| [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) ([unsloth](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF) GGUF) | Alibaba (Qwen team) | Apache 2.0 | Translates the videos' script into Spanish. |
 | [Perth](https://github.com/resemble-ai/perth) | Resemble AI | MIT | The inaudible watermark that Chatterbox adds to everything it generates. |
 | [Whisper large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) | OpenAI | MIT | Automatic transcription and the check that the voice reads the text correctly. |
 
