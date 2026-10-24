@@ -56,6 +56,9 @@ def _crear_motor():
     if os.environ.get("CONSTANTINO_MOTOR") == "chatterbox":
         from .chatterbox import MotorChatterbox
         return MotorChatterbox()
+    if os.environ.get("CONSTANTINO_MOTOR") == "separador":
+        from .separador import MotorSeparador
+        return MotorSeparador()
     if os.environ.get("CONSTANTINO_MOTOR") == "voxcpm":
         from .voxcpm import MotorVoxCpm
         return MotorVoxCpm()

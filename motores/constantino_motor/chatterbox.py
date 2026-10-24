@@ -129,12 +129,36 @@ class MotorChatterbox:
         if (params.get("idioma") or "Spanish") != "Spanish":
             raise ErrorMotor("idioma_no_soportado",
                              t("Este motor está afinado para castellano: con voces en otros idiomas usa el motor principal o VoxCPM2."))
-        idioma = "es"
 
         intensidad = float(params.get("intensidad") or 0.5)
         progreso(None, t("Preparando la voz"))
         self._modelo.conds = self._condiciones_de(referencia, intensidad)
+        return self._generar(texto, intensidad, params, progreso)
 
+    def op_sintetizar_doblaje(self, params, progreso):
+        """Doblaje: la pronunciación sale de una voz castellana nativa y el timbre, de la voz original.
+
+        El modelo tiene dos etapas: T3 decide qué se dice y cómo (pronunciación, ritmo) a partir de una muestra de
+        habla, y S3Gen pone el timbre a partir de otra. Si las dos salen de una grabación en otro idioma, se copia
+        también su acento; así, la grabación original solo aporta el timbre.
+        """
+        if self._modelo is None:
+            raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))
+        pronunciacion, timbre = params["referencia_pronunciacion"], params["referencia_timbre"]
+        for ruta in (pronunciacion, timbre):
+            if not os.path.isfile(ruta):
+                raise ErrorMotor("archivo_no_encontrado", t("No existe la grabación de referencia: {ruta}", ruta=ruta))
+        texto = (params.get("texto") or "").strip()
+        if not texto:
+            raise ErrorMotor("texto_vacio", t("No hay texto que leer."))
+        intensidad = float(params.get("intensidad") or 0.5)
+        progreso(None, t("Preparando la voz"))
+        nativa = self._condiciones_de(pronunciacion, intensidad)
+        original = self._condiciones_de(timbre, intensidad)
+        self._modelo.conds = type(nativa)(nativa.t3, original.gen)
+        return self._generar(texto, intensidad, params, progreso)
+
+    def _generar(self, texto, intensidad, params, progreso):
         ajustes = {"exaggeration": intensidad}
         for clave_app, clave_cb in (("cfg", "cfg_weight"), ("temperatura", "temperature"), ("top_p", "top_p"),
                                     ("repeticion", "repetition_penalty")):
@@ -144,7 +168,7 @@ class MotorChatterbox:
         self._sembrar(int(params.get("semilla", 1234)))
         progreso(None, t("Generando la voz"))
         inicio = time.perf_counter()
-        wav = self._modelo.generate(texto, language_id=idioma, **ajustes)
+        wav = self._modelo.generate(texto, language_id="es", **ajustes)
         segundos = time.perf_counter() - inicio
 
         import soundfile as sf

@@ -7,3 +7,7 @@ TestResults/
 publish/
 __pycache__/
 *.pyc
+
+# Material local de pruebas (no se sube): vídeos de prueba y código de VoiceStudio (AGPL, solo para consultar)
+VIDEOSMUESTRA/
+VOICESTUDIO/

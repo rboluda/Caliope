@@ -64,6 +64,25 @@ public class CatalogoTests
     }
 
     [Fact]
+    public void El_doblaje_tiene_separador_de_voz_y_traductor_con_versiones_fijadas()
+    {
+        var catalogo = CatalogoComponentes.CargarPredeterminado();
+
+        var separador = catalogo["separador-voz"];
+        Assert.Contains("demucs==4.1.0", separador.Instalacion!.Pasos.OfType<PasoEjecutar>().SelectMany(p => p.Argumentos));
+        var modelo = separador.Instalacion.Pasos.OfType<PasoModelo>().Single();
+        Assert.Equal("adefossez/HTDemucs", modelo.Repositorio);
+        Assert.Equal(40, modelo.Revision.Length);
+
+        var traductor = catalogo["traductor"];
+        var descargas = traductor.Instalacion!.Pasos.OfType<PasoDescargar>().ToList();
+        Assert.Equal(2, descargas.Count);
+        Assert.All(descargas, d => Assert.Equal(64, d.Sha256.Length));
+        Assert.Contains(traductor.Instalacion.Comprobar, r => r.EndsWith("llama-server.exe", StringComparison.Ordinal));
+        Assert.Equal(separador.Grupo, traductor.Grupo);
+    }
+
+    [Fact]
     public void Cada_motor_tiene_su_componente_en_el_catalogo()
     {
         var catalogo = CatalogoComponentes.CargarPredeterminado();

@@ -101,6 +101,54 @@ class MotorQwen:
                                  generate_kwargs={"language": idioma, "task": "transcribe"})
         return {"texto": resultado["text"].strip(), "segundos": round(time.perf_counter() - inicio, 1)}
 
+    def op_transcribir_tramos(self, params, progreso):
+        """Corta la voz por sus pausas y transcribe cada trozo: frases con su inicio y fin exactos.
+
+        Con audios largos, Whisper con marcas de tiempo pierde los tiempos (devuelve trozos de minutos); cortar antes
+        por silencios da frases de 1–15 s, que es lo que necesita el doblaje.
+        """
+        self._exigir_modelo("asr", t("transcribir"))
+        audio = params["audio"]
+        if not os.path.isfile(audio):
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio: {ruta}", ruta=audio))
+        import librosa
+        import numpy as np
+        import soundfile as sf
+
+        sr = 16000
+        datos, origen = sf.read(audio, dtype="float32", always_2d=True)
+        datos = datos.mean(axis=1)
+        if origen != sr:
+            datos = librosa.resample(datos, orig_sr=origen, target_sr=sr)
+        pausa = float(params.get("pausa_minima") or 0.35)
+        maximo = float(params.get("maximo") or 15.0)
+        progreso(None, t("Buscando las frases"))
+        tramos = []
+        for a, b in librosa.effects.split(datos, top_db=38, frame_length=1024, hop_length=256):
+            if tramos and (a - tramos[-1][1]) / sr < pausa:
+                tramos[-1][1] = b
+            else:
+                tramos.append([a, b])
+        frases, pendientes = [], [(a, b) for a, b in tramos if (b - a) / sr >= 0.25]
+        while pendientes:
+            a, b = pendientes.pop(0)
+            if (b - a) / sr <= maximo:
+                frases.append((a, b))
+                continue
+            # Las demasiado largas se parten por su punto más silencioso (en la mitad central).
+            rms = librosa.feature.rms(y=datos[a:b], frame_length=1024, hop_length=256)[0]
+            q = len(rms) // 4
+            corte = a + (q + int(np.argmin(rms[q:3 * q]))) * 256
+            pendientes[:0] = [(a, corte), (corte, b)]
+        progreso(None, t("Transcribiendo"))
+        inicio = time.perf_counter()
+        idioma = (params.get("idioma") or "English").lower()
+        textos = self._modelo([{"array": datos[a:b], "sampling_rate": sr} for a, b in frases], batch_size=8,
+                              generate_kwargs={"language": idioma, "task": "transcribe"}) if frases else []
+        resultado = [{"inicio": round(a / sr, 2), "fin": round(b / sr, 2), "texto": r["text"].strip()}
+                     for (a, b), r in zip(frases, textos) if r["text"].strip()]
+        return {"frases": resultado, "duracion": round(len(datos) / sr, 2), "segundos": round(time.perf_counter() - inicio, 1)}
+
     def op_descargar(self, params, progreso):
         self._liberar()
         return self._memoria()

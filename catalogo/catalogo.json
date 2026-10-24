@@ -851,6 +851,225 @@
       },
       "consejo": "Útil si vas a clonar voces. Ocupa poco.",
       "tecnico": "Whisper large-v3-turbo (OpenAI, MIT), revisión 41f01f3. Usa el mismo entorno que el motor de voz."
+    },
+    {
+      "id": "separador-voz",
+      "nombre": "Separador de voz y música",
+      "grupo": "Doblaje de vídeo",
+      "necesidad": "opcional",
+      "resumen": "Separa la voz de un vídeo de su música y sus efectos, para cambiar solo la voz al doblarlo.",
+      "detalle": "Escucha el audio de un vídeo y lo divide en dos: la voz de las personas y todo lo demás (música, ambiente, efectos). Al doblar, la voz se sustituye por la traducida y el fondo se conserva tal cual. Es rápido: unos 20 segundos para 8 minutos de vídeo con tarjeta gráfica.",
+      "consejo": "Solo hace falta para doblar vídeos. Si ya tienes el motor principal, reaprovecha su parte más pesada.",
+      "tecnico": "Demucs 4.1.0 (Meta, MIT), modelo htdemucs (adefossez/HTDemucs, revisión cbc8a9b, 81 MB), en su propio entorno con PyTorch 2.11.",
+      "habilita": [
+        "Doblar vídeos: separar la voz del fondo"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 5.0,
+        "sinGpuGb": 1.3
+      },
+      "requisitos": {
+        "vramMinimaGb": 1.0,
+        "vramRecomendadaGb": 2.0,
+        "funcionaEnCpu": true
+      },
+      "licencias": [
+        {
+          "nombre": "Demucs: MIT",
+          "url": "https://github.com/adefossez/demucs"
+        },
+        {
+          "nombre": "PyTorch: BSD-3",
+          "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
+        }
+      ],
+      "instalacion": {
+        "version": "demucs 4.1.0 · torch 2.11.0 · htdemucs cbc8a9b",
+        "pasos": [
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Preparando el separador de voz",
+            "programa": "{uv}",
+            "argumentos": [
+              "venv",
+              "{entornos}/demucs",
+              "--python",
+              "3.11",
+              "--clear"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Descargando la parte más pesada del separador",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--python",
+              "{entornos}/demucs/Scripts/python.exe",
+              "torch==2.11.0",
+              "--index-url",
+              "{indiceTorch}"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/demucs"
+              ],
+              "bytesConGpu": 4530000000,
+              "bytesSinGpu": 1000000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando el separador de voz",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--no-deps",
+              "--python",
+              "{entornos}/demucs/Scripts/python.exe",
+              "demucs==4.1.0",
+              "einops==0.8.2",
+              "julius==0.2.8",
+              "lameenc==1.9.0",
+              "pyyaml==6.0.3",
+              "safetensors==0.8.0",
+              "sphn==0.2.1",
+              "tqdm==4.70.1",
+              "numpy==2.4.6",
+              "soundfile==0.14.0",
+              "cffi==2.1.1",
+              "pycparser==3.12",
+              "huggingface-hub==2.2.0",
+              "hf-xet==1.7.0",
+              "anyio==4.15.1",
+              "click==8.5.0",
+              "colorama==0.4.6",
+              "h11==0.16.0",
+              "httpcore2==2.16.0",
+              "httpx2==2.16.0",
+              "idna==3.20",
+              "packaging==26.3",
+              "truststore==0.10.5"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/demucs"
+              ],
+              "bytesConGpu": 120000000,
+              "bytesSinGpu": 120000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando el separador de voz",
+            "programa": "{entornos}/demucs/Scripts/python.exe",
+            "argumentos": [
+              "-c",
+              "import torch, demucs.hf, soundfile; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
+            ],
+            "debeContener": "dispositivo={dispositivo}"
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modelo del separador",
+            "python": "{entornos}/demucs/Scripts/python.exe",
+            "repositorio": "adefossez/HTDemucs",
+            "revision": "cbc8a9b1a87023b7fd74e7b3412e6321c0eab003",
+            "tamanoBytes": 84000000,
+            "archivos": [
+              "htdemucs.yaml",
+              "955717e8.safetensors"
+            ]
+          }
+        ],
+        "rutas": [
+          "{entornos}/demucs",
+          "{modelos}/hub/models--adefossez--HTDemucs"
+        ],
+        "comprobar": [
+          "{entornos}/demucs/Scripts/python.exe",
+          "{modelos}/hub/models--adefossez--HTDemucs/snapshots/cbc8a9b1a87023b7fd74e7b3412e6321c0eab003/955717e8.safetensors"
+        ]
+      }
+    },
+    {
+      "id": "traductor",
+      "nombre": "Traductor con IA",
+      "grupo": "Doblaje de vídeo",
+      "necesidad": "opcional",
+      "resumen": "Traduce en tu ordenador, sin internet, el guion de un vídeo al castellano para doblarlo.",
+      "detalle": "Un modelo de lenguaje que traduce el guion con el contexto de todo el vídeo, en castellano de España, y que sabe acortar una frase cuando no cabe en el tiempo del original. Funciona sin conexión y no envía nada fuera de tu ordenador. Podrás corregir cualquier frase a mano.",
+      "consejo": "Solo hace falta para doblar vídeos. Funciona desde 4 GB de tarjeta; sin tarjeta NVIDIA también, pero lento.",
+      "tecnico": "llama.cpp b11819 (MIT, versión Vulkan) con Qwen3-4B-Instruct-2507 cuantizado a 4 bits (Qwen, Apache 2.0, GGUF de unsloth, revisión a06e946, 2,5 GB).",
+      "habilita": [
+        "Doblar vídeos: traducir el guion"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 2.6,
+        "sinGpuGb": 2.6
+      },
+      "requisitos": {
+        "vramMinimaGb": 3.5,
+        "vramRecomendadaGb": 4.5,
+        "funcionaEnCpu": true
+      },
+      "licencias": [
+        {
+          "nombre": "llama.cpp: MIT",
+          "url": "https://github.com/ggml-org/llama.cpp"
+        },
+        {
+          "nombre": "Qwen3: Apache 2.0",
+          "url": "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507"
+        }
+      ],
+      "instalacion": {
+        "version": "llama.cpp b11819 · Qwen3-4B-Instruct-2507 Q4_K_M a06e946",
+        "pasos": [
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando el programa del traductor",
+            "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11819/llama-b11819-bin-win-vulkan-x64.zip",
+            "sha256": "c3b2484d18258425fe3f69d0b6d07dce01501d6e010578dad3e53150a30df557",
+            "destino": "{descargas}/llama-b11819-vulkan.zip",
+            "tamanoBytes": 36875213
+          },
+          {
+            "tipo": "extraer",
+            "descripcion": "Preparando el programa del traductor",
+            "archivo": "{descargas}/llama-b11819-vulkan.zip",
+            "destino": "{herramientas}/llama"
+          },
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando el modelo del traductor",
+            "url": "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+            "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+            "destino": "{modelos}/traductor/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+            "tamanoBytes": 2497281120
+          }
+        ],
+        "rutas": [
+          "{herramientas}/llama",
+          "{modelos}/traductor"
+        ],
+        "comprobar": [
+          "{herramientas}/llama/llama-server.exe",
+          "{modelos}/traductor/Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+        ]
+      }
     }
   ]
 }

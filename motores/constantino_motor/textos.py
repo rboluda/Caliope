@@ -7,6 +7,12 @@ progreso): nada de lo que lee la aplicación ni de los registros.
 import os
 
 INGLES = {
+    # Doblaje
+    "Cargando el separador de voz": "Loading the voice separator",
+    "Separando la voz del fondo": "Separating the voice from the background",
+    "Buscando las frases": "Finding the sentences",
+    "El separador de voz no genera voz.": "The voice separator doesn't generate speech.",
+    "El separador de voz no transcribe.": "The voice separator doesn't transcribe.",
     # Progreso
     "Cargando el modelo de voz": "Loading the voice model",
     "Cargando el modelo de transcripción": "Loading the transcription model",
