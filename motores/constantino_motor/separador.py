@@ -44,13 +44,16 @@ class MotorSeparador:
         import yaml
         from demucs.apply import BagOfModels
         from demucs.hf import load_safetensors_model
-        from huggingface_hub import snapshot_download
+        from huggingface_hub import hf_hub_download
 
-        ruta = snapshot_download(repo_id=repositorio, revision=revision, local_files_only=True)
-        nombre = next(f[:-5] for f in os.listdir(ruta) if f.endswith(".yaml"))
-        with open(os.path.join(ruta, f"{nombre}.yaml"), encoding="utf-8") as f:
+        # Archivo a archivo: solo se descargan los dos que hacen falta, y huggingface_hub 2.x no deja abrir con
+        # snapshot_download (sin conexión) una copia a la que le faltan archivos del repositorio, aunque no se usen.
+        def archivo(nombre):
+            return hf_hub_download(repo_id=repositorio, filename=nombre, revision=revision, local_files_only=True)
+
+        with open(archivo("htdemucs.yaml"), encoding="utf-8") as f:
             bolsa = yaml.safe_load(f)
-        modelos = [load_safetensors_model(os.path.join(ruta, f"{firma}.safetensors")) for firma in bolsa["models"]]
+        modelos = [load_safetensors_model(archivo(f"{firma}.safetensors")) for firma in bolsa["models"]]
         self._modelo = BagOfModels(modelos, bolsa.get("weights"), bolsa.get("segment"))
         self._modelo.eval()
         self._cargado = (repositorio, revision)

@@ -76,26 +76,41 @@
             <!--  Ajustes y acción  -->
             <ui:Card Margin="0,8,0,0" Visibility="{Binding ViewModel.HayProyecto, Converter={StaticResource BoolAVisibilidad}}">
                 <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Voz de pronunciación'}" />
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon FontSize="20" Symbol="PersonVoice24" />
+                        <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="{l:T 'Las voces del vídeo se clonan solas'}" />
+                    </StackPanel>
                     <TextBlock
-                        Margin="0,2,0,6"
-                        FontSize="12"
+                        Margin="0,4,0,0"
                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                        Text="{l:T 'Una voz castellana de «Mis voces»: de ella sale cómo se pronuncia. El timbre es siempre el de la persona del vídeo. Así no se cuela el acento inglés.'}"
+                        Text="{l:T 'No tienes que elegir ninguna voz: el doblaje suena con la voz de la persona del vídeo, ahora hablando en castellano.'}"
                         TextWrapping="Wrap" />
-                    <ComboBox
-                        MaxWidth="360"
-                        HorizontalAlignment="Left"
-                        DisplayMemberPath="Nombre"
-                        IsEnabled="{Binding ViewModel.Libre}"
-                        ItemsSource="{Binding ViewModel.Voces}"
-                        SelectedValue="{Binding ViewModel.VozPronunciacion}"
-                        SelectedValuePath="Id" />
                     <CheckBox
                         Margin="0,12,0,0"
                         Content="{l:T 'Dejar la voz original muy baja de fondo (estilo documental)'}"
                         IsChecked="{Binding ViewModel.VozOriginalDeFondo}"
                         IsEnabled="{Binding ViewModel.Libre}" />
+
+                    <!--  Lo que casi nadie necesita tocar  -->
+                    <Expander Margin="0,12,0,0" Header="{l:T 'Ajustes avanzados'}">
+                        <StackPanel Margin="0,8,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="{l:T 'Acento castellano'}" />
+                            <TextBlock
+                                Margin="0,2,0,6"
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{l:T 'Para que la voz clonada no hable con acento inglés, Calíope toma la pronunciación de una voz castellana de «Mis voces». No cambia quién habla (eso sale siempre del vídeo), solo cómo se pronuncia. Normalmente no hace falta tocarlo.'}"
+                                TextWrapping="Wrap" />
+                            <ComboBox
+                                MaxWidth="360"
+                                HorizontalAlignment="Left"
+                                DisplayMemberPath="Nombre"
+                                IsEnabled="{Binding ViewModel.Libre}"
+                                ItemsSource="{Binding ViewModel.Voces}"
+                                SelectedValue="{Binding ViewModel.VozPronunciacion}"
+                                SelectedValuePath="Id" />
+                        </StackPanel>
+                    </Expander>
 
                     <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
                         <ui:Button Appearance="Primary" Command="{Binding ViewModel.DoblarCommand}" IsEnabled="{Binding ViewModel.Libre}">
