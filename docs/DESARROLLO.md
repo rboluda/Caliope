@@ -12,6 +12,17 @@ pwsh instalador/crear-instalador.ps1
 
 Publica la aplicación autocontenida (con .NET, sin los motores ni los modelos, que se descargan desde la propia aplicación) en `publish/app` y deja `publish/Caliope-<versión>-Instalador.exe`. La versión sale de `Directory.Build.props`. El instalador es por usuario (sin administrador), en español e inglés, y al desinstalar conserva la carpeta de datos.
 
+### Firma de código
+
+Cada versión sale firmada sola con el certificado personal de firma de código de rboluda: autofirmado, `CN=rboluda`, huella SHA1 `AFCC10CD1778706726F64437CE0AC9D35A8ED4E5`, válido hasta el 03/11/2031. No es el certificado de Azor: nunca se usa AzorCodeSign.
+
+- El certificado está fuera del repositorio, en `%USERPROFILE%\.firma\`. Allí están `rboluda-firma-codigo.pfx` (clave privada), `rboluda-firma-codigo.clave` (su contraseña, que `firmar.ps1` lee al firmar) y `rboluda-firma-codigo.cer` (público). El .pfx y la .clave no se suben nunca al repositorio ni a un CI, y la contraseña no se escribe en ningún archivo del proyecto.
+- `instalador/firmar.ps1 <archivo>` firma con el `signtool.exe` de versión más alta del Windows SDK (`Windows Kits\10\bin\*\x64`). Usa SHA-256 y el sello de tiempo de DigiCert, así que la firma sigue valiendo cuando caduque el certificado. Si no encuentra el .pfx o la .clave (otra persona compilando), avisa y sigue sin firmar.
+- `crear-instalador.ps1` firma `publish\app\Caliope.exe` después de `dotnet publish`. Si está el certificado, también define en ISCC la herramienta `firma` y `Firmar`. Con eso, `Caliope.iss` activa `SignTool=firma` y `SignedUninstaller=yes`, e Inno firma el instalador y el desinstalador (`unins000.exe`).
+- Solo se firman esos tres ejecutables, que son nuestros. El resto de `publish\app` (.NET, WPF-UI, NAudio, CommunityToolkit…) va tal como lo publican sus autores. `Caliope.dll` y `Constantino.Core.dll` tampoco se firman.
+- El actualizador automático no comprueba ninguna huella: solo descarga el instalador de la última versión de GitHub.
+- Para comprobarlo: `Get-AuthenticodeSignature <exe>` debe mostrar `CN=rboluda` y el sello de DigiCert. El estado «UnknownError» es normal: la firma es correcta, pero el certificado autofirmado no es de confianza en ese equipo.
+
 ## Historia (hitos del diseño)
 
 - **H0**: ventana principal con navegación, catálogo de componentes y análisis del equipo con recomendaciones.

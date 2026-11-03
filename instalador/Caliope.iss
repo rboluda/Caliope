@@ -42,6 +42,11 @@ SolidCompression=yes
 CloseApplications=yes
 OutputDir=..\publish
 OutputBaseFilename=Caliope-{#Version}-Instalador
+#ifdef Firmar
+; El instalador y el desinstalador se firman con firmar.ps1 (crear-instalador.ps1 define «firma» si está el certificado).
+SignTool=firma
+SignedUninstaller=yes
+#endif
 ShowLanguageDialog=auto
 
 [Languages]
