@@ -183,6 +183,99 @@ class MotorChatterbox:
         return {"salida": salida, "duracion": round(len(audio) / sr, 2), "segundos": round(segundos, 1),
                 "frecuencia": sr, **self._memoria(pico=True)}
 
+    def op_hablantes(self, params, progreso):
+        """Quién habla en cada momento de una pista de voz (doblaje con varias personas).
+
+        Huella de voz (el codificador del propio motor) de ventanas de 1,6 s cada 0,5 s sobre lo que suena, y
+        k-medias: se acepta el mayor número de personas (hasta «max_hablantes») cuyos grupos se parezcan entre sí
+        menos que «umbral» (una persona partida a la fuerza se parece ~0,97; dos personas, ~0,83). Los cambios de
+        menos de 1 s no cuentan. Devuelve turnos {inicio, fin, hablante} con las personas numeradas por orden de
+        aparición.
+        """
+        if self._modelo is None:
+            raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))
+        audio = params["audio"]
+        if not os.path.isfile(audio):
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio: {ruta}", ruta=audio))
+        import librosa
+        import numpy as np
+        import soundfile as sf
+        from chatterbox.models.voice_encoder.melspec import melspectrogram
+
+        maximo = int(params.get("max_hablantes") or 4)
+        umbral = float(params.get("umbral") or 0.87)
+        progreso(None, t("Distinguiendo a las personas que hablan"))
+        inicio = time.perf_counter()
+        ve = self._modelo.ve
+        sr = ve.hp.sample_rate
+        datos, origen = sf.read(audio, dtype="float32", always_2d=True)
+        datos = datos.mean(axis=1)
+        if origen != sr:
+            datos = librosa.resample(datos, orig_sr=origen, target_sr=sr)
+
+        # Qué suena (mismo criterio que al cortar las frases) y el espectro de todo el audio de una vez.
+        voz = np.zeros(len(datos), dtype=bool)
+        for a, b in librosa.effects.split(datos, top_db=38, frame_length=1024, hop_length=256):
+            voz[a:b] = True
+        mel = melspectrogram(datos, ve.hp).T  # (tramas, mels), 100 tramas por segundo
+        tramas, paso = ve.hp.ve_partial_frames, int(round(0.5 * sr / ve.hp.hop_size))
+        ventanas, centros = [], []
+        for k in range(0, max(0, len(mel) - tramas), paso):
+            a, b = k * ve.hp.hop_size, (k + tramas) * ve.hp.hop_size
+            if voz[a:b].mean() >= 0.7:
+                ventanas.append(mel[k:k + tramas])
+                centros.append((a + b) / 2 / sr)
+        if len(ventanas) < 4:
+            return {"hablantes": 1, "turnos": [{"inicio": 0.0, "fin": round(len(datos) / sr, 2), "hablante": 1}],
+                    "segundos": round(time.perf_counter() - inicio, 1)}
+        torch = self._torch
+        huellas = []
+        with torch.inference_mode():
+            for k in range(0, len(ventanas), 64):
+                lote = torch.from_numpy(np.stack(ventanas[k:k + 64]).astype(np.float32)).to(self.dispositivo)
+                huellas.append(ve(lote).cpu().numpy())
+        X = np.concatenate(huellas)
+        X /= np.linalg.norm(X, axis=1, keepdims=True)
+
+        etiquetas = np.zeros(len(X), dtype=int)
+        for n in range(2, maximo + 1):
+            centros_k, e = _kmedias(X, n)
+            parecido = centros_k @ centros_k.T
+            if np.max(parecido[~np.eye(n, dtype=bool)]) >= umbral or min(np.bincount(e, minlength=n)) < 6:
+                break
+            etiquetas = e
+
+        # Cambios de menos de 1 s (2 ventanas) no cuentan: pasan a la persona de al lado.
+        cambiado = True
+        while cambiado:
+            cambiado = False
+            k = 0
+            while k < len(etiquetas):
+                j = k
+                while j + 1 < len(etiquetas) and etiquetas[j + 1] == etiquetas[k]:
+                    j += 1
+                if j - k + 1 < 2 and (k > 0 or j + 1 < len(etiquetas)):
+                    etiquetas[k:j + 1] = etiquetas[k - 1] if k > 0 else etiquetas[j + 1]
+                    cambiado = True
+                k = j + 1
+
+        # Turnos: ventanas seguidas de la misma persona (una pausa de más de 0,6 s también corta).
+        turnos = []
+        medio = 0.25
+        for c, e in zip(centros, etiquetas):
+            if turnos and turnos[-1][2] == e and c - medio - turnos[-1][1] <= 0.6:
+                turnos[-1][1] = c + medio
+            else:
+                turnos.append([c - medio, c + medio, e])
+        numero = {}
+        for _, _, e in turnos:
+            numero.setdefault(int(e), len(numero) + 1)
+        return {
+            "hablantes": len(numero),
+            "turnos": [{"inicio": round(a, 2), "fin": round(b, 2), "hablante": numero[int(e)]} for a, b, e in turnos],
+            "segundos": round(time.perf_counter() - inicio, 1),
+        }
+
     def op_disenar(self, params, progreso):
         raise ErrorMotor("no_soportado", t("Chatterbox no diseña voces: usa Qwen3-TTS VoiceDesign."))
 
@@ -226,3 +319,29 @@ class MotorChatterbox:
         if pico:
             datos["vram_pico_gib"] = round(torch.cuda.max_memory_reserved() / GIB, 2)
         return datos
+
+
+def _kmedias(X, n, intentos=8, iteraciones=50, semilla=0):
+    """k-medias sobre huellas normalizadas (similitud del coseno). Devuelve (centros normalizados, etiquetas)."""
+    import numpy as np
+
+    azar = np.random.default_rng(semilla)
+    mejor = None
+    for _ in range(intentos):
+        centros = [X[azar.integers(len(X))]]
+        for _ in range(1, n):
+            distancia = 1 - np.max(X @ np.stack(centros).T, axis=1)
+            p = np.maximum(distancia, 0) ** 2
+            centros.append(X[azar.choice(len(X), p=p / p.sum()) if p.sum() > 0 else azar.integers(len(X))])
+        centros = np.stack(centros)
+        for _ in range(iteraciones):
+            etiquetas = np.argmax(X @ centros.T, axis=1)
+            nuevos = np.stack([X[etiquetas == k].mean(axis=0) if np.any(etiquetas == k) else centros[k] for k in range(n)])
+            nuevos /= np.linalg.norm(nuevos, axis=1, keepdims=True)
+            if np.allclose(nuevos, centros):
+                break
+            centros = nuevos
+        coste = np.sum(1 - np.max(X @ centros.T, axis=1))
+        if mejor is None or coste < mejor[0]:
+            mejor = (coste, centros, np.argmax(X @ centros.T, axis=1))
+    return mejor[1], mejor[2]

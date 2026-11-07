@@ -28,7 +28,8 @@ Calíope turns text into speech with artificial intelligence models that **run o
 - 🎨 **Design new voices** by describing them in words: “40-year-old man, deep and warm voice, slow pace, mysterious tone, Spanish from Spain”.
 - 🎙️ **Clone a voice** from 10 to 20 seconds of recording: your own, or that of someone who has given you permission. You can record it with your microphone right in the app, and with Whisper the transcript writes itself.
 - 📖 **Narrate long scripts** paragraph by paragraph, with pauses, whispers and changes of emotion marked in the text. If you change a sentence, only that paragraph is generated again.
-- 🎬 **Dub videos from English into Spanish** keeping the speaker's voice: Calíope separates the voice from the music, transcribes, translates with an AI on your computer and says each sentence again with the original timbre and Spanish pronunciation, without an English accent. For now, videos with one person and up to 10 minutes long.
+- 📝 **Meeting minutes**: from a meeting recording (phone, recorder or Teams) to its minutes, with who said what, key points, decisions and tasks with owner and deadline, all with an AI on your computer. Saved as Word.
+- 🎬 **Dub videos from English into Spanish** keeping the speaker's voice: Calíope separates the voice from the music, transcribes, translates with an AI on your computer and says each sentence again with the original timbre and Spanish pronunciation, without an English accent. It tells apart each person who speaks (up to 4) and dubs them with their own voice; videos up to 10 minutes long.
 - 🎭 **Variants of the same voice**: whispering, tense, frightened, sad, cheerful or shouting.
 - 🎚️ **Fine-tune the result**: expressiveness, speed and pitch (independent of each other), pauses and volume leveled for video or podcasts.
 - 📤 **Get the audio as MP3 or WAV**, or drag it straight into your video editor.

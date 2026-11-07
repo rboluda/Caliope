@@ -28,7 +28,8 @@ Calíope convierte texto en voz con modelos de inteligencia artificial que **se 
 - 🎨 **Diseña voces nuevas** describiéndolas con palabras: «hombre de 40 años, voz grave y cálida, ritmo pausado, tono misterioso, castellano de España».
 - 🎙️ **Clona una voz** a partir de 10 a 20 segundos de grabación: la tuya o la de alguien que te haya dado permiso. Puedes grabarla con el micrófono desde la propia aplicación, y con Whisper la transcripción se escribe sola.
 - 📖 **Narra guiones largos** por párrafos, con pausas, susurros y cambios de emoción marcados en el texto. Si cambias una frase, solo se vuelve a generar ese párrafo.
-- 🎬 **Dobla vídeos del inglés al castellano** conservando la voz de quien habla: Calíope separa la voz de la música, transcribe, traduce con una IA en tu ordenador y vuelve a decir cada frase con el timbre original y pronunciación castellana, sin acento inglés. De momento, vídeos de una persona y de hasta 10 minutos.
+- 📝 **Actas de reuniones**: de la grabación de una reunión (móvil, grabadora o Teams) al acta, con quién dijo qué, puntos clave, decisiones y tareas con responsable y plazo, todo con una IA en tu ordenador. Se guarda en Word.
+- 🎬 **Dobla vídeos del inglés al castellano** conservando la voz de quien habla: Calíope separa la voz de la música, transcribe, traduce con una IA en tu ordenador y vuelve a decir cada frase con el timbre original y pronunciación castellana, sin acento inglés. Distingue a cada persona que habla (hasta 4) y la dobla con su propia voz; vídeos de hasta 10 minutos.
 - 🎭 **Variantes de una misma voz**: susurrando, tensa, asustada, triste, alegre o gritando.
 - 🎚️ **Afina el resultado**: expresividad, velocidad y tono (independientes entre sí), pausas y volumen normalizado para vídeo o pódcast.
 - 📤 **Saca el audio en MP3 o WAV** o arrástralo directamente a tu editor de vídeo.

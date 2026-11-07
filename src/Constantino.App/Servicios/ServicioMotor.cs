@@ -127,16 +127,38 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         EjecutarAsync(ComponenteSeparador, (motor, progreso) =>
             motor.SepararAsync(new ParametrosSeparacion(audio, voces, fondo), progreso, ct), ct);
 
-    /// <summary>Frases con su inicio y fin: corta la voz por sus pausas y transcribe cada trozo (Whisper).</summary>
-    public Task<ResultadoTramos> TranscribirTramosAsync(string audio, string idioma, CancellationToken ct = default) =>
+    /// <summary>
+    /// Frases con su inicio y fin: corta la voz por sus pausas (y por <paramref name="cortes"/>, donde cambia quien
+    /// habla) y transcribe cada trozo (Whisper).
+    /// </summary>
+    public Task<ResultadoTramos> TranscribirTramosAsync(string audio, string idioma, IReadOnlyList<double>? cortes = null,
+        CancellationToken ct = default) =>
         EjecutarAsync(ModeloWhisper, (motor, progreso) =>
-            motor.TranscribirTramosAsync(new ParametrosTramos(audio, idioma), progreso, ct), ct);
+            motor.TranscribirTramosAsync(new ParametrosTramos(audio, idioma, Cortes: cortes), progreso, ct), ct);
+
+    /// <summary>Quién habla en cada momento de una pista de voz (con el codificador de voz del motor castellano).</summary>
+    public Task<ResultadoHablantes> DetectarHablantesAsync(string audio, CancellationToken ct = default) =>
+        EjecutarAsync(MotoresDeVoz.Componente(MotoresDeVoz.Chatterbox), (motor, progreso) =>
+            motor.DetectarHablantesAsync(new ParametrosHablantes(audio), progreso, ct), ct);
 
     /// <summary>Una frase doblada: pronunciación de la voz nativa y timbre de la original (motor castellano).</summary>
     public Task<ResultadoSintesis> SintetizarDoblajeAsync(string texto, string pronunciacion, string timbre, string salida, int semilla,
         CancellationToken ct = default) =>
         EjecutarAsync(MotoresDeVoz.Componente(MotoresDeVoz.Chatterbox), (motor, progreso) =>
             motor.SintetizarDoblajeAsync(new ParametrosDoblaje(texto, pronunciacion, timbre, salida, semilla), progreso, ct), ct);
+
+    // --- Actas -----------------------------------------------------------------------------------
+
+    /// <summary>Las frases de una reunión en castellano, con los trozos muy cortos unidos y sin lo que Whisper se inventa.</summary>
+    public Task<ResultadoTramos> TranscribirReunionAsync(string audio, CancellationToken ct = default) =>
+        EjecutarAsync(ModeloWhisper, (motor, progreso) =>
+            motor.TranscribirTramosAsync(new ParametrosTramos(audio, "Spanish", UnirCortos: true), progreso, ct), ct);
+
+    /// <summary>Quién dice cada tramo de una reunión, por su huella de voz (con la voz instalada del motor principal).</summary>
+    public async Task<ResultadoHablantesTramos> HablantesReunionAsync(string audio, IReadOnlyList<TramoTranscrito> tramos, int? personas,
+        CancellationToken ct = default) =>
+        await EjecutarAsync(await ModeloDeVozAsync(MotoresDeVoz.Qwen), (motor, progreso) =>
+            motor.HablantesTramosAsync(new ParametrosHablantesTramos(audio, tramos, personas), progreso, ct), ct);
 
     /// <summary>Una operación a la vez, con el modelo que necesite ya cargado.</summary>
     private async Task<TResultado> EjecutarAsync<TResultado>(string modelo, Func<MotorQwen, IProgress<EventoMotor>, Task<TResultado>> trabajo, CancellationToken ct)

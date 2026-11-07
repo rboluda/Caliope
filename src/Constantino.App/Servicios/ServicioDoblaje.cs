@@ -74,8 +74,12 @@ public sealed class ServicioDoblaje(ServicioInstalacion instalacion, ServicioMot
         public Task SepararAsync(string audio, string voces, string fondo, CancellationToken ct) =>
             motor.SepararAsync(audio, voces, fondo, ct);
 
-        public async Task<IReadOnlyList<TramoTranscrito>> TranscribirAsync(string voces, string idioma, CancellationToken ct) =>
-            (await motor.TranscribirTramosAsync(voces, idioma, ct)).Frases;
+        public async Task<IReadOnlyList<TurnoHablante>> DetectarHablantesAsync(string voces, CancellationToken ct) =>
+            (await motor.DetectarHablantesAsync(voces, ct)).Turnos;
+
+        public async Task<IReadOnlyList<TramoTranscrito>> TranscribirAsync(string voces, string idioma, IReadOnlyList<double> cortes,
+            CancellationToken ct) =>
+            (await motor.TranscribirTramosAsync(voces, idioma, cortes, ct)).Frases;
 
         public async Task<double> SintetizarAsync(string texto, string pronunciacion, string timbre, string salida, int semilla,
             CancellationToken ct) =>

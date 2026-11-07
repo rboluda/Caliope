@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Media;
 using Constantino.App.Paginas;
 using Constantino.App.Servicios;
 using Constantino.Core.Doblaje;
@@ -13,8 +14,9 @@ using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
 
-/// <summary>Una frase del doblaje en la lista: el original, la traducción (editable) y si cabe en su tiempo.</summary>
-public sealed partial class FilaFrase(FraseDoblaje f, string archivo, Action<FilaFrase> alCambiar) : ObservableObject
+/// <summary>Una frase del doblaje en la lista: quién la dice, el original, la traducción (editable) y si cabe en su tiempo.</summary>
+public sealed partial class FilaFrase(FraseDoblaje f, string archivo, Brush color, Action<FilaFrase> alCambiar,
+    Action<FilaFrase> alCambiarHablante) : ObservableObject
 {
     public int Id { get; } = f.Id;
     public string Tiempo { get; } = TimeSpan.FromSeconds(f.Inicio).ToString(@"m\:ss");
@@ -22,11 +24,15 @@ public sealed partial class FilaFrase(FraseDoblaje f, string archivo, Action<Fil
     public string Archivo { get; } = archivo;
 
     [ObservableProperty] public partial string Traduccion { get; set; } = f.Traduccion;
+    [ObservableProperty] public partial int Hablante { get; set; } = f.Hablante;
+    [ObservableProperty] public partial Brush Color { get; set; } = color;
     [ObservableProperty] public partial string Estado { get; set; } = TextoEncaje(f);
     [ObservableProperty] public partial ControlAppearance Apariencia { get; set; } = AparienciaDe(f.Encaje);
     [ObservableProperty] public partial bool Generada { get; set; } = f.Encaje != EncajeFrase.SinGenerar && File.Exists(archivo);
 
     partial void OnTraduccionChanged(string value) => alCambiar(this);
+
+    partial void OnHablanteChanged(int value) => alCambiarHablante(this);
 
     public void Actualizar(FraseDoblaje f)
     {
@@ -52,11 +58,43 @@ public sealed partial class FilaFrase(FraseDoblaje f, string archivo, Action<Fil
     };
 }
 
+/// <summary>Una persona del vídeo: su nombre, su voz original, la voz que le da la pronunciación y «unir con…».</summary>
+public sealed partial class FilaHablante(HablanteDoblaje h, string referencia, Brush color, Action<FilaHablante> alCambiar,
+    Action<FilaHablante, FilaHablante> alUnir) : ObservableObject
+{
+    public int Id { get; } = h.Id;
+    public string Referencia { get; } = referencia;
+    public Brush Color { get; } = color;
+
+    /// <summary>Las demás personas, para «unir con…».</summary>
+    public ObservableCollection<FilaHablante> Otras { get; } = [];
+
+    [ObservableProperty] public partial string Nombre { get; set; } = h.Nombre;
+    [ObservableProperty] public partial string? VozPronunciacion { get; set; } = h.VozPronunciacion;
+    [ObservableProperty] public partial string Detalle { get; set; } = "";
+    [ObservableProperty] public partial FilaHablante? UnirCon { get; set; }
+
+    partial void OnNombreChanged(string value) => alCambiar(this);
+
+    partial void OnVozPronunciacionChanged(string? value) => alCambiar(this);
+
+    partial void OnUnirConChanged(FilaHablante? value)
+    {
+        if (value is not null)
+            alUnir(this, value);
+    }
+}
+
 public sealed record OpcionDoblaje(string Id, string Nombre);
 
 public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoces voces, ServicioReproductor reproductor,
     INavigationService navegacion) : ObservableObject
 {
+    /// <summary>Un color por persona, en la lista de frases y en el panel de personas.</summary>
+    private static readonly Brush[] Colores = new[] { "#2B88D8", "#E3008C", "#10893E", "#F7630C", "#8764B8", "#C19C00" }
+        .Select(c => { var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(c)); b.Freeze(); return (Brush)b; })
+        .ToArray();
+
     private ProyectoDoblaje? _proyecto;
     private AlmacenDoblajes? _almacen;
     private CancellationTokenSource? _cancelacion;
@@ -66,6 +104,7 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
     public ObservableCollection<OpcionDoblaje> Proyectos { get; } = [];
     public ObservableCollection<OpcionVoz> Voces { get; } = [];
     public ObservableCollection<FilaFrase> Frases { get; } = [];
+    public ObservableCollection<FilaHablante> Hablantes { get; } = [];
 
     [ObservableProperty] public partial string? Faltan { get; set; }
 
@@ -75,8 +114,8 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
 
     public bool HayProyecto => ProyectoSeleccionado is not null;
 
-    [ObservableProperty] public partial string? VozPronunciacion { get; set; }
     [ObservableProperty] public partial bool VozOriginalDeFondo { get; set; }
+    [ObservableProperty] public partial string? ResumenHablantes { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Libre))]
@@ -89,6 +128,9 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
     [ObservableProperty] public partial string? Error { get; set; }
     [ObservableProperty] public partial string? Resumen { get; set; }
     [ObservableProperty] public partial string? VideoExportado { get; set; }
+
+    /// <summary>La voz de «Mis voces» que da la pronunciación a las personas nuevas: la predeterminada.</summary>
+    private string? VozPorDefecto => voces.Predeterminada ?? Voces.FirstOrDefault()?.Id;
 
     public async Task CargarAsync()
     {
@@ -110,19 +152,34 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
 
     partial void OnProyectoSeleccionadoChanged(OpcionDoblaje? value) => Mostrar(value is null ? null : _almacen?.Abrir(value.Id));
 
+    private static Brush ColorDe(int hablante) => Colores[(Math.Max(hablante, 1) - 1) % Colores.Length];
+
     private void Mostrar(ProyectoDoblaje? p)
     {
         _cargando = true;
         _proyecto = p;
         Frases.Clear();
+        Hablantes.Clear();
         // El botón «Ver el vídeo doblado» aparece siempre que exista, también al volver a abrir el proyecto.
         VideoExportado = p is not null && _almacen is not null && File.Exists(_almacen.Exportado(p, "mp4")) ? _almacen.Exportado(p, "mp4") : null;
         if (p is not null && _almacen is not null)
         {
+            foreach (var h in p.ListaHablantes)
+            {
+                Hablantes.Add(new FilaHablante(h, Path.Combine(_almacen.Trabajo(p.Id), $"referencia_{h.Id}.wav"), ColorDe(h.Id),
+                    HablanteCambiado, (origen, destino) => _ = UnirAsync(origen, destino)));
+            }
+            foreach (var h in Hablantes)
+            {
+                foreach (var otra in Hablantes.Where(o => o != h))
+                    h.Otras.Add(otra);
+            }
             foreach (var f in p.ListaFrases)
-                Frases.Add(new FilaFrase(f, Path.Combine(_almacen.Frases(p.Id), $"{f.Id:000}.wav"), TraduccionCambiada));
+            {
+                Frases.Add(new FilaFrase(f, Path.Combine(_almacen.Frases(p.Id), $"{f.Id:000}.wav"), ColorDe(f.Hablante),
+                    TraduccionCambiada, HablanteDeFraseCambiado));
+            }
             VozOriginalDeFondo = p.VozOriginalDeFondo;
-            VozPronunciacion = p.ListaHablantes.FirstOrDefault()?.VozPronunciacion ?? voces.Predeterminada ?? Voces.FirstOrDefault()?.Id;
         }
         ActualizarResumen();
         _cargando = false;
@@ -132,9 +189,20 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
     {
         if (_proyecto is not { } p)
         {
-            Resumen = null;
+            Resumen = ResumenHablantes = null;
             return;
         }
+        foreach (var h in Hablantes)
+        {
+            var suyas = p.ListaFrases.Where(f => f.Hablante == h.Id).ToList();
+            h.Detalle = T("{0} frases · {1} de voz", suyas.Count, TimeSpan.FromSeconds(suyas.Sum(f => f.Hueco)).ToString(@"m\:ss"));
+        }
+        ResumenHablantes = Hablantes.Count switch
+        {
+            0 => null,
+            1 => T("Calíope ha encontrado una persona en el vídeo. Si hablan varias y no las ha distinguido, pulsa «Volver a distinguir a las personas»."),
+            _ => T("Calíope ha distinguido {0} personas: cada una se dobla con su propia voz. Ponles nombre, escucha su voz original y, si dos son la misma, únelas.", Hablantes.Count),
+        };
         if (p.ListaFrases.Count == 0)
         {
             Resumen = T("Vídeo de {0}. Pulsa «Doblar vídeo» para empezar.", TimeSpan.FromSeconds(p.Duracion).ToString(@"m\:ss"));
@@ -159,11 +227,61 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
         ActualizarResumen();
     }
 
-    partial void OnVozPronunciacionChanged(string? value)
+    /// <summary>La frase pasa a otra persona: se doblará con su voz.</summary>
+    private void HablanteDeFraseCambiado(FilaFrase fila)
     {
-        if (_cargando || _proyecto is null || _almacen is null || _proyecto.ListaHablantes.Count == 0)
+        if (_cargando || _proyecto is null || _almacen is null)
             return;
-        _proyecto = _almacen.Guardar(_proyecto with { Hablantes = _proyecto.ListaHablantes.Select(h => h with { VozPronunciacion = value }).ToList() });
+        var f = _proyecto.ListaFrases.First(x => x.Id == fila.Id);
+        if (f.Hablante == fila.Hablante)
+            return;
+        _proyecto = _almacen.Guardar(_proyecto.ConFrase(f with { Hablante = fila.Hablante, Encaje = EncajeFrase.SinGenerar }));
+        fila.Color = ColorDe(fila.Hablante);
+        fila.Actualizar(_proyecto.ListaFrases.First(x => x.Id == fila.Id));
+        ActualizarResumen();
+    }
+
+    /// <summary>Nombre o voz de pronunciación de una persona. Otra voz deja sus frases pendientes de volver a doblar.</summary>
+    private void HablanteCambiado(FilaHablante fila)
+    {
+        if (_cargando || _proyecto is null || _almacen is null)
+            return;
+        var antes = _proyecto.ListaHablantes.First(h => h.Id == fila.Id);
+        var ahora = antes with { Nombre = string.IsNullOrWhiteSpace(fila.Nombre) ? antes.Nombre : fila.Nombre.Trim(), VozPronunciacion = fila.VozPronunciacion };
+        var p = _proyecto with { Hablantes = _proyecto.ListaHablantes.Select(h => h.Id == fila.Id ? ahora : h).ToList() };
+        if (ahora.VozPronunciacion != antes.VozPronunciacion)
+        {
+            p = p with { Frases = p.ListaFrases.Select(f => f.Hablante == fila.Id ? f with { Encaje = EncajeFrase.SinGenerar } : f).ToList() };
+            foreach (var f in Frases.Where(x => x.Hablante == fila.Id))
+                f.Actualizar(p.ListaFrases.First(x => x.Id == f.Id));
+        }
+        _proyecto = _almacen.Guardar(p);
+        // Los desplegables de las frases muestran el nombre: se refrescan.
+        if (ahora.Nombre != antes.Nombre)
+            Mostrar(_proyecto);
+        else
+            ActualizarResumen();
+    }
+
+    private async Task UnirAsync(FilaHablante origen, FilaHablante destino)
+    {
+        if (_cargando || _proyecto is null || Ocupado)
+            return;
+        var caja = new Wpf.Ui.Controls.MessageBox
+        {
+            Title = T("Unir personas"),
+            Content = T("Las frases de «{0}» pasarán a «{1}» y se doblarán con su voz. ¿Son la misma persona?", origen.Nombre, destino.Nombre),
+            PrimaryButtonText = T("Unir"),
+            CloseButtonText = T("Cancelar"),
+        };
+        if (await caja.ShowDialogAsync() != Wpf.Ui.Controls.MessageBoxResult.Primary)
+        {
+            origen.UnirCon = null;
+            return;
+        }
+        await using var sesion = await doblaje.AbrirAsync();
+        Mostrar(sesion.Doblador.UnirHablantes(_proyecto, origen.Id, destino.Id));
+        Mensaje = T("Unidas. Pulsa «Doblar vídeo» para rehacer sus frases con la misma voz.");
     }
 
     partial void OnVozOriginalDeFondoChanged(bool value)
@@ -203,7 +321,7 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
     [RelayCommand]
     private Task DoblarAsync() => TrabajarAsync(async (sesion, progreso, ct) =>
     {
-        var p = await sesion.Doblador.PrepararAsync(_proyecto!, VozPronunciacion, progreso, ct);
+        var p = await sesion.Doblador.PrepararAsync(_proyecto!, VozPorDefecto, progreso, ct);
         EnPantalla(() => Mostrar(p));
         p = await sesion.Doblador.GenerarAsync(p, RutaVoz, null, progreso, ct);
         EnPantalla(() => Mostrar(p));
@@ -219,11 +337,25 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
     [RelayCommand]
     private Task PrepararAsync() => TrabajarAsync(async (sesion, progreso, ct) =>
     {
-        var p = await sesion.Doblador.PrepararAsync(_proyecto!, VozPronunciacion, progreso, ct);
+        var p = await sesion.Doblador.PrepararAsync(_proyecto!, VozPorDefecto, progreso, ct);
         EnPantalla(() =>
         {
             Mostrar(p);
-            Mensaje = T("Guion listo: revisa la traducción y pulsa «Doblar vídeo».");
+            Mensaje = T("Guion listo: revisa la traducción y las personas, y pulsa «Doblar vídeo».");
+        });
+    });
+
+    /// <summary>Vuelve a distinguir quién habla (las traducciones se conservan).</summary>
+    [RelayCommand]
+    private Task DistinguirPersonasAsync() => TrabajarAsync(async (sesion, progreso, ct) =>
+    {
+        var p = await sesion.Doblador.DetectarHablantesAsync(_proyecto!, VozPorDefecto, progreso, ct);
+        EnPantalla(() =>
+        {
+            Mostrar(p);
+            Mensaje = p.ListaHablantes.Count == 1
+                ? T("Solo se oye a una persona.")
+                : T("Distinguidas {0} personas. Revisa sus nombres y pulsa «Doblar vídeo».", p.ListaHablantes.Count);
         });
     });
 
@@ -239,12 +371,18 @@ public sealed partial class DoblarViewModel(ServicioDoblaje doblaje, ServicioVoc
     });
 
     [RelayCommand]
-    private void Escuchar(FilaFrase fila)
+    private void Escuchar(FilaFrase fila) => Alternar(fila.Archivo);
+
+    /// <summary>La voz original de una persona (el tramo del que se clona su timbre).</summary>
+    [RelayCommand]
+    private void EscucharHablante(FilaHablante fila) => Alternar(fila.Referencia);
+
+    private void Alternar(string archivo)
     {
-        if (Reproductor.Sonando == fila.Archivo)
+        if (Reproductor.Sonando == archivo)
             Reproductor.Detener();
-        else if (File.Exists(fila.Archivo))
-            Reproductor.Reproducir(fila.Archivo);
+        else if (File.Exists(archivo))
+            Reproductor.Reproducir(archivo);
     }
 
     [RelayCommand]

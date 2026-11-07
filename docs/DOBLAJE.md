@@ -1,6 +1,7 @@
 # Calíope · Módulo «Doblar» (diseño)
 
-> Estado: **diseño aprobado, pendiente de empezar**. No hay nada desarrollado. Decisiones del usuario (22/10/2026):
+> Estado: **fase 1 publicada en la 1.2.0** (una persona) y **fase 2 en la 1.3.0** (varias personas, ver §10).
+> Decisiones del usuario (22/10/2026):
 > traducción con un **modelo de IA local grande**, hablantes **detectados automáticamente y corregibles**, solo a
 > **castellano**, vídeos de hasta **10 minutos**, voz original de fondo **opcional** (ver §8).
 
@@ -208,3 +209,19 @@ Objetivo: doblar en Calíope un vídeo de **un hablante** de punta a punta, con 
 
 **Fuera de la fase 1:** varios hablantes (fase 2: VoiceEncoder + k-medias, umbral 0,87, ya probado), glosario,
 tomas, voces de pronunciación incluidas (hombre/mujer), RTX 50.
+
+## 10. Fase 2: varias personas (1.3.0)
+
+- **Quién habla:** operación `hablantes` del motor castellano: huella del codificador de voz de Chatterbox (`ve.pt`)
+  en ventanas de 1,6 s cada 0,5 s sobre lo que suena, y k-medias propio (sin scikit-learn en ese entorno). Se acepta el
+  mayor número de personas (hasta 4) cuyos grupos se parezcan menos de **0,87** y tengan al menos 6 ventanas; los
+  cambios de menos de 1 s no cuentan. En `clip2voices.mp4` (3:31) encuentra 2 personas en 13 s.
+- **Frases de una sola persona:** los cambios de persona se pasan a Whisper como `cortes`, y cada frase es de quien
+  más habla en ella (`Doblador.HablanteDe`). Las personas se renumeran por orden de aparición y cada una tiene su
+  tramo de referencia (su frase más larga, alargada solo con frases suyas, hasta 12 s).
+- **Traducción:** cada frase lleva `persona`, para mantener el trato y la concordancia en los diálogos.
+- **Pantalla:** panel «Personas del vídeo» (color, nombre, escuchar su voz original, voz de pronunciación por persona
+  y «unir con…») y, en cada frase, un desplegable para cambiar quién la dice. «Volver a distinguir a las personas»
+  sirve para los doblajes hechos con la 1.2 (conserva las traducciones).
+- **Pendiente:** elegir sola la voz de pronunciación según la persona (hombre o mujer) cuando en «Mis voces» haya
+  de los dos tipos; hoy todas empiezan con la predeterminada y se cambia en el panel.

@@ -41,7 +41,25 @@ public sealed record ParametrosDiseno(
 
 /// <param name="PausaMinima">Silencio mínimo, en segundos, que separa dos frases.</param>
 /// <param name="Maximo">Las frases más largas (en segundos) se parten por su punto más silencioso.</param>
-public sealed record ParametrosTramos(string Audio, string Idioma, double? PausaMinima = null, double? Maximo = null);
+/// <param name="Cortes">Instantes (s) en los que se corta aunque no haya pausa: donde cambia la persona que habla.</param>
+/// <param name="UnirCortos">Actas: los trozos de menos de 1 s se unen al vecino y se quitan las frases que Whisper inventa.</param>
+public sealed record ParametrosTramos(string Audio, string Idioma, double? PausaMinima = null, double? Maximo = null,
+    IReadOnlyList<double>? Cortes = null, bool UnirCortos = false);
+
+/// <param name="Personas">Cuántas personas hablan, si se sabe; null: lo decide el motor.</param>
+public sealed record ParametrosHablantesTramos(string Audio, IReadOnlyList<TramoTranscrito> Tramos, int? Personas = null);
+
+/// <param name="Hablantes">La persona de cada tramo, en el mismo orden (numeradas desde 1 por orden de aparición).</param>
+public sealed record ResultadoHablantesTramos(int Personas, IReadOnlyList<int> Hablantes, double Segundos);
+
+/// <param name="MaxHablantes">Como mucho, cuántas personas se buscan.</param>
+/// <param name="Umbral">Dos grupos de voz cuyas huellas se parecen más que esto son la misma persona.</param>
+public sealed record ParametrosHablantes(string Audio, int MaxHablantes = 4, double Umbral = 0.87);
+
+/// <summary>Un rato en que habla una misma persona (numeradas desde 1 por orden de aparición).</summary>
+public sealed record TurnoHablante(double Inicio, double Fin, int Hablante);
+
+public sealed record ResultadoHablantes(int Hablantes, IReadOnlyList<TurnoHablante> Turnos, double Segundos);
 
 public sealed record TramoTranscrito(double Inicio, double Fin, string Texto);
 
@@ -89,6 +107,16 @@ public sealed class MotorQwen(ClienteMotor cliente)
     public Task<ResultadoSintesis> SintetizarDoblajeAsync(ParametrosDoblaje parametros, IProgress<EventoMotor>? progreso = null,
         CancellationToken ct = default) =>
         cliente.PedirAsync<ResultadoSintesis>("sintetizar_doblaje", parametros, progreso, ct);
+
+    /// <summary>Solo el motor castellano: quién habla en cada momento, por la huella de voz de su codificador.</summary>
+    public Task<ResultadoHablantes> DetectarHablantesAsync(ParametrosHablantes parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoHablantes>("hablantes", parametros, progreso, ct);
+
+    /// <summary>Necesita un modelo Base cargado: quién dice cada tramo de una reunión, por su huella de voz.</summary>
+    public Task<ResultadoHablantesTramos> HablantesTramosAsync(ParametrosHablantesTramos parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoHablantesTramos>("hablantes_tramos", parametros, progreso, ct);
 
     /// <summary>Solo el separador de voz: divide un audio en la voz y el fondo.</summary>
     public Task<ResultadoSeparacion> SepararAsync(ParametrosSeparacion parametros, IProgress<EventoMotor>? progreso = null,

@@ -68,6 +68,105 @@ public sealed class DoblajeTests : IDisposable
     }
 
     [Fact]
+    public void La_referencia_de_una_persona_no_se_alarga_con_frases_de_otra()
+    {
+        var frases = new List<FraseDoblaje>
+        {
+            new(1, 1, 0, 3, "a"), new(2, 2, 3.2, 9, "b"), new(3, 1, 9.2, 11, "c"), new(4, 1, 11.2, 13, "d"),
+        };
+
+        Assert.Equal((9.2, 13.0), Doblaje.Doblador.ElegirReferencia(frases, 1));
+        Assert.Equal((3.2, 9.0), Doblaje.Doblador.ElegirReferencia(frases, 2));
+    }
+
+    [Fact]
+    public void Los_cambios_de_persona_cortan_y_cada_tramo_es_de_quien_mas_habla()
+    {
+        TurnoHablante[] turnos = [new(0, 4, 1), new(4.2, 6, 1), new(6.4, 9, 2), new(9.5, 12, 1)];
+
+        Assert.Equal([6.2, 9.25], Doblaje.Doblador.CambiosDeHablante(turnos));
+        Assert.Equal(2, Doblaje.Doblador.HablanteDe(turnos, 5.5, 8));
+        Assert.Equal(1, Doblaje.Doblador.HablanteDe(turnos, 3, 6.6));
+        // En un hueco sin nadie, la del turno más cercano.
+        Assert.Equal(1, Doblaje.Doblador.HablanteDe(turnos, 12.5, 13));
+        Assert.Equal(1, Doblaje.Doblador.HablanteDe([], 0, 1));
+    }
+
+    [Fact]
+    public void Las_personas_se_numeran_por_orden_de_aparicion_y_solo_las_que_hablan()
+    {
+        var (frases, hablantes) = Doblaje.Doblador.Numerar(
+            [new FraseDoblaje(1, 3, 0, 2, "a"), new FraseDoblaje(2, 1, 2.5, 4, "b"), new FraseDoblaje(3, 3, 5, 6, "c")], "voz");
+
+        Assert.Equal([1, 2, 1], frases.Select(f => f.Hablante));
+        Assert.Equal(["Persona 1", "Persona 2"], hablantes.Select(h => h.Nombre));
+        Assert.All(hablantes, h => Assert.Equal("voz", h.VozPronunciacion));
+        Assert.Equal((2.5, 4.0), (hablantes[1].ReferenciaInicio, hablantes[1].ReferenciaFin));
+    }
+
+    [Fact]
+    public async Task Con_dos_personas_cada_frase_se_dobla_con_el_timbre_de_quien_la_dice()
+    {
+        _motores.Turnos = [new(0.4, 2.6, 1), new(2.9, 5.1, 2), new(5.9, 7.1, 1)];
+
+        var p = await Doblador().PrepararAsync(_almacen.Crear(Path.Combine(_carpeta, "v.mp4"), 30), "mi-voz", Sin, CancellationToken.None);
+
+        Assert.Equal([1, 2, 1], p.ListaFrases.Select(f => f.Hablante));
+        Assert.Equal(["Persona 1", "Persona 2"], p.ListaHablantes.Select(h => h.Nombre));
+        Assert.Equal([2.75, 5.5], _motores.Cortes);
+        Assert.Equal([1, 2, 1], _traductor.Hablantes);
+        Assert.True(File.Exists(Doblador().Referencia(p, 1)));
+        Assert.True(File.Exists(Doblador().Referencia(p, 2)));
+
+        await Doblador().GenerarAsync(p, RutaVoz, null, Sin, CancellationToken.None);
+        Assert.Equal(["referencia_1.wav", "referencia_2.wav", "referencia_1.wav"], _motores.Sintesis.Select(s => Path.GetFileName(s.Timbre)));
+    }
+
+    [Fact]
+    public async Task Se_puede_cambiar_la_persona_de_una_frase_y_unir_dos_personas()
+    {
+        _motores.Turnos = [new(0.4, 2.6, 1), new(2.9, 5.1, 2), new(5.9, 7.1, 1)];
+        var d = Doblador();
+        var p = await d.GenerarAsync(await d.PrepararAsync(_almacen.Crear(Path.Combine(_carpeta, "v.mp4"), 30), "mi-voz", Sin,
+            CancellationToken.None), RutaVoz, null, Sin, CancellationToken.None);
+
+        p = d.CambiarHablante(p, 3, 2);
+        Assert.Equal(2, p.ListaFrases[2].Hablante);
+        Assert.Equal(EncajeFrase.SinGenerar, p.ListaFrases[2].Encaje);
+        p = await d.GenerarAsync(p, RutaVoz, null, Sin, CancellationToken.None);
+        Assert.Equal("referencia_2.wav", Path.GetFileName(_motores.Sintesis[^1].Timbre));
+        Assert.Equal(4, _motores.Sintesis.Count);
+
+        // Eran la misma persona: todo pasa a la 1 y la referencia de la 2 sobra.
+        p = d.UnirHablantes(p, 2, 1);
+        Assert.Equal(1, Assert.Single(p.ListaHablantes).Id);
+        Assert.All(p.ListaFrases, f => Assert.Equal(1, f.Hablante));
+        Assert.False(File.Exists(d.Referencia(p, 2)));
+        Assert.Single(_almacen.Abrir(p.Id)!.ListaHablantes);
+        p = await d.GenerarAsync(p, RutaVoz, null, Sin, CancellationToken.None);
+        Assert.Equal(6, _motores.Sintesis.Count);
+    }
+
+    [Fact]
+    public async Task Un_doblaje_de_una_persona_puede_volver_a_distinguir_a_las_personas_sin_perder_la_traduccion()
+    {
+        var d = Doblador();
+        var p = await d.PrepararAsync(_almacen.Crear(Path.Combine(_carpeta, "v.mp4"), 30), "mi-voz", Sin, CancellationToken.None);
+        Assert.Single(p.ListaHablantes);
+        p = _almacen.Guardar(p with { Hablantes = [p.ListaHablantes[0] with { Nombre = "Ana" }] });
+
+        _motores.Turnos = [new(0, 2.6, 1), new(2.9, 5.1, 2), new(5.9, 7.1, 1)];
+        p = await d.DetectarHablantesAsync(p, null, Sin, CancellationToken.None);
+
+        Assert.Equal([1, 2, 1], p.ListaFrases.Select(f => f.Hablante));
+        Assert.Equal(["es: Hello there.", "es: How are you?", "es: Bye."], p.ListaFrases.Select(f => f.Traduccion));
+        Assert.Equal(2, p.ListaHablantes.Count);
+        Assert.Equal("mi-voz", p.ListaHablantes[1].VozPronunciacion);
+        Assert.True(File.Exists(d.Referencia(p, 2)));
+        Assert.Equal(1, _motores.Transcripciones);
+    }
+
+    [Fact]
     public void Los_subtitulos_tienen_numero_tiempos_y_traduccion()
     {
         var srt = Doblaje.Doblador.Subtitulos([new FraseDoblaje(1, 1, 61.5, 64, "Hello", "Hola", EncajeFrase.Cabe, Duracion: 1.25)]);
@@ -172,6 +271,11 @@ public sealed class DoblajeTests : IDisposable
     {
         public int Separaciones, Transcripciones;
         public List<(string Texto, string Pronunciacion, string Timbre)> Sintesis { get; } = [];
+        /// <summary>Por defecto habla una sola persona todo el rato.</summary>
+        public IReadOnlyList<TurnoHablante> Turnos { get; set; } = [new(0, 30, 1)];
+        public IReadOnlyList<double> Cortes { get; private set; } = [];
+
+        public Task<IReadOnlyList<TurnoHablante>> DetectarHablantesAsync(string voces, CancellationToken ct) => Task.FromResult(Turnos);
 
         public Task SepararAsync(string audio, string voces, string fondo, CancellationToken ct)
         {
@@ -181,9 +285,10 @@ public sealed class DoblajeTests : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task<IReadOnlyList<TramoTranscrito>> TranscribirAsync(string voces, string idioma, CancellationToken ct)
+        public Task<IReadOnlyList<TramoTranscrito>> TranscribirAsync(string voces, string idioma, IReadOnlyList<double> cortes, CancellationToken ct)
         {
             Transcripciones++;
+            Cortes = cortes;
             return Task.FromResult<IReadOnlyList<TramoTranscrito>>(
                 [new(0.5, 2.5, "Hello there."), new(3.0, 5.0, "How are you?"), new(6.0, 7.0, "Bye.")]);
         }
@@ -199,10 +304,12 @@ public sealed class DoblajeTests : IDisposable
     private sealed class TraductorFalso : ITraductorDoblaje
     {
         public int Tandas, Acortadas;
+        public List<int> Hablantes { get; } = [];
 
         public Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct)
         {
             Tandas++;
+            Hablantes.AddRange(frases.Select(f => f.Hablante));
             return Task.FromResult<IReadOnlyDictionary<int, string>>(frases.ToDictionary(f => f.Id, f => "es: " + f.Original));
         }
 

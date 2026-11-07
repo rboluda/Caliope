@@ -45,6 +45,8 @@ INGLES = {
     "Chatterbox no diseña voces: usa Qwen3-TTS VoiceDesign.": "Chatterbox doesn't design voices: use Qwen3-TTS VoiceDesign.",
     "Chatterbox no transcribe: usa Whisper.": "Chatterbox doesn't transcribe: use Whisper.",
     "VoxCPM2 solo genera voz.": "VoxCPM2 only generates voice.",
+    "Distinguiendo a las personas que hablan": "Telling apart the people who speak",
+    "distinguir a las personas": "tell the people apart",
     "VoxCPM2 no diseña voces en Calíope: usa el diseñador de voces.":
         "VoxCPM2 doesn't design voices in Calíope: use the voice designer.",
     "VoxCPM2 no transcribe: usa la transcripción automática.":

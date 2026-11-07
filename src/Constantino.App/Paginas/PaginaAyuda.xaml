@@ -177,6 +177,22 @@
                 </StackPanel>
             </ui:CardExpander>
 
+            <!--  Actas  -->
+            <ui:CardExpander Margin="0,8,0,0">
+                <ui:CardExpander.Icon>
+                    <ui:SymbolIcon Symbol="DocumentText24" />
+                </ui:CardExpander.Icon>
+                <ui:CardExpander.Header>
+                    <TextBlock FontWeight="SemiBold" Text="{l:T 'Actas de reuniones'}" />
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Actas» eliges la grabación de una reunión (del móvil, de una grabadora o de Teams) y Calíope la pasa a texto, distingue a las personas que hablan y redacta el acta: puntos clave, decisiones, tareas con responsable y plazo, fechas límite, riesgos y seguimiento. Todo se hace en tu ordenador: la grabación no sale de él.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Después de transcribir, la IA propone quién es cada persona por lo que se dice («Sí, hola Raúl»). Puede equivocarse: escucha cada voz, corrige los nombres y añade su empresa o papel antes de redactar. Si sabes cuántas personas hablan, indícalo: las separa mejor.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Con la fecha de la reunión, «la semana que viene» se convierte en una fecha, y con el glosario los nombres y siglas salen bien escritos. Cada punto del acta lleva el minuto en que se dijo, para comprobarlo en la transcripción. El acta se puede corregir en la propia pantalla y guardar en Word, Markdown o texto.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Hace falta instalar en «Componentes» la transcripción automática, el traductor con IA y una voz del motor principal (su huella de voz distingue a las personas). Graba y transcribe reuniones solo si los participantes lo saben y están de acuerdo.'}" />
+                </StackPanel>
+            </ui:CardExpander>
+
             <!--  Doblar  -->
             <ui:CardExpander Margin="0,8,0,0">
                 <ui:CardExpander.Icon>
@@ -187,9 +203,10 @@
                 </ui:CardExpander.Header>
                 <StackPanel>
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Doblar» eliges un vídeo en inglés y Calíope lo devuelve en castellano con la voz de la misma persona: separa la voz de la música y los efectos, transcribe frase a frase, traduce con una IA en tu ordenador y vuelve a decir cada frase. La música y el ambiente originales se conservan.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si en el vídeo hablan varias personas (hasta 4), Calíope las distingue solo y dobla a cada una con su voz. En «Personas del vídeo» puedes ponerles nombre, escuchar su voz original y unir dos si las ha separado por error; en cada frase puedes cambiar quién la dice.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'El timbre sale de la persona del vídeo y la pronunciación, de una voz castellana de «Mis voces» que eliges tú. Si se usara solo la voz original, el resultado tendría un acento inglés muy marcado.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Cada frase tiene que caber en el tiempo que ocupaba en el vídeo. Si se pasa un poco, se acelera sin cambiar el tono; si se pasa mucho, la IA propone una frase más corta. Puedes corregir cualquier traducción a mano y pulsar otra vez «Doblar vídeo»: solo se rehace lo que has cambiado.'}" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Hace falta instalar en «Componentes» el motor castellano, la transcripción automática, el separador de voz y el traductor. De momento, vídeos de una sola persona y de hasta 10 minutos. Dobla solo vídeos y voces que tengas derecho a usar.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Hace falta instalar en «Componentes» el motor castellano, la transcripción automática, el separador de voz y el traductor. Vídeos de hasta 10 minutos. Dobla solo vídeos y voces que tengas derecho a usar.'}" />
                 </StackPanel>
             </ui:CardExpander>
 

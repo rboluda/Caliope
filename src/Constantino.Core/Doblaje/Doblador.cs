@@ -11,13 +11,19 @@ namespace Constantino.Core.Doblaje;
 public interface IMotoresDoblaje
 {
     Task SepararAsync(string audio, string voces, string fondo, CancellationToken ct);
-    Task<IReadOnlyList<TramoTranscrito>> TranscribirAsync(string voces, string idioma, CancellationToken ct);
+
+    /// <summary>Quién habla en cada momento de la pista de voz (personas numeradas desde 1 por orden de aparición).</summary>
+    Task<IReadOnlyList<TurnoHablante>> DetectarHablantesAsync(string voces, CancellationToken ct);
+
+    /// <summary>Frases cortadas por las pausas y, además, por <paramref name="cortes"/> (donde cambia quien habla).</summary>
+    Task<IReadOnlyList<TramoTranscrito>> TranscribirAsync(string voces, string idioma, IReadOnlyList<double> cortes, CancellationToken ct);
 
     /// <summary>Genera <paramref name="texto"/> con la pronunciación de una voz y el timbre de otra; devuelve su duración.</summary>
     Task<double> SintetizarAsync(string texto, string pronunciacion, string timbre, string salida, int semilla, CancellationToken ct);
 }
 
-public sealed record FraseATraducir(int Id, string Original, int MaxCaracteres);
+/// <param name="Hablante">Quién la dice: ayuda a mantener el trato y la concordancia en los diálogos.</param>
+public sealed record FraseATraducir(int Id, string Original, int MaxCaracteres, int Hablante = 1);
 
 public interface ITraductorDoblaje
 {
@@ -47,9 +53,10 @@ public sealed record EventoDoblaje(string Mensaje, double? Fraccion = null);
 public sealed record ResultadoExportacion(string Video, string Audio, string Subtitulos);
 
 /// <summary>
-/// El doblaje de un vídeo de punta a punta: extraer el audio → separar voz y fondo → transcribir por frases →
-/// elegir el tramo de la voz original para su timbre → traducir → generar cada frase con la pronunciación de una
-/// voz castellana nativa y el timbre original → encajarla en su hueco → montar y exportar.
+/// El doblaje de un vídeo de punta a punta: extraer el audio → separar voz y fondo → distinguir a las personas que
+/// hablan → transcribir por frases → elegir de cada persona un tramo de su voz para el timbre → traducir → generar cada
+/// frase con la pronunciación de una voz castellana nativa y el timbre de quien la dice → encajarla en su hueco →
+/// montar y exportar.
 /// Todo se guarda al acabar cada paso y lo ya hecho no se repite (las frases, por su huella).
 /// </summary>
 public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, ITraductorDoblaje traductor, IAudioDoblaje audio)
@@ -107,27 +114,24 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
 
         if (p.Fase < FaseDoblaje.Transcrito)
         {
+            progreso.Report(new EventoDoblaje(T("Distinguiendo a las personas que hablan"), 0.25));
+            var turnos = await motores.DetectarHablantesAsync(Voces(p), ct).ConfigureAwait(false);
             progreso.Report(new EventoDoblaje(T("Escuchando lo que se dice, frase a frase"), 0.3));
-            var tramos = await motores.TranscribirAsync(Voces(p), p.IdiomaOrigen, ct).ConfigureAwait(false);
+            var tramos = await motores.TranscribirAsync(Voces(p), p.IdiomaOrigen, CambiosDeHablante(turnos), ct).ConfigureAwait(false);
             if (tramos.Count == 0)
                 throw new InvalidOperationException(T("No se ha encontrado ninguna voz en el vídeo."));
-            var frases = tramos.Select((t, i) => new FraseDoblaje(i + 1, 1, t.Inicio, t.Fin, t.Texto)).ToList();
-            var (ini, fin) = ElegirReferencia(frases);
-            var hablantes = new List<HablanteDoblaje> { new(1, T("Hablante {0}", 1), vozPronunciacion, ini, fin) };
-            p = almacen.Guardar(p with { Fase = FaseDoblaje.Transcrito, Frases = frases, Hablantes = hablantes });
+            var frases = tramos.Select((t, i) => new FraseDoblaje(i + 1, HablanteDe(turnos, t.Inicio, t.Fin), t.Inicio, t.Fin, t.Texto)).ToList();
+            var (numeradas, hablantes) = Numerar(frases, vozPronunciacion);
+            p = almacen.Guardar(p with { Fase = FaseDoblaje.Transcrito, Frases = numeradas, Hablantes = hablantes });
         }
 
-        foreach (var h in p.ListaHablantes)
-        {
-            if (!File.Exists(Referencia(p, h.Id)))
-                await audio.RecortarAsync(Voces(p), h.ReferenciaInicio, h.ReferenciaFin, Referencia(p, h.Id), ct).ConfigureAwait(false);
-        }
+        await CrearReferenciasAsync(p, ct).ConfigureAwait(false);
 
         if (p.Fase < FaseDoblaje.Traducido || p.ListaFrases.Any(f => string.IsNullOrWhiteSpace(f.Traduccion)))
         {
             progreso.Report(new EventoDoblaje(T("Traduciendo el guion al castellano"), 0.5));
             var pendientes = p.ListaFrases.Where(f => string.IsNullOrWhiteSpace(f.Traduccion))
-                .Select(f => new FraseATraducir(f.Id, f.Original, MaxCaracteres(HuecoDisponible(p, f)))).ToList();
+                .Select(f => new FraseATraducir(f.Id, f.Original, MaxCaracteres(HuecoDisponible(p, f)), f.Hablante)).ToList();
             var traducidas = await traductor.TraducirAsync(pendientes, ct).ConfigureAwait(false);
             p = p with
             {
@@ -143,23 +147,123 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
     }
 
     /// <summary>
-    /// El tramo de la voz original para su timbre: la frase más larga, alargada con las siguientes si están seguidas,
-    /// hasta unos 12 segundos.
+    /// El tramo de la voz original para el timbre de una persona: su frase más larga, alargada con las siguientes si
+    /// están seguidas y son suyas, hasta unos 12 segundos. Sin <paramref name="hablante"/>, de cualquiera.
     /// </summary>
-    public static (double Inicio, double Fin) ElegirReferencia(IReadOnlyList<FraseDoblaje> frases)
+    public static (double Inicio, double Fin) ElegirReferencia(IReadOnlyList<FraseDoblaje> frases, int? hablante = null)
     {
         var mejor = (Inicio: 0.0, Fin: 0.0);
-        for (var i = 0; i < frases.Count; i++)
+        var orden = frases.OrderBy(f => f.Inicio).ToList();
+        bool Suya(FraseDoblaje f) => hablante is null || f.Hablante == hablante;
+        for (var i = 0; i < orden.Count; i++)
         {
-            var inicio = frases[i].Inicio;
-            var fin = frases[i].Fin;
-            for (var j = i + 1; j < frases.Count && frases[j].Inicio - fin < 0.6 && frases[j].Fin - inicio <= 12; j++)
-                fin = frases[j].Fin;
+            if (!Suya(orden[i]))
+                continue;
+            var inicio = orden[i].Inicio;
+            var fin = orden[i].Fin;
+            for (var j = i + 1; j < orden.Count && Suya(orden[j]) && orden[j].Inicio - fin < 0.6 && orden[j].Fin - inicio <= 12; j++)
+                fin = orden[j].Fin;
             fin = Math.Min(fin, inicio + 12);
             if (fin - inicio > mejor.Fin - mejor.Inicio)
                 mejor = (inicio, fin);
         }
         return mejor;
+    }
+
+    /// <summary>Donde una persona deja de hablar y empieza otra: ahí se corta la frase aunque no haya pausa.</summary>
+    public static IReadOnlyList<double> CambiosDeHablante(IReadOnlyList<TurnoHablante> turnos) =>
+        turnos.OrderBy(t => t.Inicio).Zip(turnos.OrderBy(t => t.Inicio).Skip(1))
+            .Where(t => t.First.Hablante != t.Second.Hablante)
+            .Select(t => Math.Round((t.First.Fin + t.Second.Inicio) / 2, 2))
+            .ToList();
+
+    /// <summary>La persona que más habla entre <paramref name="inicio"/> y <paramref name="fin"/>; si no habla nadie, la del turno más cercano.</summary>
+    public static int HablanteDe(IReadOnlyList<TurnoHablante> turnos, double inicio, double fin)
+    {
+        if (turnos.Count == 0)
+            return 1;
+        var solapes = turnos.GroupBy(t => t.Hablante)
+            .Select(g => (Hablante: g.Key, Solape: g.Sum(t => Math.Max(0, Math.Min(fin, t.Fin) - Math.Max(inicio, t.Inicio)))))
+            .Where(x => x.Solape > 0)
+            .ToList();
+        if (solapes.Count > 0)
+            return solapes.MaxBy(x => x.Solape).Hablante;
+        var centro = (inicio + fin) / 2;
+        return turnos.MinBy(t => Math.Abs((t.Inicio + t.Fin) / 2 - centro))!.Hablante;
+    }
+
+    /// <summary>
+    /// Las personas que tienen alguna frase, renumeradas por orden de aparición, cada una con su tramo de referencia y
+    /// la voz de pronunciación indicada.
+    /// </summary>
+    public static (List<FraseDoblaje> Frases, List<HablanteDoblaje> Hablantes) Numerar(IReadOnlyList<FraseDoblaje> frases, string? vozPronunciacion)
+    {
+        var numero = new Dictionary<int, int>();
+        foreach (var f in frases.OrderBy(f => f.Inicio))
+            numero.TryAdd(f.Hablante, numero.Count + 1);
+        var renumeradas = frases.Select(f => f with { Hablante = numero[f.Hablante] }).ToList();
+        var hablantes = numero.Values.Order().Select(n =>
+        {
+            var (ini, fin) = ElegirReferencia(renumeradas, n);
+            return new HablanteDoblaje(n, T("Persona {0}", n), vozPronunciacion, ini, fin);
+        }).ToList();
+        return (renumeradas, hablantes);
+    }
+
+    /// <summary>El tramo de voz de cada persona, recortado del audio para clonar su timbre (solo si falta).</summary>
+    private async Task CrearReferenciasAsync(ProyectoDoblaje p, CancellationToken ct)
+    {
+        foreach (var h in p.ListaHablantes)
+        {
+            if (!File.Exists(Referencia(p, h.Id)))
+                await audio.RecortarAsync(Voces(p), h.ReferenciaInicio, h.ReferenciaFin, Referencia(p, h.Id), ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Vuelve a distinguir a las personas de un doblaje ya transcrito (por ejemplo, de cuando Calíope solo doblaba a
+    /// una): cada frase pasa a la persona que más habla en ella y las traducciones se conservan.
+    /// </summary>
+    public async Task<ProyectoDoblaje> DetectarHablantesAsync(ProyectoDoblaje p, string? vozPronunciacion, IProgress<EventoDoblaje> progreso,
+        CancellationToken ct)
+    {
+        if (p.Fase < FaseDoblaje.Transcrito || !File.Exists(Voces(p)))
+            throw new InvalidOperationException(T("Primero prepara el guion del vídeo."));
+        progreso.Report(new EventoDoblaje(T("Distinguiendo a las personas que hablan"), 0.2));
+        var turnos = await motores.DetectarHablantesAsync(Voces(p), ct).ConfigureAwait(false);
+        var voz = vozPronunciacion ?? p.ListaHablantes.FirstOrDefault()?.VozPronunciacion;
+        var (frases, hablantes) = Numerar(p.ListaFrases.Select(f => f with { Hablante = HablanteDe(turnos, f.Inicio, f.Fin) }).ToList(), voz);
+        foreach (var h in p.ListaHablantes)
+            File.Delete(Referencia(p, h.Id));
+        // Quien conserva sus frases conserva su nombre y su voz de pronunciación.
+        hablantes = hablantes.Select(h => p.ListaHablantes.FirstOrDefault(v => v.Id == h.Id) is { } antes
+            && frases.Where(f => f.Hablante == h.Id).Select(f => f.Id).SequenceEqual(p.ListaFrases.Where(f => f.Hablante == h.Id).Select(f => f.Id))
+                ? h with { Nombre = antes.Nombre, VozPronunciacion = antes.VozPronunciacion }
+                : h).ToList();
+        p = almacen.Guardar(p with { Frases = frases, Hablantes = hablantes });
+        await CrearReferenciasAsync(p, ct).ConfigureAwait(false);
+        progreso.Report(new EventoDoblaje(T("Personas distinguidas: {0}", hablantes.Count), 1));
+        return p;
+    }
+
+    /// <summary>La frase pasa a otra persona: al doblarla se usará su voz.</summary>
+    public ProyectoDoblaje CambiarHablante(ProyectoDoblaje p, int frase, int hablante)
+    {
+        var f = p.ListaFrases.First(x => x.Id == frase);
+        return f.Hablante == hablante ? p : almacen.Guardar(p.ConFrase(f with { Hablante = hablante, Encaje = EncajeFrase.SinGenerar }));
+    }
+
+    /// <summary>
+    /// <paramref name="origen"/> y <paramref name="destino"/> eran la misma persona: las frases de la primera pasan a la
+    /// segunda, que conserva su nombre, su voz y su tramo de referencia.
+    /// </summary>
+    public ProyectoDoblaje UnirHablantes(ProyectoDoblaje p, int origen, int destino)
+    {
+        if (origen == destino || p.ListaHablantes.All(h => h.Id != destino))
+            return p;
+        var frases = p.ListaFrases.Select(f => f.Hablante == origen ? f with { Hablante = destino, Encaje = EncajeFrase.SinGenerar } : f).ToList();
+        File.Delete(Referencia(p, origen));
+        return almacen.Guardar(p with { Frases = frases, Hablantes = p.ListaHablantes.Where(h => h.Id != origen).ToList() });
     }
 
     private static string HuellaDe(FraseDoblaje f, string pronunciacion, string timbre) =>
@@ -176,6 +280,7 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
         IProgress<EventoDoblaje> progreso, CancellationToken ct)
     {
         Directory.CreateDirectory(almacen.Frases(p.Id));
+        await CrearReferenciasAsync(p, ct).ConfigureAwait(false);
         var hablantes = p.ListaHablantes.ToDictionary(h => h.Id);
         var todas = p.ListaFrases.Where(f => !string.IsNullOrWhiteSpace(f.Traduccion)).ToList();
         for (var k = 0; k < todas.Count; k++)

@@ -14,7 +14,7 @@
             <TextBlock
                 Margin="0,4,0,16"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="{l:T 'Dobla un vídeo en inglés al castellano conservando la voz de quien habla: Calíope separa la voz de la música, transcribe, traduce y vuelve a decir cada frase con el timbre original y pronunciación castellana. De momento, vídeos de una persona y de hasta 10 minutos.'}"
+                Text="{l:T 'Dobla un vídeo en inglés al castellano conservando la voz de quien habla: Calíope separa la voz de la música, distingue a cada persona, transcribe, traduce y vuelve a decir cada frase con su timbre original y pronunciación castellana. Vídeos de hasta 10 minutos y hasta 4 personas.'}"
                 TextWrapping="Wrap" />
 
             <!--  Falta algo por instalar  -->
@@ -83,34 +83,13 @@
                     <TextBlock
                         Margin="0,4,0,0"
                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                        Text="{l:T 'No tienes que elegir ninguna voz: el doblaje suena con la voz de la persona del vídeo, ahora hablando en castellano.'}"
+                        Text="{l:T 'No tienes que elegir ninguna voz: cada persona del vídeo se dobla con su propia voz, ahora hablando en castellano.'}"
                         TextWrapping="Wrap" />
                     <CheckBox
                         Margin="0,12,0,0"
                         Content="{l:T 'Dejar la voz original muy baja de fondo (estilo documental)'}"
                         IsChecked="{Binding ViewModel.VozOriginalDeFondo}"
                         IsEnabled="{Binding ViewModel.Libre}" />
-
-                    <!--  Lo que casi nadie necesita tocar  -->
-                    <Expander Margin="0,12,0,0" Header="{l:T 'Ajustes avanzados'}">
-                        <StackPanel Margin="0,8,0,0">
-                            <TextBlock FontWeight="SemiBold" Text="{l:T 'Acento castellano'}" />
-                            <TextBlock
-                                Margin="0,2,0,6"
-                                FontSize="12"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{l:T 'Para que la voz clonada no hable con acento inglés, Calíope toma la pronunciación de una voz castellana de «Mis voces». No cambia quién habla (eso sale siempre del vídeo), solo cómo se pronuncia. Normalmente no hace falta tocarlo.'}"
-                                TextWrapping="Wrap" />
-                            <ComboBox
-                                MaxWidth="360"
-                                HorizontalAlignment="Left"
-                                DisplayMemberPath="Nombre"
-                                IsEnabled="{Binding ViewModel.Libre}"
-                                ItemsSource="{Binding ViewModel.Voces}"
-                                SelectedValue="{Binding ViewModel.VozPronunciacion}"
-                                SelectedValuePath="Id" />
-                        </StackPanel>
-                    </Expander>
 
                     <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
                         <ui:Button Appearance="Primary" Command="{Binding ViewModel.DoblarCommand}" IsEnabled="{Binding ViewModel.Libre}">
@@ -156,6 +135,97 @@
                 </StackPanel>
             </ui:Card>
 
+            <!--  Personas  -->
+            <ui:Card Margin="0,8,0,0" Visibility="{Binding ViewModel.ResumenHablantes, Converter={StaticResource NoNuloAVisibilidad}}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon FontSize="20" Symbol="People24" />
+                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="{l:T 'Personas del vídeo'}" />
+                        </StackPanel>
+                        <ui:Button
+                            Grid.Column="1"
+                            Command="{Binding ViewModel.DistinguirPersonasCommand}"
+                            Content="{l:T 'Volver a distinguir a las personas'}"
+                            IsEnabled="{Binding ViewModel.Libre}"
+                            ToolTip="{l:T 'Vuelve a escuchar quién habla en cada frase. Las traducciones se conservan.'}" />
+                    </Grid>
+                    <TextBlock
+                        Margin="0,4,0,8"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{Binding ViewModel.ResumenHablantes}"
+                        TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding ViewModel.Hablantes}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:FilaHablante}">
+                                <Grid Margin="0,4,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="200" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="14"
+                                        Height="14"
+                                        Margin="0,0,10,0"
+                                        VerticalAlignment="Center"
+                                        Background="{Binding Color}"
+                                        CornerRadius="7" />
+                                    <ui:TextBox
+                                        Grid.Column="1"
+                                        IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}"
+                                        Text="{Binding Nombre, UpdateSourceTrigger=LostFocus}"
+                                        ToolTip="{l:T 'Nombre de la persona (solo para reconocerla en la lista)'}" />
+                                    <ui:Button
+                                        Grid.Column="2"
+                                        Margin="6,0,0,0"
+                                        Command="{Binding DataContext.ViewModel.EscucharHablanteCommand, ElementName=Raiz}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="{l:T 'Escuchar su voz original'}">
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Play24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                    <TextBlock
+                                        Grid.Column="3"
+                                        Margin="12,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding Detalle}" />
+                                    <ComboBox
+                                        Grid.Column="4"
+                                        Width="180"
+                                        Margin="8,0,0,0"
+                                        DisplayMemberPath="Nombre"
+                                        IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}"
+                                        ItemsSource="{Binding DataContext.ViewModel.Voces, ElementName=Raiz}"
+                                        SelectedValue="{Binding VozPronunciacion}"
+                                        SelectedValuePath="Id"
+                                        ToolTip="{l:T 'Acento castellano: para que la voz clonada no hable con acento inglés, la pronunciación sale de esta voz de «Mis voces». No cambia quién habla, solo cómo se pronuncia. Normalmente no hace falta tocarlo.'}" />
+                                    <ComboBox
+                                        Grid.Column="5"
+                                        Width="150"
+                                        Margin="8,0,0,0"
+                                        DisplayMemberPath="Nombre"
+                                        IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}"
+                                        ItemsSource="{Binding Otras}"
+                                        SelectedItem="{Binding UnirCon}"
+                                        ToolTip="{l:T 'Unir con otra persona: si Calíope ha partido a una misma persona en dos, sus frases se doblarán con una sola voz.'}"
+                                        Visibility="{Binding Otras.Count, Converter={StaticResource NumeroAVisibilidad}}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ui:Card>
+
             <!--  Frases  -->
             <ItemsControl Margin="0,12,0,0" ItemsSource="{Binding ViewModel.Frases}">
                 <ItemsControl.ItemTemplate>
@@ -163,12 +233,27 @@
                         <ui:Card Margin="0,0,0,6" Padding="12,8">
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="48" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Tiempo}" />
-                                <StackPanel Grid.Column="1">
+                                <Border Width="4" Margin="0,0,10,0" Background="{Binding Color}" CornerRadius="2" />
+                                <TextBlock Grid.Column="1" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Tiempo}" />
+                                <StackPanel Grid.Column="2">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ComboBox
+                                            MinWidth="140"
+                                            Margin="0,0,8,4"
+                                            Padding="8,2"
+                                            DisplayMemberPath="Nombre"
+                                            IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}"
+                                            ItemsSource="{Binding DataContext.ViewModel.Hablantes, ElementName=Raiz}"
+                                            SelectedValue="{Binding Hablante}"
+                                            SelectedValuePath="Id"
+                                            ToolTip="{l:T 'Quién dice esta frase: se doblará con su voz'}"
+                                            Visibility="{Binding DataContext.ViewModel.Hablantes.Count, ElementName=Raiz, Converter={StaticResource NumeroAVisibilidad}}" />
+                                    </StackPanel>
                                     <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Original}" TextWrapping="Wrap" />
                                     <ui:TextBox
                                         Margin="0,4,0,0"
@@ -176,7 +261,7 @@
                                         Text="{Binding Traduccion, UpdateSourceTrigger=LostFocus}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
+                                <StackPanel Grid.Column="3" Margin="12,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
                                     <ui:Badge Appearance="{Binding Apariencia}" Content="{Binding Estado}" />
                                     <ui:Button
                                         Margin="8,0,0,0"

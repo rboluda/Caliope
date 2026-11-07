@@ -122,6 +122,11 @@
                         <ui:SymbolIcon Symbol="VideoClip24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="{l:T 'Actas'}" TargetPageType="{x:Type paginas:PaginaActas}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="DocumentText24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
                 <ui:NavigationViewItem Content="{l:T 'Ayuda'}" TargetPageType="{x:Type paginas:PaginaAyuda}">

@@ -107,7 +107,9 @@ class MotorQwen:
         """Corta la voz por sus pausas y transcribe cada trozo: frases con su inicio y fin exactos.
 
         Con audios largos, Whisper con marcas de tiempo pierde los tiempos (devuelve trozos de minutos); cortar antes
-        por silencios da frases de 1–15 s, que es lo que necesita el doblaje.
+        por silencios da frases de 1–15 s, que es lo que necesita el doblaje. «cortes» son instantes donde se corta
+        aunque no haya pausa (donde cambia la persona que habla), para que cada frase sea de una sola persona. Con
+        «unir_cortos» (actas), los trozos de menos de 1 s se juntan con el vecino: solos, Whisper se inventa frases.
         """
         self._exigir_modelo("asr", t("transcribir"))
         audio = params["audio"]
@@ -131,6 +133,12 @@ class MotorQwen:
                 tramos[-1][1] = b
             else:
                 tramos.append([a, b])
+        # Donde cambia quien habla también se corta (si no queda un trozo de menos de 0,3 s).
+        for c in sorted(int(float(x) * sr) for x in (params.get("cortes") or [])):
+            for k, (a, b) in enumerate(tramos):
+                if a + 0.3 * sr < c < b - 0.3 * sr:
+                    tramos[k:k + 1] = [[a, c], [c, b]]
+                    break
         frases, pendientes = [], [(a, b) for a, b in tramos if (b - a) / sr >= 0.25]
         while pendientes:
             a, b = pendientes.pop(0)
@@ -142,14 +150,89 @@ class MotorQwen:
             q = len(rms) // 4
             corte = a + (q + int(np.argmin(rms[q:3 * q]))) * 256
             pendientes[:0] = [(a, corte), (corte, b)]
+        if params.get("unir_cortos"):
+            frases = _unir_cortos(sorted(frases), sr, maximo)
         progreso(None, t("Transcribiendo"))
         inicio = time.perf_counter()
         idioma = (params.get("idioma") or "English").lower()
         textos = self._modelo([{"array": datos[a:b], "sampling_rate": sr} for a, b in frases], batch_size=8,
                               generate_kwargs={"language": idioma, "task": "transcribe"}) if frases else []
-        resultado = [{"inicio": round(a / sr, 2), "fin": round(b / sr, 2), "texto": r["text"].strip()}
-                     for (a, b), r in zip(frases, textos) if r["text"].strip()]
+        resultado = []
+        for (a, b), r in zip(frases, textos):
+            if texto := _limpiar(r["text"], (b - a) / sr, bool(params.get("unir_cortos"))):
+                resultado.append({"inicio": round(a / sr, 2), "fin": round(b / sr, 2), "texto": texto})
         return {"frases": resultado, "duracion": round(len(datos) / sr, 2), "segundos": round(time.perf_counter() - inicio, 1)}
+
+    def op_hablantes_tramos(self, params, progreso):
+        """Quién dice cada tramo de una reunión: huella de voz (x-vector del modelo Base) y k-medias.
+
+        La huella de cada tramo es la media de ventanas de 3 s. Con «personas», se buscan exactamente esas; si no, el
+        mayor número (2–8) en el que los grupos sigan bien separados (silueta ≥ 0,4) y cada persona tenga al menos el
+        10 % del tiempo de voz (probado con una reunión real: la silueta sola se queda en 2). Los tramos de menos de
+        1 s toman la persona del tramo más cercano. Devuelve una persona por tramo, numeradas por orden de aparición.
+        """
+        self._exigir_modelo("base", t("distinguir a las personas"))
+        audio = params["audio"]
+        if not os.path.isfile(audio):
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio: {ruta}", ruta=audio))
+        import librosa
+        import numpy as np
+        import soundfile as sf
+        from sklearn.cluster import KMeans
+        from sklearn.metrics import silhouette_score
+
+        progreso(None, t("Distinguiendo a las personas que hablan"))
+        inicio = time.perf_counter()
+        sr = 24000
+        datos, origen = sf.read(audio, dtype="float32", always_2d=True)
+        datos = datos.mean(axis=1)
+        if origen != sr:
+            datos = librosa.resample(datos, orig_sr=origen, target_sr=sr)
+        tramos = params["tramos"]
+        modelo = self._modelo.model
+
+        huellas = {}
+        for i, tramo in enumerate(tramos):
+            a, b = float(tramo["inicio"]), float(tramo["fin"])
+            if b - a < 1.0:
+                continue
+            ventanas = [(x, min(b, x + 3)) for x in np.arange(a, max(b - 1, a + 0.01), 3)]
+            v = np.mean([modelo.extract_speaker_embedding(datos[int(x * sr):int(y * sr)], sr).float().cpu().numpy()
+                         for x, y in ventanas if y - x >= 1.0] or
+                        [modelo.extract_speaker_embedding(datos[int(a * sr):int(b * sr)], sr).float().cpu().numpy()], axis=0)
+            huellas[i] = v / np.linalg.norm(v)
+        ids = sorted(huellas)
+        if len(ids) < 3:
+            return {"personas": 1, "hablantes": [1] * len(tramos), "segundos": round(time.perf_counter() - inicio, 1)}
+        X = np.stack([huellas[i] for i in ids])
+        pesos = np.array([tramos[i]["fin"] - tramos[i]["inicio"] for i in ids])
+
+        def agrupar(n):
+            return KMeans(n, n_init=20, random_state=0).fit_predict(X)
+
+        pedidas = params.get("personas")
+        if pedidas:
+            n = max(1, min(int(pedidas), len(ids)))
+            etiquetas = agrupar(n) if n > 1 else np.zeros(len(ids), dtype=int)
+        else:
+            n, etiquetas = 1, np.zeros(len(ids), dtype=int)
+            for k in range(2, min(8, len(ids) - 1) + 1):
+                e = agrupar(k)
+                segundos = [pesos[e == j].sum() for j in range(k)]
+                if silhouette_score(X, e, metric="cosine") >= 0.4 and min(segundos) >= 0.1 * sum(segundos):
+                    n, etiquetas = k, e
+
+        persona = {i: int(e) for i, e in zip(ids, etiquetas)}
+        for i in range(len(tramos)):
+            if i not in persona:
+                centro = tramos[i]["inicio"] + tramos[i]["fin"]
+                cercano = min(ids, key=lambda j: abs(tramos[j]["inicio"] + tramos[j]["fin"] - centro))
+                persona[i] = persona[cercano]
+        numero = {}
+        for i in range(len(tramos)):
+            numero.setdefault(persona[i], len(numero) + 1)
+        return {"personas": len(numero), "hablantes": [numero[persona[i]] for i in range(len(tramos))],
+                "segundos": round(time.perf_counter() - inicio, 1)}
 
     def op_descargar(self, params, progreso):
         self._liberar()
@@ -248,3 +331,46 @@ class MotorQwen:
         if pico:
             datos["vram_pico_gib"] = round(torch.cuda.max_memory_reserved() / GIB, 2)
         return datos
+
+
+# Lo que Whisper se inventa en silencios y ruidos (aprendido de subtítulos de YouTube).
+_INVENTADAS = None
+
+
+def _limpiar(texto, segundos, inventadas):
+    """Quita bucles («no, no, no…» infinito) y, con <inventadas>, las frases que Whisper se inventa en trozos cortos
+    (en un vídeo, «Thanks for watching!» puede ser real; en una reunión en castellano, no). "" si no queda nada."""
+    import re
+
+    global _INVENTADAS
+    if _INVENTADAS is None:
+        _INVENTADAS = re.compile(
+            r"^(¡?gracias por ver el v[ií]deo!?|subt[ií]tulos? (realizados|por) .*|suscr[ií]bete.*|cc por .*|amara\.org.*)$", re.I)
+    texto = texto.strip()
+    # Una palabra o un grupo de hasta 4 repetido más de 3 veces seguidas se deja en 2.
+    texto = re.sub(r"\b((?:\w+[,.]?\s+){1,4}?)\1{3,}", r"\1\1", texto + " ").strip()
+    if inventadas and _INVENTADAS.match(texto) and segundos < 2.5:
+        return ""
+    return texto
+
+
+def _unir_cortos(frases, sr, maximo):
+    """Los trozos de menos de 1 s se unen al vecino más cercano si la pausa es corta (< 0,8 s) y no pasan del máximo."""
+    frases = list(frases)
+    i = 0
+    while i < len(frases):
+        a, b = frases[i]
+        if (b - a) / sr >= 1.0 or len(frases) == 1:
+            i += 1
+            continue
+        anterior = (a - frases[i - 1][1]) / sr if i > 0 else 1e9
+        siguiente = (frases[i + 1][0] - b) / sr if i + 1 < len(frases) else 1e9
+        if anterior <= siguiente and anterior < 0.8 and (b - frases[i - 1][0]) / sr <= maximo:
+            frases[i - 1] = (frases[i - 1][0], b)
+            del frases[i]
+        elif siguiente < 0.8 and (frases[i + 1][1] - a) / sr <= maximo:
+            frases[i + 1] = (a, frases[i + 1][1])
+            del frases[i]
+        else:
+            i += 1
+    return frases
