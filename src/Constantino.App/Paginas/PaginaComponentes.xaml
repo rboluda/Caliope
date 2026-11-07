@@ -9,9 +9,204 @@
     xmlns:vm="clr-namespace:Constantino.App.ViewModels"
     x:Name="Raiz"
     Title="{l:T 'Componentes'}">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="32,24,32,32" MaxWidth="1040">
-            <Grid>
+    <Page.Resources>
+        <!--  Icono de estado de un componente: instalado, con versión nueva, dañado o sin instalar  -->
+        <Style x:Key="IconoEstado" TargetType="ui:SymbolIcon">
+            <Setter Property="Symbol" Value="Circle24" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+            <Setter Property="FontSize" Value="18" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Tarjeta.EstadoActual}" Value="Instalado">
+                    <Setter Property="Symbol" Value="CheckmarkCircle24" />
+                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tarjeta.EstadoActual}" Value="Actualizable">
+                    <Setter Property="Symbol" Value="ArrowCircleUp24" />
+                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tarjeta.EstadoActual}" Value="Danado">
+                    <Setter Property="Symbol" Value="ErrorCircle24" />
+                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!--  Una pieza: la fila (pulsable) y, desplegado, todo lo del componente  -->
+        <DataTemplate x:Key="FilaPieza" DataType="{x:Type vm:PiezaVista}">
+            <StackPanel Margin="0,2,0,2">
+                <Button
+                    Padding="6,5"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Command="{Binding AlternarCommand}"
+                    Cursor="Hand"
+                    ToolTip="{l:T 'Ver más y opciones'}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Margin="0,1,8,0" VerticalAlignment="Top" Style="{StaticResource IconoEstado}" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding Tarjeta.Nombre}" TextWrapping="Wrap" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{Binding Nota}"
+                                TextWrapping="Wrap"
+                                Visibility="{Binding Nota, Converter={StaticResource NoNuloAVisibilidad}}" />
+                        </StackPanel>
+                        <TextBlock
+                            Grid.Column="2"
+                            Margin="8,1,0,0"
+                            VerticalAlignment="Top"
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                            Text="{Binding Tarjeta.Tamano}" />
+                        <ui:SymbolIcon Grid.Column="3" Margin="6,2,0,0" VerticalAlignment="Top" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="ui:SymbolIcon">
+                                    <Setter Property="Symbol" Value="ChevronDown24" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Abierta}" Value="True">
+                                            <Setter Property="Symbol" Value="ChevronUp24" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                    </Grid>
+                </Button>
+                <Border
+                    Margin="30,2,0,6"
+                    Padding="12,10"
+                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                    CornerRadius="6"
+                    Visibility="{Binding Abierta, Converter={StaticResource BoolAVisibilidad}}">
+                    <StackPanel DataContext="{Binding Tarjeta}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:Badge Appearance="{Binding Apariencia}" Content="{Binding Etiqueta}" />
+                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Estado}" />
+                        </StackPanel>
+                        <TextBlock Margin="0,8,0,0" Text="{Binding Resumen}" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,4,0,0" FontStyle="Italic" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Motivo}" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Visibility="{Binding Consejo, Converter={StaticResource NoNuloAVisibilidad}}">
+                            <Run FontWeight="SemiBold" Text="{l:T '¿Lo necesito? '}" /><Run Text="{Binding Consejo, Mode=OneWay}" />
+                        </TextBlock>
+                        <Expander Margin="0,8,0,0" Header="{l:T 'Más información'}">
+                            <StackPanel Margin="0,8,0,0">
+                                <TextBlock Text="{Binding Detalle}" TextWrapping="Wrap" />
+                                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap">
+                                    <Run FontWeight="SemiBold" Text="{l:T 'Sirve para: '}" /><Run Text="{Binding Habilita, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Margin="0,4,0,0" TextWrapping="Wrap">
+                                    <Run FontWeight="SemiBold" Text="{l:T 'Necesita: '}" /><Run Text="{Binding Necesita, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Margin="0,8,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" Visibility="{Binding Tecnico, Converter={StaticResource NoNuloAVisibilidad}}">
+                                    <Run FontWeight="SemiBold" Text="{l:T 'Detalles técnicos: '}" /><Run Text="{Binding Tecnico, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="{l:T 'Licencias:'}" />
+                                <ItemsControl ItemsSource="{Binding Licencias}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <ui:HyperlinkButton Padding="0,2" Content="{Binding Nombre}" NavigateUri="{Binding Url}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Expander>
+                        <TextBlock Margin="0,6,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="{Binding DisponibleEn}" TextWrapping="Wrap" Visibility="{Binding DisponibleEn, Converter={StaticResource NoNuloAVisibilidad}}" />
+                        <WrapPanel Margin="0,10,0,0" IsEnabled="{Binding DataContext.ViewModel.Instalacion.Ocupado, ElementName=Raiz, Converter={StaticResource NegarBool}}">
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                Appearance="Primary"
+                                Command="{Binding DataContext.ViewModel.InstalarCommand, ElementName=Raiz}"
+                                CommandParameter="{Binding}"
+                                Content="{Binding TextoInstalar}"
+                                Visibility="{Binding PuedeInstalar, Converter={StaticResource BoolAVisibilidad}}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="ArrowDownload24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                Command="{Binding DataContext.ViewModel.RepararCommand, ElementName=Raiz}"
+                                CommandParameter="{Binding}"
+                                Content="{l:T 'Reparar'}"
+                                Visibility="{Binding PuedeReparar, Converter={StaticResource BoolAVisibilidad}}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Wrench24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button
+                                Appearance="Transparent"
+                                Command="{Binding DataContext.ViewModel.DesinstalarCommand, ElementName=Raiz}"
+                                CommandParameter="{Binding}"
+                                Content="{l:T 'Desinstalar'}"
+                                Visibility="{Binding PuedeDesinstalar, Converter={StaticResource BoolAVisibilidad}}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Delete24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+
+        <!--  Una caja del bento: título, si está lista, sus piezas y «instalar lo que falta»  -->
+        <DataTemplate x:Key="Caja" DataType="{x:Type vm:CajaComponentes}">
+            <ui:Card Margin="0,0,8,8" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Margin="0,0,8,0" VerticalAlignment="Center" FontSize="20" Symbol="{Binding Icono}" />
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold" Text="{Binding Titulo}" TextWrapping="Wrap" />
+                        <ui:Badge Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center" Appearance="{Binding Apariencia}" Content="{Binding Estado}" MaxWidth="220" />
+                    </Grid>
+                    <TextBlock Margin="0,4,0,8" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Descripcion}" TextWrapping="Wrap" />
+                    <ItemsControl ItemTemplate="{StaticResource FilaPieza}" ItemsSource="{Binding Piezas}" />
+                    <!--  Alternativas: se sustituyen entre sí, basta con una  -->
+                    <Border
+                        Margin="0,6,0,0"
+                        Padding="8,6"
+                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Visibility="{Binding HayAlternativas, Converter={StaticResource BoolAVisibilidad}}">
+                        <StackPanel>
+                            <TextBlock Margin="6,0,0,2" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Elige una · se sustituyen entre sí, basta con una'}" />
+                            <ItemsControl ItemTemplate="{StaticResource FilaPieza}" ItemsSource="{Binding Alternativas}" />
+                        </StackPanel>
+                    </Border>
+                    <ui:Button
+                        Margin="0,10,0,0"
+                        Appearance="Primary"
+                        Command="{Binding DataContext.ViewModel.CompletarCommand, ElementName=Raiz}"
+                        CommandParameter="{Binding}"
+                        Content="{Binding TextoCompletar}"
+                        IsEnabled="{Binding DataContext.ViewModel.Instalacion.Ocupado, ElementName=Raiz, Converter={StaticResource NegarBool}}"
+                        Visibility="{Binding PuedeCompletar, Converter={StaticResource BoolAVisibilidad}}">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="ArrowDownload24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
+            </ui:Card>
+        </DataTemplate>
+    </Page.Resources>
+
+    <ScrollViewer x:Name="Desplazamiento" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,24,32" MaxWidth="1100">
+            <Grid Margin="0,0,8,0">
                 <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Componentes'}" />
                 <ui:Button HorizontalAlignment="Right" Command="{Binding ViewModel.AbrirAsistenteCommand}" Content="{l:T 'Abrir el asistente'}">
                     <ui:Button.Icon>
@@ -20,19 +215,19 @@
                 </ui:Button>
             </Grid>
             <TextBlock
-                Margin="0,4,0,4"
+                Margin="0,4,8,4"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="{l:T 'Todo lo que Calíope puede instalar. Instala solo lo que vayas a usar: puedes añadir o quitar componentes cuando quieras.'}"
+                Text="{l:T 'Ordenados por lo que puedes hacer con ellos. Cada caja dice qué le falta; pulsa una pieza para ver más, repararla o quitarla.'}"
                 TextWrapping="Wrap" />
-            <TextBlock Margin="0,0,0,8" Text="{Binding ViewModel.ResumenDispositivo}" TextWrapping="Wrap" />
+            <TextBlock Margin="0,0,8,8" Text="{Binding ViewModel.ResumenDispositivo}" TextWrapping="Wrap" />
 
             <controles:PanelInstalacion
-                Margin="0,0,0,8"
+                Margin="0,0,8,8"
                 DataContext="{Binding ViewModel.Instalacion}"
                 Visibility="{Binding DataContext.ViewModel.MostrarProgreso, ElementName=Raiz, Converter={StaticResource BoolAVisibilidad}}" />
 
             <ui:InfoBar
-                Margin="0,0,0,8"
+                Margin="0,0,8,8"
                 IsClosable="False"
                 IsOpen="{Binding ViewModel.Aviso, Converter={StaticResource TextoNoVacio}}"
                 Message="{Binding ViewModel.Aviso}"
@@ -46,181 +241,118 @@
                 IsIndeterminate="True"
                 Visibility="{Binding ViewModel.Cargando, Converter={StaticResource BoolAVisibilidad}}" />
 
-            <ItemsControl ItemsSource="{Binding ViewModel.Grupos}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Margin="0,16,0,0">
-                            <TextBlock Margin="0,0,0,8" FontSize="18" FontWeight="SemiBold" Text="{Binding Nombre}" />
+            <!--  Resumen  -->
+            <UniformGrid Margin="0,4,0,8" Columns="3">
+                <Border Margin="0,0,8,0" Padding="14,10" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Componentes instalados'}" />
+                        <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding ViewModel.Instalados}" />
+                    </StackPanel>
+                </Border>
+                <Border Margin="0,0,8,0" Padding="14,10" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Ocupan en disco'}" />
+                        <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding ViewModel.Ocupa}" />
+                    </StackPanel>
+                </Border>
+                <Border Margin="0,0,8,0" Padding="14,10" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Funciones listas'}" />
+                        <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding ViewModel.FuncionesListas}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
 
-                            <!--  Guía de motores: qué conviene a este equipo y en qué se diferencian  -->
-                            <ui:Card Margin="0,0,0,8" Visibility="{Binding Guia, Converter={StaticResource NoNuloAVisibilidad}}">
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon FontSize="20" Symbol="Lightbulb24" />
-                                        <TextBlock Margin="8,0,0,0" FontSize="15" FontWeight="SemiBold" Text="{l:T '¿Qué motor me conviene?'}" />
-                                    </StackPanel>
-                                    <TextBlock Margin="0,8,0,0" Text="{Binding Guia.Consejo}" TextWrapping="Wrap" />
-                                    <ItemsControl Margin="0,12,0,0" ItemsSource="{Binding Guia.Fichas}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <UniformGrid Columns="3" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border
-                                                    Margin="0,0,8,0"
-                                                    Padding="12,10"
-                                                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                    CornerRadius="6">
-                                                    <StackPanel>
-                                                        <TextBlock FontWeight="SemiBold" Text="{Binding Nombre}" TextWrapping="Wrap" />
-                                                        <TextBlock Margin="0,4,0,6" Text="{Binding ParaQue}" TextWrapping="Wrap" />
-                                                        <TextBlock FontSize="12" TextWrapping="Wrap">
-                                                            <Run FontWeight="SemiBold" Text="{l:T 'Velocidad: '}" /><Run Text="{Binding Velocidad, Mode=OneWay}" />
-                                                        </TextBlock>
-                                                        <TextBlock FontSize="12" TextWrapping="Wrap">
-                                                            <Run FontWeight="SemiBold" Text="{l:T 'Parecido a la voz: '}" /><Run Text="{Binding Parecido, Mode=OneWay}" />
-                                                        </TextBlock>
-                                                        <TextBlock FontSize="12" TextWrapping="Wrap">
-                                                            <Run FontWeight="SemiBold" Text="{l:T 'Idiomas: '}" /><Run Text="{Binding Idiomas, Mode=OneWay}" />
-                                                        </TextBlock>
-                                                        <TextBlock FontSize="12" TextWrapping="Wrap">
-                                                            <Run FontWeight="SemiBold" Text="{l:T 'Tarjeta: '}" /><Run Text="{Binding Tarjeta, Mode=OneWay}" />
-                                                        </TextBlock>
-                                                    </StackPanel>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                    <TextBlock
-                                        Margin="0,8,0,0"
-                                        FontSize="12"
-                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                        Text="{l:T 'Los tres leen el texto igual de bien: en las pruebas, ninguno se comió ni cambió más de 3 palabras. Medido con la misma voz y el mismo texto en una tarjeta de 8 GB.'}"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
-                            </ui:Card>
+            <!--  La base (grande) y la primera función  -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ContentPresenter Content="{Binding ViewModel.Base}" ContentTemplate="{StaticResource Caja}" />
+                <ContentPresenter Grid.Column="1" Content="{Binding ViewModel.Primera}" ContentTemplate="{StaticResource Caja}" />
+            </Grid>
 
-                            <ItemsControl ItemsSource="{Binding Tarjetas}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:TarjetaComponente}">
-                                        <ui:Card Margin="0,0,0,8">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding Nombre}" />
-                                                        <ui:Badge Margin="12,0,0,0" Appearance="{Binding Apariencia}" Content="{Binding Etiqueta}" />
-                                                    </StackPanel>
-                                                    <TextBlock Margin="0,6,0,0" Text="{Binding Resumen}" TextWrapping="Wrap" />
-                                                    <TextBlock
-                                                        Margin="0,4,0,0"
-                                                        FontStyle="Italic"
-                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                        Text="{Binding Motivo}"
-                                                        TextWrapping="Wrap" />
-                                                    <Border
-                                                        Margin="0,8,0,0"
-                                                        Padding="10,6"
-                                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                        CornerRadius="4"
-                                                        Visibility="{Binding Consejo, Converter={StaticResource NoNuloAVisibilidad}}">
-                                                        <TextBlock TextWrapping="Wrap">
-                                                            <Run FontWeight="SemiBold" Text="{l:T '¿Lo necesito? '}" /><Run Text="{Binding Consejo, Mode=OneWay}" />
-                                                        </TextBlock>
-                                                    </Border>
-                                                    <Expander Margin="0,8,0,0" Header="{l:T 'Más información'}">
-                                                        <StackPanel Margin="0,8,0,0">
-                                                            <TextBlock Text="{Binding Detalle}" TextWrapping="Wrap" />
-                                                            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap">
-                                                                <Run FontWeight="SemiBold" Text="{l:T 'Sirve para: '}" /><Run Text="{Binding Habilita, Mode=OneWay}" />
-                                                            </TextBlock>
-                                                            <TextBlock Margin="0,4,0,0" TextWrapping="Wrap">
-                                                                <Run FontWeight="SemiBold" Text="{l:T 'Necesita: '}" /><Run Text="{Binding Necesita, Mode=OneWay}" />
-                                                            </TextBlock>
-                                                            <TextBlock
-                                                                Margin="0,8,0,0"
-                                                                FontSize="12"
-                                                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                                TextWrapping="Wrap"
-                                                                Visibility="{Binding Tecnico, Converter={StaticResource NoNuloAVisibilidad}}">
-                                                                <Run FontWeight="SemiBold" Text="{l:T 'Detalles técnicos: '}" /><Run Text="{Binding Tecnico, Mode=OneWay}" />
-                                                            </TextBlock>
-                                                            <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="{l:T 'Licencias:'}" />
-                                                            <ItemsControl ItemsSource="{Binding Licencias}">
-                                                                <ItemsControl.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <ui:HyperlinkButton Padding="0,2" Content="{Binding Nombre}" NavigateUri="{Binding Url}" />
-                                                                    </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                            </ItemsControl>
-                                                        </StackPanel>
-                                                    </Expander>
-                                                </StackPanel>
-
-                                                <StackPanel Grid.Column="1" Margin="24,0,0,0" MinWidth="150" HorizontalAlignment="Right">
-                                                    <TextBlock HorizontalAlignment="Right" FontWeight="SemiBold" Text="{Binding Tamano}" />
-                                                    <TextBlock HorizontalAlignment="Right" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Estado}" />
-                                                    <TextBlock
-                                                        MaxWidth="180"
-                                                        Margin="0,4,0,0"
-                                                        HorizontalAlignment="Right"
-                                                        FontSize="12"
-                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                        Text="{Binding DisponibleEn}"
-                                                        TextAlignment="Right"
-                                                        TextWrapping="Wrap"
-                                                        Visibility="{Binding DisponibleEn, Converter={StaticResource NoNuloAVisibilidad}}" />
-                                                    <StackPanel Margin="0,12,0,0" HorizontalAlignment="Right" IsEnabled="{Binding DataContext.ViewModel.Instalacion.Ocupado, ElementName=Raiz, Converter={StaticResource NegarBool}}">
-                                                        <ui:Button
-                                                            HorizontalAlignment="Right"
-                                                            Appearance="Primary"
-                                                            Command="{Binding DataContext.ViewModel.InstalarCommand, ElementName=Raiz}"
-                                                            CommandParameter="{Binding}"
-                                                            Content="{Binding TextoInstalar}"
-                                                            Visibility="{Binding PuedeInstalar, Converter={StaticResource BoolAVisibilidad}}">
-                                                            <ui:Button.Icon>
-                                                                <ui:SymbolIcon Symbol="ArrowDownload24" />
-                                                            </ui:Button.Icon>
-                                                        </ui:Button>
-                                                        <ui:Button
-                                                            Margin="0,6,0,0"
-                                                            HorizontalAlignment="Right"
-                                                            Command="{Binding DataContext.ViewModel.RepararCommand, ElementName=Raiz}"
-                                                            CommandParameter="{Binding}"
-                                                            Content="{l:T 'Reparar'}"
-                                                            Visibility="{Binding PuedeReparar, Converter={StaticResource BoolAVisibilidad}}">
-                                                            <ui:Button.Icon>
-                                                                <ui:SymbolIcon Symbol="Wrench24" />
-                                                            </ui:Button.Icon>
-                                                        </ui:Button>
-                                                        <ui:Button
-                                                            Margin="0,6,0,0"
-                                                            HorizontalAlignment="Right"
-                                                            Appearance="Transparent"
-                                                            Command="{Binding DataContext.ViewModel.DesinstalarCommand, ElementName=Raiz}"
-                                                            CommandParameter="{Binding}"
-                                                            Content="{l:T 'Desinstalar'}"
-                                                            Visibility="{Binding PuedeDesinstalar, Converter={StaticResource BoolAVisibilidad}}">
-                                                            <ui:Button.Icon>
-                                                                <ui:SymbolIcon Symbol="Delete24" />
-                                                            </ui:Button.Icon>
-                                                        </ui:Button>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Grid>
-                                        </ui:Card>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
+            <!--  El resto de funciones  -->
+            <ItemsControl ItemTemplate="{StaticResource Caja}" ItemsSource="{Binding ViewModel.Funciones}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="3" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
             </ItemsControl>
+
+            <!--  Motores que sustituyen al principal, con la guía para elegir  -->
+            <ContentPresenter Content="{Binding ViewModel.Motores}" ContentTemplate="{StaticResource Caja}" />
+            <ui:Card Margin="0,0,8,8" Visibility="{Binding ViewModel.Guia, Converter={StaticResource NoNuloAVisibilidad}}">
+                <Expander>
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon FontSize="20" Symbol="Lightbulb24" />
+                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold" Text="{l:T '¿Qué motor me conviene?'}" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel>
+                        <TextBlock Margin="0,4,0,0" Text="{Binding ViewModel.Guia.Consejo}" TextWrapping="Wrap" />
+                        <ItemsControl Margin="0,12,0,0" ItemsSource="{Binding ViewModel.Guia.Fichas}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,8,0" Padding="12,10" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                                        <StackPanel>
+                                            <TextBlock FontWeight="SemiBold" Text="{Binding Nombre}" TextWrapping="Wrap" />
+                                            <TextBlock Margin="0,4,0,6" Text="{Binding ParaQue}" TextWrapping="Wrap" />
+                                            <TextBlock FontSize="12" TextWrapping="Wrap">
+                                                <Run FontWeight="SemiBold" Text="{l:T 'Velocidad: '}" /><Run Text="{Binding Velocidad, Mode=OneWay}" />
+                                            </TextBlock>
+                                            <TextBlock FontSize="12" TextWrapping="Wrap">
+                                                <Run FontWeight="SemiBold" Text="{l:T 'Parecido a la voz: '}" /><Run Text="{Binding Parecido, Mode=OneWay}" />
+                                            </TextBlock>
+                                            <TextBlock FontSize="12" TextWrapping="Wrap">
+                                                <Run FontWeight="SemiBold" Text="{l:T 'Idiomas: '}" /><Run Text="{Binding Idiomas, Mode=OneWay}" />
+                                            </TextBlock>
+                                            <TextBlock FontSize="12" TextWrapping="Wrap">
+                                                <Run FontWeight="SemiBold" Text="{l:T 'Tarjeta: '}" /><Run Text="{Binding Tarjeta, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock
+                            Margin="0,8,0,0"
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                            Text="{l:T 'Los tres leen el texto igual de bien: en las pruebas, ninguno se comió ni cambió más de 3 palabras. Medido con la misma voz y el mismo texto en una tarjeta de 8 GB.'}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Expander>
+            </ui:Card>
+
+            <!--  Leyenda  -->
+            <WrapPanel Margin="0,4,8,0">
+                <StackPanel Margin="0,0,16,4" Orientation="Horizontal">
+                    <ui:SymbolIcon FontSize="16" Foreground="{DynamicResource SystemFillColorSuccessBrush}" Symbol="CheckmarkCircle24" />
+                    <TextBlock Margin="4,0,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Instalado'}" />
+                </StackPanel>
+                <StackPanel Margin="0,0,16,4" Orientation="Horizontal">
+                    <ui:SymbolIcon FontSize="16" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Symbol="Circle24" />
+                    <TextBlock Margin="4,0,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Sin instalar'}" />
+                </StackPanel>
+                <StackPanel Margin="0,0,16,4" Orientation="Horizontal">
+                    <ui:SymbolIcon FontSize="16" Foreground="{DynamicResource SystemFillColorCautionBrush}" Symbol="ArrowCircleUp24" />
+                    <TextBlock Margin="4,0,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Hay una versión nueva'}" />
+                </StackPanel>
+                <StackPanel Margin="0,0,16,4" Orientation="Horizontal">
+                    <ui:SymbolIcon FontSize="16" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Symbol="ErrorCircle24" />
+                    <TextBlock Margin="4,0,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Dañado'}" />
+                </StackPanel>
+                <TextBlock Margin="0,0,0,4" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T '«También para»: lo usan otras funciones; si lo quitas, dejarán de funcionar.'}" TextWrapping="Wrap" />
+            </WrapPanel>
         </StackPanel>
     </ScrollViewer>
 </Page>

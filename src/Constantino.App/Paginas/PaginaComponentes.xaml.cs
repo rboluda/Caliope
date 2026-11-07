@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Constantino.App.ViewModels;
 using Wpf.Ui.Abstractions.Controls;
 
@@ -13,6 +14,11 @@ public partial class PaginaComponentes : Page, INavigableView<ComponentesViewMod
         ViewModel = viewModel;
         DataContext = this;
         InitializeComponent();
-        Loaded += async (_, _) => await ViewModel.CargarAsync();
+        Loaded += async (_, _) =>
+        {
+            await ViewModel.CargarAsync();
+            // Al rellenarse las cajas, la página se desplazaba hacia abajo: siempre empieza por el título y el resumen.
+            await Dispatcher.InvokeAsync(() => Desplazamiento.ScrollToTop(), DispatcherPriority.ContextIdle);
+        };
     }
 }

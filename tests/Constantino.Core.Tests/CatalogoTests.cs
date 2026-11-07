@@ -21,6 +21,23 @@ public class CatalogoTests
     }
 
     [Fact]
+    public void Cada_componente_esta_en_alguna_caja_de_componentes()
+    {
+        var catalogo = CatalogoComponentes.CargarPredeterminado();
+        var funciones = FuncionesCaliope.Todas;
+        var usados = FuncionesCaliope.Base
+            .Concat(FuncionesCaliope.MotoresAlternativos)
+            .Concat(funciones.SelectMany(f => f.Necesita.Concat(f.Opcionales)))
+            .Concat(catalogo.Componentes.Where(c => c.GrupoExclusivo == FuncionesCaliope.GrupoVoces).Select(c => c.Id))
+            .ToHashSet();
+
+        // Todo lo que nombran las cajas existe, y nada del catálogo se queda fuera de la pantalla.
+        Assert.All(usados, id => Assert.True(catalogo.Contiene(id), id));
+        Assert.Empty(catalogo.Componentes.Select(c => c.Id).Except(usados));
+        Assert.Equal(["narrar", "disenar", "doblar", "actas"], funciones.Select(f => f.Id));
+    }
+
+    [Fact]
     public void Chatterbox_se_instala_en_su_propio_entorno_con_el_paquete_de_castellano()
     {
         var c = CatalogoComponentes.CargarPredeterminado()["chatterbox"];
