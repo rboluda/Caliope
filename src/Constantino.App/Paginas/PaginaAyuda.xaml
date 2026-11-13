@@ -84,10 +84,14 @@
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Elige sexo, edad, timbre, ritmo, tono y acento (o escribe la descripción tú mismo). Calíope genera varias versiones con semillas distintas: escúchalas y guarda la que más te guste. Necesita el diseñador de voces.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Clonar una voz'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Graba entre 10 y 20 segundos leyendo el texto propuesto (o importa un audio), recorta el tramo bueno y comprueba el análisis: sin saturar, sin ruido de fondo y con volumen suficiente. La transcripción tiene que ser exacta: con la transcripción automática instalada se escribe sola.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'El tono de la grabación también se copia'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'El motor imita el timbre y también la forma de hablar de la grabación: si es alegre, la narración saldrá alegre. Para una historia de misterio, clona una grabación pausada, grave y algo tensa. Para los momentos distintos (susurros, miedo, gritos), añade variantes.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'La transcripción importa'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si la transcripción no coincide con lo que se oye, la voz sale cortada (medio segundo de audio). Calíope avisa cuando no encaja. Si no la tienes, marca «No tengo la transcripción»: se imitará solo el timbre, algo menos parecido pero sin riesgo.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Variantes'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Una variante es la misma voz hablando de otra forma: susurrando, tensa, asustada, triste, alegre o gritando. Se añaden en «Voces → Añadir variante» desde una grabación o, si la voz es diseñada, generándola con el diseñador de voces. En el guion se usan con su etiqueta.'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Susurro fabricado'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si no tienes un susurro grabado, elige «Susurrando» al añadir la variante y pulsa «Fabricar el susurro»: Calíope convierte la grabación de la voz en susurro conservando su timbre (con WORLD). Lo mejor sigue siendo un susurro grabado de verdad de 8 segundos o más; el fabricado suena algo peor, pero mucho mejor que bajar el volumen. Un susurro de menos de 3 segundos no sirve: el motor no llega a susurrar.'}" />
                 </StackPanel>
             </ui:CardExpander>
 

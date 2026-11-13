@@ -76,6 +76,11 @@ public sealed record ResultadoSeparacion(string Voces, string Fondo, int Frecuen
 
 public sealed record ResultadoSintesis(string Salida, double Duracion, double Segundos, int Frecuencia, double? VramPicoGib = null);
 
+/// <summary>Convertir la grabación <paramref name="Entrada"/> de una voz en susurro (WORLD) y escribirlo en <paramref name="Salida"/>.</summary>
+public sealed record ParametrosSusurro(string Entrada, string Salida);
+
+public sealed record ResultadoRetoque(string Salida, double Duracion);
+
 /// <summary>Operaciones del motor Qwen3-TTS con tipos, sobre el protocolo de <see cref="ClienteMotor"/>.</summary>
 public sealed class MotorQwen(ClienteMotor cliente)
 {
@@ -122,6 +127,11 @@ public sealed class MotorQwen(ClienteMotor cliente)
     public Task<ResultadoSeparacion> SepararAsync(ParametrosSeparacion parametros, IProgress<EventoMotor>? progreso = null,
         CancellationToken ct = default) =>
         cliente.PedirAsync<ResultadoSeparacion>("separar", parametros, progreso, ct);
+
+    /// <summary>Solo el motor principal; no necesita modelo cargado.</summary>
+    public Task<ResultadoRetoque> SusurrarAsync(ParametrosSusurro parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoRetoque>("susurrar", parametros, progreso, ct);
 
     /// <summary>Necesita el modelo VoiceDesign cargado.</summary>
     public Task<ResultadoSintesis> DisenarAsync(ParametrosDiseno parametros, IProgress<EventoMotor>? progreso = null, CancellationToken ct = default) =>

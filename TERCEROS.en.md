@@ -26,6 +26,7 @@ Calíope **does not redistribute** the engines or the models: it downloads them 
 | [PyTorch](https://pytorch.org) | PyTorch Foundation | BSD-3 | Runs the models on the graphics card or the processor. |
 | [Transformers](https://github.com/huggingface/transformers) and [Hugging Face Hub](https://github.com/huggingface/huggingface_hub) | Hugging Face | Apache 2.0 | Downloading and loading the models. |
 | [FFmpeg](https://ffmpeg.org) | FFmpeg project | GPL | Converts the audio, levels the volume, mixes in the background and creates the included sounds. An official build is downloaded ([gyan.dev](https://www.gyan.dev/ffmpeg/builds/)). |
+| [WORLD](https://github.com/mmorise/World) and [pyworld](https://github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder) | Masanori Morise and Jeremy Hsu | BSD-3 / MIT | Makes the whisper of a voice from its normal recording, keeping its timbre. |
 | [Rubber Band](https://breakfastquay.com/rubberband/) | Breakfast Quay | GPL | Changes the speed without touching the pitch, and the pitch without touching the speed (included in FFmpeg). |
 | [uv](https://github.com/astral-sh/uv) | Astral | MIT / Apache 2.0 | Installs each engine in its own Python environment. |
 | [Python](https://www.python.org) | Python Software Foundation | PSF | The language the engines are written in. |

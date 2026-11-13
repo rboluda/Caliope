@@ -179,6 +179,13 @@ public sealed class MotorPythonTests
             motor.DisenarAsync(new ParametrosDiseno("Hola", "Spanish", " ", Path.Combine(temporal, "c.wav"))));
         Assert.Equal("sin_descripcion", sinDescripcion.Codigo);
 
+        var susurro = await motor.SusurrarAsync(new ParametrosSusurro(referencia, Path.Combine(temporal, "susurro.wav")));
+        Assert.True(File.Exists(susurro.Salida));
+        Assert.True(susurro.Duracion > 0);
+        var sinAudio = await Assert.ThrowsAsync<MotorException>(() =>
+            motor.SusurrarAsync(new ParametrosSusurro(Path.Combine(temporal, "no-existe.wav"), Path.Combine(temporal, "d.wav"))));
+        Assert.Equal("archivo_no_encontrado", sinAudio.Codigo);
+
         var transcripcion = await motor.TranscribirAsync(new ParametrosTranscripcion(referencia, "Spanish"));
         Assert.Equal("Texto transcrito en Spanish.", transcripcion.Texto);
 

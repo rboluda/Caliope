@@ -36,6 +36,9 @@ INGLES = {
     "diseñar voces": "design voices",
     "No hay texto que leer.": "There is no text to read.",
     "Chatterbox solo genera voz.": "Chatterbox only generates voice.",
+    "Fabricando el susurro": "Making the whisper",
+    "Falta una pieza del motor principal para fabricar susurros: actualízalo desde Componentes.":
+        "The main engine is missing a piece to make whispers: update it from Components.",
     "Falta parte de Chatterbox: repáralo desde Componentes.":
         "Part of Chatterbox is missing: repair it from Components.",
     "El modelo de Chatterbox no encaja: repáralo desde Componentes.":

@@ -77,7 +77,15 @@ public sealed partial class TarjetaVoz : ObservableObject
     public bool PuedeGenerarVariante => Voz.Origen == OrigenVoz.Disenada && !string.IsNullOrWhiteSpace(Voz.Descripcion);
 
     [ObservableProperty] public partial bool MostrarAnadirVariante { get; set; }
-    [ObservableProperty] public partial TipoVariante? TipoVariante { get; set; } = CatalogoVariantes.Tipos[0];
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EsSusurro), nameof(HayOtrasFormasDeVariante))]
+    public partial TipoVariante? TipoVariante { get; set; } = CatalogoVariantes.Tipos[0];
+
+    /// <summary>El susurro se puede fabricar a partir de la grabación de la propia voz, sin grabarlo.</summary>
+    public bool EsSusurro => TipoVariante?.Id == CatalogoVariantes.Susurro;
+
+    /// <summary>Además de añadirla desde una grabación, se puede generar o fabricar.</summary>
+    public bool HayOtrasFormasDeVariante => PuedeGenerarVariante || EsSusurro;
     [ObservableProperty] public partial string ArchivoVariante { get; set; } = "";
     [ObservableProperty] public partial string TranscripcionVariante { get; set; } = "";
     [ObservableProperty] public partial bool SinTranscripcionVariante { get; set; }
@@ -223,6 +231,36 @@ public sealed partial class VocesViewModel : ObservableObject
             CargarVariantes(biblioteca, t);
             t.MostrarAnadirVariante = false;
             Reproductor.Reproducir(biblioteca.ReferenciaDeVariante(t.Voz.Id, tipo.Id));
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            t.ErrorVariante = e is VozInvalidaException ? e.Message : ServicioMotor.Explicar(e);
+        }
+        finally
+        {
+            t.TrabajandoVariante = false;
+        }
+    }
+
+    /// <summary>
+    /// Sin un susurro grabado: Calíope lo fabrica a partir de la grabación de la propia voz (WORLD) y lo guarda como
+    /// su variante «susurro», con la misma transcripción.
+    /// </summary>
+    [RelayCommand]
+    private async Task FabricarSusurroAsync(TarjetaVoz t)
+    {
+        t.ErrorVariante = null;
+        t.TrabajandoVariante = true;
+        try
+        {
+            var salida = await _voces.ArchivoTemporalAsync("variante-susurro");
+            var r = await Motor.FabricarSusurroAsync(t.Referencia, salida);
+            var biblioteca = await _voces.BibliotecaAsync();
+            await biblioteca.AnadirVarianteAsync(t.Voz.Id, CatalogoVariantes.Susurro, T("Susurrando (fabricado)"), r.Salida,
+                t.Voz.Transcripcion, sinTranscripcion: t.Voz.SoloTimbre);
+            CargarVariantes(biblioteca, t);
+            t.MostrarAnadirVariante = false;
+            Reproductor.Reproducir(biblioteca.ReferenciaDeVariante(t.Voz.Id, CatalogoVariantes.Susurro));
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {

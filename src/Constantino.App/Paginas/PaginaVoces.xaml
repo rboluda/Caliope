@@ -87,6 +87,13 @@
                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="{l:T 'Una grabación limpia de 10–20 segundos, de una sola persona, sin música ni ruido de fondo. Sirven WAV, MP3, FLAC, OGG o M4A.'}"
                         TextWrapping="Wrap" />
+                    <ui:InfoBar
+                        Margin="0,0,0,12"
+                        IsClosable="False"
+                        IsOpen="True"
+                        Message="{l:T 'El motor imita también el tono de la grabación: si es alegre, la narración saldrá alegre. Para misterio o terror, usa una grabación pausada, grave y algo tensa.'}"
+                        Severity="Informational"
+                        Title="{l:T 'Consejo'}" />
 
                     <TextBlock Margin="0,0,0,4" Text="{l:T 'Grabación'}" />
                     <Grid>
@@ -409,10 +416,32 @@
                                                     <ui:SymbolIcon Symbol="Sparkle24" />
                                                 </ui:Button.Icon>
                                             </ui:Button>
-                                            <TextBlock Margin="0,12,0,0" Text="{l:T 'O añádela desde una grabación:'}" />
+                                        </StackPanel>
+
+                                        <!--  Fabricar el susurro a partir de la grabación de la voz  -->
+                                        <StackPanel Margin="0,12,0,0" Visibility="{Binding EsSusurro, Converter={StaticResource BoolAVisibilidad}}">
+                                            <TextBlock
+                                                Text="{l:T '¿No tienes un susurro grabado? Calíope puede fabricarlo a partir de la grabación de esta voz. Suena algo peor que un susurro de verdad, pero mucho mejor que bajar el volumen.'}"
+                                                TextWrapping="Wrap" />
+                                            <ui:Button
+                                                Margin="0,8,0,0"
+                                                Appearance="Primary"
+                                                Command="{Binding DataContext.ViewModel.FabricarSusurroCommand, ElementName=Raiz}"
+                                                CommandParameter="{Binding}"
+                                                Content="{l:T 'Fabricar el susurro'}"
+                                                IsEnabled="{Binding TrabajandoVariante, Converter={StaticResource NegarBool}}"
+                                                ToolTip="{l:T 'Cambia la vibración de la voz por aire y conserva su timbre (WORLD)'}">
+                                                <ui:Button.Icon>
+                                                    <ui:SymbolIcon Symbol="Wand24" />
+                                                </ui:Button.Icon>
+                                            </ui:Button>
                                         </StackPanel>
 
                                         <!--  Desde una grabación  -->
+                                        <TextBlock
+                                            Margin="0,12,0,0"
+                                            Text="{l:T 'O añádela desde una grabación:'}"
+                                            Visibility="{Binding HayOtrasFormasDeVariante, Converter={StaticResource BoolAVisibilidad}}" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />

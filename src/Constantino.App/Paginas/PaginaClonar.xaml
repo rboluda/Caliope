@@ -29,6 +29,13 @@
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                 Text="{l:T 'Crea una voz a partir de una grabación de 10–20 segundos: la tuya o la de alguien que te haya dado permiso.'}"
                 TextWrapping="Wrap" />
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="True"
+                Message="{l:T 'El motor imita también el tono de la grabación: si es alegre, la narración saldrá alegre. Para misterio o terror, usa una grabación pausada, grave y algo tensa.'}"
+                Severity="Informational"
+                Title="{l:T 'Consejo'}" />
 
             <!--  1. Grabación  -->
             <ui:Card>

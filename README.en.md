@@ -30,7 +30,7 @@ Calíope turns text into speech with artificial intelligence models that **run o
 - 📖 **Narrate long scripts** paragraph by paragraph, with pauses, whispers and changes of emotion marked in the text. If you change a sentence, only that paragraph is generated again.
 - 📝 **Meeting minutes**: from a meeting recording (phone, recorder or Teams) to its minutes, with who said what, key points, decisions and tasks with owner and deadline, all with an AI on your computer. Saved as Word.
 - 🎬 **Dub videos from English into Spanish** keeping the speaker's voice: Calíope separates the voice from the music, transcribes, translates with an AI on your computer and says each sentence again with the original timbre and Spanish pronunciation, without an English accent. It tells apart each person who speaks (up to 4) and dubs them with their own voice; videos up to 10 minutes long.
-- 🎭 **Variants of the same voice**: whispering, tense, frightened, sad, cheerful or shouting.
+- 🎭 **Variants of the same voice**: whispering, tense, frightened, sad, cheerful or shouting. If you don't have a recorded whisper, Calíope makes one from the voice's recording.
 - 🎚️ **Fine-tune the result**: expressiveness, speed and pitch (independent of each other), pauses and volume leveled for video or podcasts.
 - 📤 **Get the audio as MP3 or WAV**, or drag it straight into your video editor.
 - 🔒 **Everything stays private**: your texts and voices never leave your computer. The internet is only used to download the components and to check whether there's a new version of Calíope (you can turn that off in Settings).

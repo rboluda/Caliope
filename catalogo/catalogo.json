@@ -144,12 +144,16 @@
           "url": "https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE"
         },
         {
+          "nombre": "pyworld (WORLD): MIT",
+          "url": "https://github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder/blob/master/LICENSE.txt"
+        },
+        {
           "nombre": "PyTorch: BSD-3",
           "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
         }
       ],
       "instalacion": {
-        "version": "qwen-tts 0.1.1 · torch 2.11.0",
+        "version": "qwen-tts 0.1.1 · torch 2.11.0 · pyworld 0.3.5",
         "pasos": [
           {
             "tipo": "ejecutar",
@@ -197,7 +201,8 @@
               "--compile-bytecode",
               "--python",
               "{entornos}/qwen3tts/Scripts/python.exe",
-              "qwen-tts==0.1.1"
+              "qwen-tts==0.1.1",
+              "pyworld==0.3.5"
             ],
             "progreso": {
               "carpetas": [
@@ -214,7 +219,7 @@
             "programa": "{entornos}/qwen3tts/Scripts/python.exe",
             "argumentos": [
               "-c",
-              "import torch, qwen_tts; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
+              "import torch, qwen_tts, pyworld; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
             ],
             "debeContener": "dispositivo={dispositivo}"
           }
@@ -227,7 +232,7 @@
         ]
       },
       "consejo": "Imprescindible. Se instala una sola vez.",
-      "tecnico": "Qwen3-TTS (Alibaba, Apache 2.0) en un entorno de Python propio con PyTorch 2.11 (CUDA 12.8, o versión para procesador) y qwen-tts 0.1.1."
+      "tecnico": "Qwen3-TTS (Alibaba, Apache 2.0) en un entorno de Python propio con PyTorch 2.11 (CUDA 12.8, o versión para procesador) y qwen-tts 0.1.1. Los susurros fabricados usan WORLD (pyworld 0.3.5, MIT)."
     },
     {
       "id": "modelo-qwen-base-1.7b",

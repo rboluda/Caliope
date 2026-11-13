@@ -109,6 +109,14 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             new ParametrosDiseno(texto, idioma, instruccion, salida, semilla, temperatura), progreso, ct), ct);
     }
 
+    /// <summary>
+    /// Convierte la grabación de una voz en susurro (WORLD, en el motor principal), para crear su variante «susurro»
+    /// cuando no hay un susurro grabado.
+    /// </summary>
+    public async Task<ResultadoRetoque> FabricarSusurroAsync(string grabacion, string salida, CancellationToken ct = default) =>
+        await EjecutarAsync(await ModeloDeVozAsync(MotoresDeVoz.Qwen), (motor, progreso) =>
+            motor.SusurrarAsync(new ParametrosSusurro(grabacion, salida), progreso, ct), ct);
+
     /// <summary>Escribe lo que se dice en <paramref name="audio"/> (modelo Whisper).</summary>
     public async Task<ResultadoTranscripcion> TranscribirAsync(string audio, string idioma, CancellationToken ct = default)
     {

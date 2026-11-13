@@ -53,6 +53,13 @@ class MotorFalso:
         progreso(None, t("Transcribiendo"))
         return {"texto": f"Texto transcrito en {params.get('idioma', 'Spanish')}.", "segundos": 0.0}
 
+    def op_susurrar(self, params, progreso):
+        if not os.path.isfile(params["entrada"]):
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio."))
+        progreso(None, t("Fabricando el susurro"))
+        r = self._tono({"texto": "susurro" * 20, "salida": params["salida"]}, progreso)
+        return {"salida": r["salida"], "duracion": r["duracion"]}
+
     def _tono(self, params, progreso):
         texto = params.get("texto", "")
         if texto == "falla":

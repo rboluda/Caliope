@@ -261,6 +261,12 @@ class MotorQwen:
         return self._generar(params, progreso, lambda ajustes: self._modelo.generate_voice_design(
             text=texto, language=params.get("idioma", "Spanish"), instruct=instruccion, **ajustes))
 
+    def op_susurrar(self, params, progreso):
+        """Convierte la grabación de una voz en susurro (WORLD), para su variante «susurro». No necesita modelo."""
+        from .retoque import susurrar
+
+        return susurrar(params["entrada"], params["salida"], progreso)
+
     def _exigir_modelo(self, tipo, para):
         if self._modelo is None:
             raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))

@@ -26,6 +26,7 @@ Calíope **no redistribuye** los motores ni los modelos: los descarga de sus fue
 | [PyTorch](https://pytorch.org) | PyTorch Foundation | BSD-3 | Ejecuta los modelos en la tarjeta gráfica o en el procesador. |
 | [Transformers](https://github.com/huggingface/transformers) y [Hugging Face Hub](https://github.com/huggingface/huggingface_hub) | Hugging Face | Apache 2.0 | Descarga y carga de los modelos. |
 | [FFmpeg](https://ffmpeg.org) | Proyecto FFmpeg | GPL | Convierte el audio, iguala el volumen, mezcla el fondo y crea los sonidos incluidos. Se descarga una compilación oficial ([gyan.dev](https://www.gyan.dev/ffmpeg/builds/)). |
+| [WORLD](https://github.com/mmorise/World) y [pyworld](https://github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder) | Masanori Morise y Jeremy Hsu | BSD-3 / MIT | Fabrica el susurro de una voz a partir de su grabación normal, conservando su timbre. |
 | [Rubber Band](https://breakfastquay.com/rubberband/) | Breakfast Quay | GPL | Cambia la velocidad sin tocar el tono y el tono sin tocar la velocidad (incluido en FFmpeg). |
 | [uv](https://github.com/astral-sh/uv) | Astral | MIT / Apache 2.0 | Instala cada motor en su propio entorno de Python. |
 | [Python](https://www.python.org) | Python Software Foundation | PSF | El lenguaje de los motores. |
