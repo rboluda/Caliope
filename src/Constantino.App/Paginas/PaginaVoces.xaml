@@ -7,11 +7,11 @@
     xmlns:vm="clr-namespace:Constantino.App.ViewModels"
     x:Name="Raiz"
     ScrollViewer.CanContentScroll="False"
-    Title="{l:T 'Voces'}">
+    Title="{l:T 'Mis voces'}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="32,24,32,32" MaxWidth="1040">
             <Grid>
-                <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Voces'}" />
+                <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Mis voces'}" />
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                     <ui:Button
                         Margin="0,0,8,0"

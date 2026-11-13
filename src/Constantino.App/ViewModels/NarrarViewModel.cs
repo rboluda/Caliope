@@ -687,7 +687,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         var tieneSusurro = voz.IdsVariantes.Contains(Constantino.Core.Voces.CatalogoVariantes.Susurro);
         var lista = string.Join(", ", voz.Variantes.Select(v => $"{v.Variante.Etiqueta} {v.Variante.Nombre.ToLowerInvariant()}"));
         AyudaVariantes = voz.Variantes.Count == 0
-            ? T("Esta voz no tiene variantes: [whispers] se simula bajando el volumen. Puedes añadirle variantes en «Voces».")
+            ? T("Esta voz no tiene variantes: [whispers] se simula bajando el volumen. Puedes añadirle variantes en «Mis voces».")
             : tieneSusurro
                 ? T("Variantes de esta voz: {0}.", lista)
                 : T("Variantes de esta voz: {0}. [whispers] se simula bajando el volumen.", lista);
@@ -867,7 +867,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         await GuardarYRefrescarAsync();
         if (await _narracion.VozAsync(VozId) is not { } voz)
         {
-            Error = Voces.Count == 0 ? T("Primero añade una voz en «Voces».") : T("Elige la voz con la que narrar.");
+            Error = Voces.Count == 0 ? T("Primero añade una voz en «Mis voces».") : T("Elige la voz con la que narrar.");
             return;
         }
         if (await _narracion.ModeloAsync(MotorVoz) is not { } modelo)

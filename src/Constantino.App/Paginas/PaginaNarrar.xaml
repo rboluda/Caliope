@@ -74,7 +74,7 @@
                 Margin="0,0,0,12"
                 IsClosable="False"
                 IsOpen="{Binding ViewModel.SinVoces}"
-                Message="{l:T 'Para narrar hace falta al menos una voz. Añádela en «Voces».'}"
+                Message="{l:T 'Para narrar hace falta al menos una voz. Añádela en «Mis voces».'}"
                 Severity="Warning"
                 Title="{l:T 'No hay voces'}" />
 

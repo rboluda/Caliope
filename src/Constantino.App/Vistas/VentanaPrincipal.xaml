@@ -84,19 +84,15 @@
             IsPaneToggleVisible="True"
             OpenPaneLength="220"
             PaneDisplayMode="Left">
+            <!--  Arriba, lo que se hace con Calíope: las voces y los módulos que las usan. Abajo, aparte, la configuración.  -->
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem Content="{l:T 'Inicio'}" TargetPageType="{x:Type paginas:PaginaInicio}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Home24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="{l:T 'Componentes'}" TargetPageType="{x:Type paginas:PaginaComponentes}">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="PuzzlePiece24" />
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-                <ui:NavigationViewItemSeparator />
-                <ui:NavigationViewItem Content="{l:T 'Voces'}" TargetPageType="{x:Type paginas:PaginaVoces}">
+                <ui:NavigationViewItemHeader Margin="0,10,0,2" Text="{l:T 'Voces'}" />
+                <ui:NavigationViewItem Content="{l:T 'Mis voces'}" TargetPageType="{x:Type paginas:PaginaVoces}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Library24" />
                     </ui:NavigationViewItem.Icon>
@@ -111,32 +107,38 @@
                         <ui:SymbolIcon Symbol="Mic24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItemHeader Margin="0,10,0,2" Text="{l:T 'Módulos'}" />
                 <ui:NavigationViewItem Content="{l:T 'Narrar'}" TargetPageType="{x:Type paginas:PaginaNarrar}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="BookOpen24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItemSeparator />
-                <ui:NavigationViewItem Content="{l:T 'Doblar'}" TargetPageType="{x:Type paginas:PaginaDoblar}">
+                <ui:NavigationViewItem Content="{l:T 'Doblar vídeos'}" TargetPageType="{x:Type paginas:PaginaDoblar}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="VideoClip24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="{l:T 'Actas'}" TargetPageType="{x:Type paginas:PaginaActas}">
+                <ui:NavigationViewItem Content="{l:T 'Actas de reuniones'}" TargetPageType="{x:Type paginas:PaginaActas}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="DocumentText24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
-                <ui:NavigationViewItem Content="{l:T 'Ayuda'}" TargetPageType="{x:Type paginas:PaginaAyuda}">
+                <ui:NavigationViewItemHeader Margin="0,10,0,2" Text="{l:T 'Configuración'}" />
+                <ui:NavigationViewItem Content="{l:T 'Componentes'}" TargetPageType="{x:Type paginas:PaginaComponentes}">
                     <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="QuestionCircle24" />
+                        <ui:SymbolIcon Symbol="PuzzlePiece24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
                 <ui:NavigationViewItem Content="{l:T 'Ajustes'}" TargetPageType="{x:Type paginas:PaginaAjustes}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Settings24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="{l:T 'Ayuda'}" TargetPageType="{x:Type paginas:PaginaAyuda}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="QuestionCircle24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.FooterMenuItems>

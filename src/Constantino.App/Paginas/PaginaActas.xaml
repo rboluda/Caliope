@@ -7,10 +7,10 @@
     xmlns:vm="clr-namespace:Constantino.App.ViewModels"
     x:Name="Raiz"
     ScrollViewer.CanContentScroll="False"
-    Title="{l:T 'Actas'}">
+    Title="{l:T 'Actas de reuniones'}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="32,24,32,32" MaxWidth="1040">
-            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Actas'}" />
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Actas de reuniones'}" />
             <TextBlock
                 Margin="0,4,0,16"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"

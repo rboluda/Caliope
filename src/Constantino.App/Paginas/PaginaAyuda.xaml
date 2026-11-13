@@ -53,7 +53,7 @@
                 </ui:CardExpander.Header>
                 <StackPanel>
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '1. Instala lo necesario. El asistente del primer arranque analiza tu equipo y propone qué instalar. Siempre puedes añadir o quitar piezas desde «Componentes». Lo imprescindible son las herramientas básicas, el motor de voz y una de las voces (la de alta calidad, o la ligera en equipos modestos).'}" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '2. Consigue una voz. Puedes diseñarla describiéndola con palabras («Diseñar voz»), clonarla a partir de una grabación tuya o de alguien que te haya dado permiso («Clonar voz»), o importar un audio que ya tengas («Voces → Importar una voz»).'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '2. Consigue una voz. Puedes diseñarla describiéndola con palabras («Diseñar voz»), clonarla a partir de una grabación tuya o de alguien que te haya dado permiso («Clonar voz»), o importar un audio que ya tengas («Mis voces → Importar una voz»).'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '3. Narra. En «Narrar» crea un proyecto, escribe o pega el guion, elige la voz y pulsa «Generar narración». Cada párrafo se convierte en un bloque de audio; si cambias algo, solo se rehace lo que ha cambiado.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T '4. Saca el audio. En la zona «Narración completa» puedes escucharla, guardarla donde quieras, copiarla o arrastrarla directamente a tu editor de vídeo. «Exportar todo…» copia también cada bloque por separado.'}" />
                     <StackPanel Orientation="Horizontal">
@@ -89,7 +89,7 @@
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'La transcripción importa'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si la transcripción no coincide con lo que se oye, la voz sale cortada (medio segundo de audio). Calíope avisa cuando no encaja. Si no la tienes, marca «No tengo la transcripción»: se imitará solo el timbre, algo menos parecido pero sin riesgo.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Variantes'}" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Una variante es la misma voz hablando de otra forma: susurrando, tensa, asustada, triste, alegre o gritando. Se añaden en «Voces → Añadir variante» desde una grabación o, si la voz es diseñada, generándola con el diseñador de voces. En el guion se usan con su etiqueta.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Una variante es la misma voz hablando de otra forma: susurrando, tensa, asustada, triste, alegre o gritando. Se añaden en «Mis voces → Añadir variante» desde una grabación o, si la voz es diseñada, generándola con el diseñador de voces. En el guion se usan con su etiqueta.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Susurro fabricado'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si no tienes un susurro grabado, elige «Susurrando» al añadir la variante y pulsa «Fabricar el susurro»: Calíope convierte la grabación de la voz en susurro conservando su timbre (con WORLD). Lo mejor sigue siendo un susurro grabado de verdad de 8 segundos o más; el fabricado suena algo peor, pero mucho mejor que bajar el volumen. Un susurro de menos de 3 segundos no sirve: el motor no llega a susurrar.'}" />
                 </StackPanel>
@@ -190,7 +190,7 @@
                     <TextBlock FontWeight="SemiBold" Text="{l:T 'Actas de reuniones'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Actas» eliges la grabación de una reunión (del móvil, de una grabadora o de Teams) y Calíope la pasa a texto, distingue a las personas que hablan y redacta el acta: puntos clave, decisiones, tareas con responsable y plazo, fechas límite, riesgos y seguimiento. Todo se hace en tu ordenador: la grabación no sale de él.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Actas de reuniones» eliges la grabación de una reunión (del móvil, de una grabadora o de Teams) y Calíope la pasa a texto, distingue a las personas que hablan y redacta el acta: puntos clave, decisiones, tareas con responsable y plazo, fechas límite, riesgos y seguimiento. Todo se hace en tu ordenador: la grabación no sale de él.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Después de transcribir, la IA propone quién es cada persona por lo que se dice («Sí, hola Raúl»). Puede equivocarse: escucha cada voz, corrige los nombres y añade su empresa o papel antes de redactar. Si sabes cuántas personas hablan, indícalo: las separa mejor.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Con la fecha de la reunión, «la semana que viene» se convierte en una fecha, y con el glosario los nombres y siglas salen bien escritos. Cada punto del acta lleva el minuto en que se dijo, para comprobarlo en la transcripción. El acta se puede corregir en la propia pantalla y guardar en Word, Markdown o texto.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Hace falta instalar en «Componentes» la transcripción automática, el traductor con IA y una voz del motor principal (su huella de voz distingue a las personas). Graba y transcribe reuniones solo si los participantes lo saben y están de acuerdo.'}" />
@@ -206,7 +206,7 @@
                     <TextBlock FontWeight="SemiBold" Text="{l:T 'Doblar vídeos'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Doblar» eliges un vídeo en inglés y Calíope lo devuelve en castellano con la voz de la misma persona: separa la voz de la música y los efectos, transcribe frase a frase, traduce con una IA en tu ordenador y vuelve a decir cada frase. La música y el ambiente originales se conservan.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Doblar vídeos» eliges un vídeo en inglés y Calíope lo devuelve en castellano con la voz de la misma persona: separa la voz de la música y los efectos, transcribe frase a frase, traduce con una IA en tu ordenador y vuelve a decir cada frase. La música y el ambiente originales se conservan.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si en el vídeo hablan varias personas (hasta 4), Calíope las distingue solo y dobla a cada una con su voz. En «Personas del vídeo» puedes ponerles nombre, escuchar su voz original y unir dos si las ha separado por error; en cada frase puedes cambiar quién la dice.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'El timbre sale de la persona del vídeo y la pronunciación, de una voz castellana de «Mis voces» que eliges tú. Si se usara solo la voz original, el resultado tendría un acento inglés muy marcado.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Cada frase tiene que caber en el tiempo que ocupaba en el vídeo. Si se pasa un poco, se acelera sin cambiar el tono; si se pasa mucho, la IA propone una frase más corta. Puedes corregir cualquier traducción a mano y pulsar otra vez «Doblar vídeo»: solo se rehace lo que has cambiado.'}" />
@@ -227,7 +227,7 @@
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'El motor principal basta para todo. Los otros dos son opcionales y no hace falta probarlos: en «Componentes», el recuadro «¿Qué motor me conviene?» mira tu tarjeta gráfica y te dice si alguno te aporta algo.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Castellano rápido (Chatterbox, de Resemble AI, licencia MIT): versión afinada para el castellano de España. Es el más rápido (tarda menos de lo que dura el audio), deja ajustar la intensidad emocional y marca lo que genera con una marca de agua inaudible. Solo lee en español, pide 4,5 GB de tarjeta y todavía no funciona con las RTX 50.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Máximo parecido (VoxCPM2, de OpenBMB, licencia Apache 2.0): el que más se parece a la voz original, sobre todo si la voz tiene transcripción, y el de mejor sonido (48 kHz). Lee 30 idiomas. Es el más exigente: necesita una tarjeta de 8 GB (con 8 va justo y más lento; mejor 10 GB o más).'}" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Los tres leen el texto igual de bien. Elige el motor en «Narrar»; en «Voces → Probar» puedes escuchar la misma voz con cada uno.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Los tres leen el texto igual de bien. Elige el motor en «Narrar»; en «Mis voces → Probar» puedes escuchar la misma voz con cada uno.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Whisper (OpenAI, MIT) transcribe las grabaciones al clonar. Es opcional: sin él, escribes la transcripción a mano.'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Solo un motor ocupa la tarjeta gráfica a la vez: al cambiar de motor, Calíope cierra el otro. El motor se enciende solo cuando hace falta y puedes apagarlo para liberar memoria.'}" />
                 </StackPanel>
@@ -243,7 +243,7 @@
                 </ui:CardExpander.Header>
                 <StackPanel>
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'La voz sale cortada o muy corta'}" />
-                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Casi siempre es la transcripción de la voz: corrígela en «Voces → Editar transcripción» o déjala vacía para imitar solo el timbre.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Casi siempre es la transcripción de la voz: corrígela en «Mis voces → Editar transcripción» o déjala vacía para imitar solo el timbre.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T '«No hay memoria suficiente en la tarjeta gráfica»'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Cierra navegadores, juegos y otros programas que usen la tarjeta y vuelve a intentarlo. En equipos de 4 GB usa la «Voz ligera».'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'La primera vez tarda'}" />

@@ -46,7 +46,7 @@ public sealed class ServicioDoblaje(ServicioInstalacion instalacion, ServicioMot
         var todas = biblioteca.Listar();
         var elegida = todas.FirstOrDefault(v => v.Id == id) ?? todas.FirstOrDefault(v => v.Id == voces.Predeterminada)
                       ?? todas.FirstOrDefault(v => v.Idioma == "Spanish") ?? todas.FirstOrDefault()
-                      ?? throw new InvalidOperationException(T("Para doblar hace falta una voz en castellano en «Voces»: su pronunciación es la que se usa."));
+                      ?? throw new InvalidOperationException(T("Para doblar hace falta una voz en castellano en «Mis voces»: su pronunciación es la que se usa."));
         return biblioteca.ReferenciaDe(elegida.Id);
     }
 
