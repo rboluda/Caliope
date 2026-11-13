@@ -150,6 +150,8 @@
                     <TextBlock FontWeight="SemiBold" Text="{l:T 'Pronunciación, otras tomas y sonidos'}" />
                 </ui:CardExpander.Header>
                 <StackPanel>
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Cifras, fechas y abreviaturas'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Con una voz en español, Calíope escribe con palabras lo que los motores leen mal: «1.250 €» se lee «mil doscientos cincuenta euros», «13/11/2026» «trece de noviembre de dos mil veintiséis», «21:30» «veintiuna y media», «3.º piso» «tercer piso», «-5 °C» «menos cinco grados», «Sr.» «señor» y «siglo XIX» «siglo diecinueve». Los números concuerdan con la palabra que les sigue («21 personas», «1 coche»). Si quieres que una cifra se lea de otra forma, escríbela con palabras o añádela a «Pronunciación», que manda sobre esto.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Pronunciación'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Si la voz dice mal una palabra (un nombre, una sigla, una palabra extranjera), pulsa «Pronunciación» en Narrar y escribe cómo debe sonar: «ONU» → «o ene u». Sirve para todos tus proyectos.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Otras tomas'}" />

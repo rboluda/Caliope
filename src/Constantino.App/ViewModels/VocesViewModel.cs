@@ -474,7 +474,8 @@ public sealed partial class VocesViewModel : ObservableObject
         {
             var salida = await _voces.ArchivoTemporalAsync("prueba-" + t.Voz.Id);
             var motor = MotorPrueba;
-            var r = await Motor.SintetizarAsync(t.Voz, t.Referencia, t.TextoPrueba.Trim(), salida, motor: motor);
+            var texto = t.Voz.Idioma == "Spanish" ? Constantino.Core.Narracion.NormalizadorEspanol.Normalizar(t.TextoPrueba.Trim()) : t.TextoPrueba.Trim();
+            var r = await Motor.SintetizarAsync(t.Voz, t.Referencia, texto, salida, motor: motor);
             t.UltimaPrueba = r.Salida;
             t.ResultadoPrueba = T("{0}: {1:0.#} s de audio generados en {2:0.#} s", MotoresDeVoz.NombreVisible(motor), r.Duracion, r.Segundos) +
                                 (r.VramPicoGib is { } v ? " · " + T("{0:0.#} GB de memoria de la tarjeta", v) : "");

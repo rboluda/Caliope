@@ -26,6 +26,9 @@ public interface ISintetizador
     /// <summary>Otras voces de la biblioteca para [voz: …]: nombre o id normalizado → id.</summary>
     IReadOnlyDictionary<string, string> OtrasVoces => new Dictionary<string, string>();
 
+    /// <summary>Idioma de la voz del proyecto («Spanish»…), o null si no se sabe. En español, las cifras se leen con palabras.</summary>
+    string? Idioma => null;
+
     /// <summary>Firma de otra voz (cambia si cambia su grabación).</summary>
     string FirmaDeVoz(string vozId) => vozId;
 
@@ -116,7 +119,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
     /// <summary>Lee el guion con todo lo que sabe el narrador: variantes, otras voces, efectos y pronunciaciones.</summary>
     public IReadOnlyList<Bloque> Leer(Proyecto p, string guion) =>
         Guion.Leer(guion, p.Ajustes.Pausa, p.Ajustes.PausaLarga,
-            new ContextoGuion(sintetizador.Variantes, sintetizador.OtrasVoces, sonidos?.Efectos, diccionario));
+            new ContextoGuion(sintetizador.Variantes, sintetizador.OtrasVoces, sonidos?.Efectos, diccionario, sintetizador.Idioma));
 
     /// <summary>La huella con la que se compara un bloque ya generado (la misma en pantalla y al generar).</summary>
     public string Huella(Proyecto p, Bloque b) =>
@@ -268,7 +271,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             progreso.Report(new EventoNarracion(TipoEventoNarracion.Montando, b.Indice, bloques.Count,
                 T("Revisando que se lee bien: bloque {0}", b.Indice), (double)k / indices.Count));
             var oido = await revisor!.TranscribirAsync(Path.Combine(normalizados, $"{b.Archivo}.wav"), ct).ConfigureAwait(false);
-            var c = Revision.Comparar(b.TextoLeido, oido);
+            var c = Revision.Comparar(b.TextoLeido, oido, sintetizador.Idioma == "Spanish");
             if (c.MalLeido)
                 fallidos.Add((b, c));
         }
@@ -288,7 +291,8 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             var mejor = (Semilla: (int?)null, Comparacion: original);
             foreach (var t in tomas)
             {
-                var c = Revision.Comparar(b.TextoLeido, await revisor!.TranscribirAsync(t.Archivo, ct).ConfigureAwait(false));
+                var c = Revision.Comparar(b.TextoLeido, await revisor!.TranscribirAsync(t.Archivo, ct).ConfigureAwait(false),
+                    sintetizador.Idioma == "Spanish");
                 if (c.Errores < mejor.Comparacion.Errores)
                     mejor = (t.Semilla, c);
             }

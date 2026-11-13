@@ -47,6 +47,7 @@ public sealed class SintetizadorMotor(ServicioMotor motor, VozParaNarrar voz, st
     public string FirmaVoz { get; } = voz.Firma;
     public string Modelo => modelo;
     public IReadOnlyCollection<string> Variantes => voz.IdsVariantes;
+    public string? Idioma => voz.Voz.Idioma;
     public IReadOnlyDictionary<string, string> OtrasVoces { get; } = otrasVoces ?? new Dictionary<string, string>();
 
     public string FirmaDeVoz(string vozId) => Cargar(vozId)?.Firma ?? "falta";

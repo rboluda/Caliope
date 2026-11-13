@@ -24,8 +24,14 @@ public sealed record ComparacionLectura(int Errores, int Palabras, double Tasa)
 /// <summary>Compara el texto de un bloque con la transcripción de su audio para detectar frases cortadas o inventadas.</summary>
 public static class Revision
 {
-    public static ComparacionLectura Comparar(string esperado, string oido)
+    /// <param name="espanol">
+    /// En español el texto ya se lee con palabras («mil doscientos»), y Whisper escribe cifras («1200»): se pasan a
+    /// palabras también para poder compararlas.
+    /// </param>
+    public static ComparacionLectura Comparar(string esperado, string oido, bool espanol = false)
     {
+        if (espanol)
+            oido = NormalizadorEspanol.Normalizar(oido);
         var a = Palabras(esperado);
         // Lo que Whisper escriba con cifras tampoco se compara.
         var b = Palabras(oido).Where(p => !p.Any(char.IsDigit)).ToList();

@@ -25,11 +25,17 @@ public sealed record Pronunciacion(string Escrito, string Dicho);
 /// <param name="Voces">Otras voces utilizables con [voz: …]: nombre o id normalizado (slug) → id.</param>
 /// <param name="Efectos">Efectos disponibles para [sfx: …] (nombres normalizados).</param>
 /// <param name="Diccionario">Sustituciones de pronunciación (palabras completas, sin distinguir mayúsculas).</param>
+/// <param name="Idioma">Idioma de la voz («Spanish»…). En español, las cifras, fechas y abreviaturas se leen con palabras.</param>
 public sealed record ContextoGuion(
     IReadOnlyCollection<string>? Variantes = null,
     IReadOnlyDictionary<string, string>? Voces = null,
     IReadOnlyCollection<string>? Efectos = null,
-    IReadOnlyList<Pronunciacion>? Diccionario = null);
+    IReadOnlyList<Pronunciacion>? Diccionario = null,
+    string? Idioma = null)
+{
+    /// <summary>Si las cifras, fechas y abreviaturas se pasan a palabras antes de leerlas.</summary>
+    public bool LeerCifras => Idioma == "Spanish";
+}
 
 /// <summary>Un bloque del guion: un párrafo, que da un archivo de audio.</summary>
 /// <param name="Nombre">De la línea «# nombre»; «bloque» si no la hay.</param>
@@ -53,7 +59,9 @@ public sealed record Bloque(int Indice, string Nombre, string Texto, IReadOnlyLi
 /// el final de la línea o [/whispers]. Las etiquetas con el nombre de una variante de la voz ([tenso], [alegre]…)
 /// funcionan igual. [voz: Nombre] lee con otra voz de la biblioteca hasta el final de la línea; [normal] vuelve a la
 /// voz del proyecto. [sfx: nombre] inserta un efecto de sonido. Cualquier otra etiqueta se quita y se avisa.</item>
-/// <item>El diccionario de pronunciación sustituye palabras antes de leerlas.</item>
+/// <item>El diccionario de pronunciación sustituye palabras antes de leerlas. Después, con una voz en español, las
+/// cifras, fechas, horas, monedas y abreviaturas se pasan a palabras (<see cref="NormalizadorEspanol"/>): así una
+/// entrada del diccionario puede decidir cómo se lee una cifra concreta.</item>
 /// </list>
 /// </summary>
 public static partial class Guion
@@ -91,7 +99,6 @@ public static partial class Guion
     private static Bloque LeerBloque(int indice, string[] lineas, double pausa, double pausaLarga, ContextoGuion contexto)
     {
         var variantes = contexto.Variantes ?? [];
-        var diccionario = contexto.Diccionario ?? [];
         var nombre = "bloque";
         if (lineas.Length > 0 && lineas[0].TrimStart().StartsWith('#'))
         {
@@ -109,7 +116,7 @@ public static partial class Guion
             var pos = 0;
             foreach (Match m in Etiqueta().Matches(linea))
             {
-                AnadirVoz(eventos, linea[pos..m.Index], susurro, variante, voz, diccionario);
+                AnadirVoz(eventos, linea[pos..m.Index], susurro, variante, voz, contexto);
                 pos = m.Index + m.Length;
                 var etiqueta = NormalizarEtiqueta(m.Groups[1].Value);
                 var comoVariante = CatalogoVariantes.DesdeIngles(Textos.Slug(etiqueta.TrimStart('/'), ""));
@@ -162,18 +169,20 @@ public static partial class Guion
                     avisos.Add(T("Etiqueta desconocida eliminada: [{0}]", m.Groups[1].Value));
                 }
             }
-            AnadirVoz(eventos, linea[pos..], susurro, variante, voz, diccionario);
+            AnadirVoz(eventos, linea[pos..], susurro, variante, voz, contexto);
         }
         return new Bloque(indice, nombre, string.Join("\n", lineas).Trim(), eventos, avisos);
     }
 
     private static void AnadirVoz(List<Evento> eventos, string texto, bool susurro, string? variante, string? voz,
-        IReadOnlyList<Pronunciacion> diccionario)
+        ContextoGuion contexto)
     {
         texto = Espacios().Replace(texto, " ").Trim();
         if (texto.Length == 0)
             return;
-        texto = Pronunciar(texto, diccionario);
+        texto = Pronunciar(texto, contexto.Diccionario ?? []);
+        if (contexto.LeerCifras)
+            texto = NormalizadorEspanol.Normalizar(texto);
         if (eventos.Count > 0 && eventos[^1] is EventoVoz anterior && anterior.Susurro == susurro && anterior.Variante == variante
             && anterior.VozId == voz)
             eventos[^1] = anterior with { Texto = anterior.Texto + " " + texto };

@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Constantino.Core.Instalaciones;
 using Constantino.Core.Motores;
+using Constantino.Core.Narracion;
 using static Constantino.Core.Idioma;
 
 namespace Constantino.Core.Doblaje;
@@ -297,7 +298,9 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
 
             var hueco = HuecoDisponible(p, f);
             var bruto = Path.Combine(almacen.Frases(p.Id), $"{f.Id:000}_bruto.wav");
-            var duracion = await motores.SintetizarAsync(f.Traduccion, pronunciacion, timbre, bruto, Semilla, ct).ConfigureAwait(false);
+            // Las cifras, fechas y abreviaturas de la traducción, con palabras: el motor las lee mejor.
+            var duracion = await motores.SintetizarAsync(NormalizadorEspanol.Normalizar(f.Traduccion), pronunciacion, timbre, bruto,
+                Semilla, ct).ConfigureAwait(false);
             // Si no cabe ni acelerando al máximo, la IA propone una frase más corta (hasta dos veces).
             for (var intento = 0; intento < IntentosAcortar && duracion / hueco > TempoMaximo; intento++)
             {
@@ -305,7 +308,8 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
                 if (corta.Length == 0 || corta.Length >= f.Traduccion.Length)
                     break;
                 f = f with { Traduccion = corta };
-                duracion = await motores.SintetizarAsync(f.Traduccion, pronunciacion, timbre, bruto, Semilla, ct).ConfigureAwait(false);
+                duracion = await motores.SintetizarAsync(NormalizadorEspanol.Normalizar(f.Traduccion), pronunciacion, timbre, bruto,
+                    Semilla, ct).ConfigureAwait(false);
             }
             var (tempo, encaje) = Encajar(duracion, hueco);
             if (tempo > 1.0)

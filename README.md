@@ -30,6 +30,7 @@ Calíope convierte texto en voz con modelos de inteligencia artificial que **se 
 - 📖 **Narra guiones largos** por párrafos, con pausas, susurros y cambios de emoción marcados en el texto. Si cambias una frase, solo se vuelve a generar ese párrafo.
 - 📝 **Actas de reuniones**: de la grabación de una reunión (móvil, grabadora o Teams) al acta, con quién dijo qué, puntos clave, decisiones y tareas con responsable y plazo, todo con una IA en tu ordenador. Se guarda en Word.
 - 🎬 **Dobla vídeos del inglés al castellano** conservando la voz de quien habla: Calíope separa la voz de la música, transcribe, traduce con una IA en tu ordenador y vuelve a decir cada frase con el timbre original y pronunciación castellana, sin acento inglés. Distingue a cada persona que habla (hasta 4) y la dobla con su propia voz; vídeos de hasta 10 minutos.
+- 🔢 **Cifras, fechas y abreviaturas con palabras**: «1.250 €», «13/11/2026», «21:30», «3.º», «-5 °C» o «Sr.» se leen bien en español, concordando con la palabra que les sigue.
 - 🎭 **Variantes de una misma voz**: susurrando, tensa, asustada, triste, alegre o gritando. Si no tienes un susurro grabado, Calíope lo fabrica a partir de la grabación de la voz.
 - 🎚️ **Afina el resultado**: expresividad, velocidad y tono (independientes entre sí), pausas y volumen normalizado para vídeo o pódcast.
 - 📤 **Saca el audio en MP3 o WAV** o arrástralo directamente a tu editor de vídeo.
