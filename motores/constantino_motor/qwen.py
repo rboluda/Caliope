@@ -267,6 +267,12 @@ class MotorQwen:
 
         return susurrar(params["entrada"], params["salida"], progreso)
 
+    def op_analizar_voz(self, params, progreso):
+        """Tono medio, sonoridad y duración de una grabación (para revisar las voces diseñadas). No necesita modelo."""
+        from .retoque import analizar
+
+        return analizar(params["audio"])
+
     def _exigir_modelo(self, tipo, para):
         if self._modelo is None:
             raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))

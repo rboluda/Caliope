@@ -20,7 +20,8 @@ public sealed record SolicitudImportacion(
     OrigenVoz Origen = OrigenVoz.Importada,
     string? Descripcion = null,
     int? Semilla = null,
-    bool SinTranscripcion = false);
+    bool SinTranscripcion = false,
+    bool AcentoEspana = false);
 
 /// <param name="Aviso">Algo mejorable pero aceptable (p. ej. una grabación más corta de lo ideal).</param>
 public sealed record ResultadoImportacion(Voz Voz, string? Aviso);
@@ -100,7 +101,7 @@ public sealed class BibliotecaVoces(string carpeta, string ffmpeg, IEjecutorProc
             var duracion = await ConvertirAsync(s.Archivo, Path.Combine(destino, ArchivoReferencia), transcripcion, s.SinTranscripcion, ct)
                 .ConfigureAwait(false);
             var voz = new Voz(id, nombre, s.Idioma, s.Origen, transcripcion, Math.Round(duracion, 2), DateTimeOffset.Now,
-                s.Consentimiento, s.Descripcion, s.Semilla);
+                s.Consentimiento, s.Descripcion, s.Semilla, s.AcentoEspana);
             Escribir(voz);
             return new ResultadoImportacion(voz, AvisoDuracion(duracion));
         }

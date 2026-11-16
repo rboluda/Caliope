@@ -19,6 +19,10 @@ public enum OrigenVoz
 /// (algo menos parecido, pero funciona).
 /// </param>
 /// <param name="Consentimiento">Quien la añadió confirmó que la voz es suya o tiene permiso para usarla.</param>
+/// <param name="AcentoEspana">
+/// Diseñada con acento de España: el diseñador sesea, así que su grabación pasó por el motor castellano. Sus variantes
+/// no se pueden generar con el diseñador (saldrían con seseo).
+/// </param>
 public sealed record Voz(
     string Id,
     string Nombre,
@@ -29,7 +33,8 @@ public sealed record Voz(
     DateTimeOffset Creada,
     bool Consentimiento,
     string? Descripcion = null,
-    int? Semilla = null)
+    int? Semilla = null,
+    bool AcentoEspana = false)
 {
     [System.Text.Json.Serialization.JsonIgnore]
     public bool SoloTimbre => string.IsNullOrEmpty(Transcripcion);

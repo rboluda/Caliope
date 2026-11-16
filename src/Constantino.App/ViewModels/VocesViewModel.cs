@@ -73,8 +73,13 @@ public sealed partial class TarjetaVoz : ObservableObject
     public bool TieneVariantes => Variantes.Count > 0;
     public IReadOnlyList<TipoVariante> TiposVariante => CatalogoVariantes.Tipos;
 
-    /// <summary>Las voces diseñadas pueden generar variantes con su misma descripción y semilla.</summary>
-    public bool PuedeGenerarVariante => Voz.Origen == OrigenVoz.Disenada && !string.IsNullOrWhiteSpace(Voz.Descripcion);
+    /// <summary>
+    /// Las voces diseñadas pueden generar variantes con su misma descripción y semilla. Las de acento de España no:
+    /// el diseñador las haría con seseo, y pasarlas por el motor castellano les quitaría la emoción de la variante.
+    /// </summary>
+    public bool PuedeGenerarVariante => Voz.Origen == OrigenVoz.Disenada && !string.IsNullOrWhiteSpace(Voz.Descripcion) && !Voz.AcentoEspana;
+
+    public bool AcentoEspana => Voz.AcentoEspana;
 
     [ObservableProperty] public partial bool MostrarAnadirVariante { get; set; }
     [ObservableProperty]

@@ -418,6 +418,13 @@
                                             </ui:Button>
                                         </StackPanel>
 
+                                        <TextBlock
+                                            Margin="0,12,0,0"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="{l:T 'Esta voz tiene acento de España: el diseñador haría sus variantes con acento latino. Añádelas desde una grabación o, para el susurro, fabrícalo.'}"
+                                            TextWrapping="Wrap"
+                                            Visibility="{Binding AcentoEspana, Converter={StaticResource BoolAVisibilidad}}" />
+
                                         <!--  Fabricar el susurro a partir de la grabación de la voz  -->
                                         <StackPanel Margin="0,12,0,0" Visibility="{Binding EsSusurro, Converter={StaticResource BoolAVisibilidad}}">
                                             <TextBlock

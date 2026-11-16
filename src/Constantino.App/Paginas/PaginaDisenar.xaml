@@ -47,7 +47,43 @@
                     <ui:Card>
                         <StackPanel>
                             <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '1. ¿Cómo es la voz?'}" />
-                            <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Empezar desde un ejemplo'}" />
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Descríbela con tus palabras (opcional)'}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBox
+                                    MinHeight="60"
+                                    AcceptsReturn="True"
+                                    PlaceholderText="{l:T 'Por ejemplo: un abuelo gallego que cuenta historias junto al fuego'}"
+                                    Text="{Binding ViewModel.DescripcionLibre, UpdateSourceTrigger=PropertyChanged}"
+                                    TextWrapping="Wrap" />
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Top">
+                                    <ui:Button
+                                        Command="{Binding ViewModel.DescribirCommand}"
+                                        Content="{l:T 'Rellenar con IA'}"
+                                        IsEnabled="{Binding ViewModel.Libre}"
+                                        ToolTip="{l:T 'La IA de tu ordenador (el traductor con IA, Qwen3-4B en llama.cpp) lee tu descripción y rellena las opciones de abajo'}">
+                                        <ui:Button.Icon>
+                                            <ui:SymbolIcon Symbol="Sparkle24" />
+                                        </ui:Button.Icon>
+                                    </ui:Button>
+                                    <ui:ProgressRing
+                                        Width="18"
+                                        Height="18"
+                                        Margin="0,8,0,0"
+                                        IsIndeterminate="True"
+                                        Visibility="{Binding ViewModel.Describiendo, Converter={StaticResource BoolAVisibilidad}}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{l:T 'La IA rellena las opciones de abajo; después puedes cambiarlas. Necesita el traductor con IA.'}"
+                                TextWrapping="Wrap" />
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'O empieza desde un ejemplo'}" />
                             <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Ejemplos}" SelectedItem="{Binding ViewModel.Ejemplo}" />
 
                             <Grid>
@@ -116,6 +152,46 @@
                                 </StackPanel>
                             </Grid>
 
+                            <!--  Acento de España: el diseñador sesea; el motor castellano pone la pronunciación.  -->
+                            <Border
+                                Margin="0,12,0,0"
+                                Padding="12"
+                                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                CornerRadius="6"
+                                Visibility="{Binding ViewModel.PuedeAcentoEspana, Converter={StaticResource BoolAVisibilidad}}">
+                                <StackPanel>
+                                    <CheckBox IsChecked="{Binding ViewModel.AcentoEspana}" IsEnabled="{Binding ViewModel.MotorCastellanoInstalado}">
+                                        <TextBlock FontWeight="SemiBold" Text="{l:T 'Acento de España de doblaje (con el motor castellano)'}" TextWrapping="Wrap" />
+                                    </CheckBox>
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        FontSize="12"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        Text="{l:T 'El diseñador inventa las voces con acento latino (sesea). Con esta opción, cada variante pasa por el motor castellano: conserva su timbre y habla como en el doblaje de cine de España.'}"
+                                        TextWrapping="Wrap" />
+                                    <Grid Margin="0,8,0,0" Visibility="{Binding ViewModel.MotorCastellanoInstalado, Converter={StaticResource BoolAVisibilidad}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Text="{l:T 'Pronunciación de:'}" />
+                                        <ComboBox
+                                            Grid.Column="1"
+                                            DisplayMemberPath="Nombre"
+                                            IsEnabled="{Binding ViewModel.AcentoEspana}"
+                                            ItemsSource="{Binding ViewModel.Pronunciaciones}"
+                                            SelectedItem="{Binding ViewModel.Pronunciacion}"
+                                            ToolTip="{l:T 'La de serie basta. Con una voz tuya de España, el timbre queda un poco más fiel.'}" />
+                                    </Grid>
+                                    <TextBlock
+                                        Margin="0,6,0,0"
+                                        Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                        Text="{l:T 'Necesita el motor castellano (Chatterbox): instálalo desde Componentes.'}"
+                                        TextWrapping="Wrap"
+                                        Visibility="{Binding ViewModel.MotorCastellanoInstalado, Converter={StaticResource BoolInversoAVisibilidad}}" />
+                                </StackPanel>
+                            </Border>
+
                             <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Algo más (opcional, mejor en inglés)'}" />
                             <ui:TextBox PlaceholderText="{l:T 'Por ejemplo: Like a late-night radio host'}" Text="{Binding ViewModel.Extra, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
@@ -170,6 +246,11 @@
                                     </ui:Button.Icon>
                                 </ui:Button>
                             </Grid>
+                            <CheckBox Margin="0,10,0,0" IsChecked="{Binding ViewModel.RehacerSolas}">
+                                <TextBlock
+                                    Text="{l:T 'Revisar cada variante y rehacer sola la que no encaje: tono distinto del pedido o palabras saltadas (con la transcripción automática, si está instalada)'}"
+                                    TextWrapping="Wrap" />
+                            </CheckBox>
                             <StackPanel Margin="0,10,0,0" Orientation="Horizontal" Visibility="{Binding ViewModel.Generando, Converter={StaticResource BoolAVisibilidad}}">
                                 <ui:ProgressRing Width="18" Height="18" IsIndeterminate="True" />
                                 <ui:Button Margin="12,0,0,0" Command="{Binding ViewModel.CancelarCommand}" Content="{l:T 'Cancelar'}" />
@@ -199,7 +280,7 @@
                         <TextBlock
                             Margin="0,4,0,8"
                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                            Text="{l:T 'Cada variante es una voz distinta con la misma descripción. La que guardes quedará en tu biblioteca, lista para narrar.'}"
+                            Text="{l:T 'Cada variante es una voz distinta con la misma descripción. Escucha también «Así sonará al narrar»: es la voz que tendrás al narrar. La que guardes quedará en tu biblioteca.'}"
                             TextWrapping="Wrap" />
                         <ItemsControl ItemsSource="{Binding ViewModel.Variantes}">
                             <ItemsControl.ItemTemplate>
@@ -207,9 +288,15 @@
                                     <Border Margin="0,6" Padding="12" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6">
                                         <StackPanel>
                                             <Grid>
-                                                <StackPanel>
-                                                    <TextBlock FontWeight="SemiBold" Text="{Binding Titulo}" />
+                                                <StackPanel Margin="0,0,110,0">
+                                                    <TextBlock FontWeight="SemiBold" Text="{Binding Titulo}" TextWrapping="Wrap" />
                                                     <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Detalle}" />
+                                                    <TextBlock
+                                                        FontSize="12"
+                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                        Text="{Binding Revision}"
+                                                        TextWrapping="Wrap"
+                                                        Visibility="{Binding Revision, Converter={StaticResource NoNuloAVisibilidad}}" />
                                                 </StackPanel>
                                                 <ui:Button
                                                     HorizontalAlignment="Right"
@@ -222,6 +309,64 @@
                                                     </ui:Button.Icon>
                                                 </ui:Button>
                                             </Grid>
+                                            <TextBlock
+                                                Margin="0,6,0,0"
+                                                Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                                Text="{Binding Avisos}"
+                                                TextWrapping="Wrap"
+                                                Visibility="{Binding Avisos, Converter={StaticResource NoNuloAVisibilidad}}" />
+                                            <WrapPanel Margin="0,8,0,0">
+                                                <ui:Button
+                                                    Margin="0,0,8,0"
+                                                    Command="{Binding DataContext.ViewModel.NarrarCommand, ElementName=Raiz}"
+                                                    CommandParameter="{Binding}"
+                                                    Content="{l:T 'Así sonará al narrar'}"
+                                                    IsEnabled="{Binding Narrando, Converter={StaticResource NegarBool}}"
+                                                    ToolTip="{l:T 'Lee un párrafo de narración con la voz ya clonada, como saldrá en Narrar'}">
+                                                    <ui:Button.Icon>
+                                                        <ui:SymbolIcon Symbol="BookOpen24" />
+                                                    </ui:Button.Icon>
+                                                </ui:Button>
+                                                <ui:Button
+                                                    Margin="0,0,8,0"
+                                                    Command="{Binding DataContext.ViewModel.AlternarCambiosCommand, ElementName=Raiz}"
+                                                    CommandParameter="{Binding}"
+                                                    Content="{l:T 'Más así…'}"
+                                                    IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}">
+                                                    <ui:Button.Icon>
+                                                        <ui:SymbolIcon Symbol="Wand24" />
+                                                    </ui:Button.Icon>
+                                                </ui:Button>
+                                                <ui:ProgressRing
+                                                    Width="18"
+                                                    Height="18"
+                                                    VerticalAlignment="Center"
+                                                    IsIndeterminate="True"
+                                                    Visibility="{Binding Narrando, Converter={StaticResource BoolAVisibilidad}}" />
+                                            </WrapPanel>
+                                            <StackPanel Margin="0,8,0,0" Visibility="{Binding MostrarCambios, Converter={StaticResource BoolAVisibilidad}}">
+                                                <TextBlock
+                                                    FontSize="12"
+                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                    Text="{l:T 'Crea dos voces con la misma semilla y el cambio que elijas, una con un poco y otra con bastante. Salen parecidas, no idénticas.'}"
+                                                    TextWrapping="Wrap" />
+                                                <ItemsControl ItemsSource="{Binding Cambios}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:CambioDeVariante}">
+                                                            <ui:Button
+                                                                Margin="0,6,6,0"
+                                                                Command="{Binding DataContext.ViewModel.MasAsiCommand, ElementName=Raiz}"
+                                                                CommandParameter="{Binding}"
+                                                                Content="{Binding Nombre}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
                                             <StackPanel Margin="0,10,0,0" Orientation="Horizontal" Visibility="{Binding Guardada, Converter={StaticResource NoNuloAVisibilidad}, ConverterParameter=inverso}">
                                                 <ui:TextBox MinWidth="200" PlaceholderText="{l:T 'Nombre de la voz'}" Text="{Binding Nombre, UpdateSourceTrigger=PropertyChanged}" />
                                                 <ui:Button
@@ -242,7 +387,7 @@
                                                 IsOpen="{Binding Error, Converter={StaticResource TextoNoVacio}}"
                                                 Message="{Binding Error}"
                                                 Severity="Warning"
-                                                Title="{l:T 'No se ha podido guardar'}" />
+                                                Title="{l:T 'Algo ha fallado'}" />
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>

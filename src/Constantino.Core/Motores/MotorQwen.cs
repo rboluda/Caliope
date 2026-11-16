@@ -81,6 +81,13 @@ public sealed record ParametrosSusurro(string Entrada, string Salida);
 
 public sealed record ResultadoRetoque(string Salida, double Duracion);
 
+/// <summary>Medidas de una grabación de voz.</summary>
+/// <param name="TonoHz">Tono medio (mediana) de lo que suena con tono.</param>
+/// <param name="Sonoridad">Qué parte del tiempo suena con tono (0–1): un susurro o un silencio, casi nada.</param>
+public sealed record MedidasVoz(double TonoHz, double Sonoridad, double Duracion);
+
+public sealed record ParametrosAnalisisVoz(string Audio);
+
 /// <summary>Operaciones del motor Qwen3-TTS con tipos, sobre el protocolo de <see cref="ClienteMotor"/>.</summary>
 public sealed class MotorQwen(ClienteMotor cliente)
 {
@@ -132,6 +139,11 @@ public sealed class MotorQwen(ClienteMotor cliente)
     public Task<ResultadoRetoque> SusurrarAsync(ParametrosSusurro parametros, IProgress<EventoMotor>? progreso = null,
         CancellationToken ct = default) =>
         cliente.PedirAsync<ResultadoRetoque>("susurrar", parametros, progreso, ct);
+
+    /// <summary>Solo el motor principal; no necesita modelo cargado.</summary>
+    public Task<MedidasVoz> AnalizarVozAsync(ParametrosAnalisisVoz parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<MedidasVoz>("analizar_voz", parametros, progreso, ct);
 
     /// <summary>Necesita el modelo VoiceDesign cargado.</summary>
     public Task<ResultadoSintesis> DisenarAsync(ParametrosDiseno parametros, IProgress<EventoMotor>? progreso = null, CancellationToken ct = default) =>

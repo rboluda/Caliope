@@ -78,6 +78,8 @@ class MotorChatterbox:
             raise ErrorMotor("instalacion_incompleta", t("Falta parte de Chatterbox: repáralo desde Componentes."))
 
         self._modelo = self._montar(principal, paquete)
+        # La voz de serie: sirve de pronunciación de España cuando no hay una voz castellana nativa (diseñar voces).
+        self._por_defecto = self._modelo.conds
         self._cargado = (repositorio, revision)
         return {"segundos": round(time.perf_counter() - inicio, 1), "ya_cargado": False, **self._memoria()}
 
@@ -146,8 +148,8 @@ class MotorChatterbox:
         """
         if self._modelo is None:
             raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))
-        pronunciacion, timbre = params["referencia_pronunciacion"], params["referencia_timbre"]
-        for ruta in (pronunciacion, timbre):
+        pronunciacion, timbre = params.get("referencia_pronunciacion") or "", params["referencia_timbre"]
+        for ruta in ([pronunciacion] if pronunciacion else []) + [timbre]:
             if not os.path.isfile(ruta):
                 raise ErrorMotor("archivo_no_encontrado", t("No existe la grabación de referencia: {ruta}", ruta=ruta))
         texto = (params.get("texto") or "").strip()
@@ -155,7 +157,8 @@ class MotorChatterbox:
             raise ErrorMotor("texto_vacio", t("No hay texto que leer."))
         intensidad = float(params.get("intensidad") or 0.5)
         progreso(None, t("Preparando la voz"))
-        nativa = self._condiciones_de(pronunciacion, intensidad)
+        # Sin grabación de pronunciación, la voz de serie del motor: castellano de España (medido: sin seseo).
+        nativa = self._condiciones_de(pronunciacion, intensidad) if pronunciacion else self._por_defecto
         original = self._condiciones_de(timbre, intensidad)
         self._modelo.conds = type(nativa)(nativa.t3, original.gen)
         return self._generar(texto, intensidad, params, progreso)

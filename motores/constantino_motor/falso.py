@@ -60,6 +60,13 @@ class MotorFalso:
         r = self._tono({"texto": "susurro" * 20, "salida": params["salida"]}, progreso)
         return {"salida": r["salida"], "duracion": r["duracion"]}
 
+    def op_analizar_voz(self, params, progreso):
+        if not os.path.isfile(params["audio"]):
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio."))
+        with wave.open(params["audio"], "rb") as w:
+            duracion = w.getnframes() / w.getframerate()
+        return {"tono_hz": 220.0, "sonoridad": 0.8, "duracion": round(duracion, 2)}
+
     def _tono(self, params, progreso):
         texto = params.get("texto", "")
         if texto == "falla":

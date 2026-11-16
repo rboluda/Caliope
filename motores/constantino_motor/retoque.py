@@ -36,6 +36,21 @@ def _leer(ruta):
     return np.ascontiguousarray(x)
 
 
+def analizar(entrada):
+    """Mide una voz: su tono medio (Hz), qué parte suena con tono (0–1; un susurro, casi nada) y su duración."""
+    import numpy as np
+
+    pw = _world()
+    x = _leer(entrada)
+    f0, _ = pw.harvest(x, FRECUENCIA, f0_floor=55, f0_ceil=500, frame_period=10.0)
+    sonoros = f0[f0 > 0]
+    return {
+        "tono_hz": round(float(np.median(sonoros)), 1) if len(sonoros) else 0.0,
+        "sonoridad": round(len(sonoros) / max(len(f0), 1), 3),
+        "duracion": round(len(x) / FRECUENCIA, 2),
+    }
+
+
 def susurrar(entrada, salida, progreso):
     """
     Convierte voz normal en susurro: conserva el timbre y cambia la vibración de las cuerdas vocales por aire.

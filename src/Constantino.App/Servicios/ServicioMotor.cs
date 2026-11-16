@@ -117,6 +117,20 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         await EjecutarAsync(await ModeloDeVozAsync(MotoresDeVoz.Qwen), (motor, progreso) =>
             motor.SusurrarAsync(new ParametrosSusurro(grabacion, salida), progreso, ct), ct);
 
+    /// <summary>
+    /// Tono medio y sonoridad de una voz recién diseñada. No necesita modelo: se pide con el diseñador, que ya está
+    /// cargado justo después de generar.
+    /// </summary>
+    public Task<MedidasVoz> AnalizarVozAsync(string audio, CancellationToken ct = default) =>
+        EjecutarAsync(ModeloVoiceDesign, (motor, progreso) => motor.AnalizarVozAsync(new ParametrosAnalisisVoz(audio), progreso, ct), ct);
+
+    /// <summary>¿Está instalado el motor castellano? (para dar acento de España a las voces diseñadas)</summary>
+    public async Task<bool> HayMotorCastellanoAsync() =>
+        (await instalacion.InstaladorAsync()).EstaInstalado(MotoresDeVoz.Componente(MotoresDeVoz.Chatterbox));
+
+    /// <summary>¿Está instalada la transcripción automática? (para revisar que una voz lee bien su texto)</summary>
+    public async Task<bool> HayWhisperAsync() => (await instalacion.InstaladorAsync()).EstaInstalado(ModeloWhisper);
+
     /// <summary>Escribe lo que se dice en <paramref name="audio"/> (modelo Whisper).</summary>
     public async Task<ResultadoTranscripcion> TranscribirAsync(string audio, string idioma, CancellationToken ct = default)
     {
