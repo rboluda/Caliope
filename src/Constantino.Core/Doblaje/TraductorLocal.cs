@@ -33,7 +33,8 @@ public sealed class TraductorLocal(string servidor, string modelo, bool usaGpu) 
     // (los dos juntos no caben en 8 GB). Son frases cortas: tarda unos segundos.
     private readonly ServidorIA _iaProcesador = new(servidor, modelo, usaGpu: false, contexto: 2048);
 
-    public async Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct)
+    public async Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct,
+        Action<IReadOnlyDictionary<int, string>>? alTerminarTanda = null)
     {
         var resultado = new Dictionary<int, string>();
         for (var inicio = 0; inicio < frases.Count; inicio += Tanda)
@@ -57,6 +58,7 @@ public sealed class TraductorLocal(string servidor, string modelo, bool usaGpu) 
                 if (!string.IsNullOrWhiteSpace(es))
                     resultado[f.Id] = es.Trim();
             }
+            alTerminarTanda?.Invoke(resultado);
         }
         // Lo siguiente es generar las voces: la tarjeta queda libre para el motor.
         await _ia.DisposeAsync().ConfigureAwait(false);

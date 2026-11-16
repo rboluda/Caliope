@@ -27,11 +27,14 @@ Calíope turns text into speech with artificial intelligence models that **run o
 
 - 🎨 **Design new voices** by describing them in words: “40-year-old man, deep and warm voice, slow pace, mysterious tone, Spanish from Spain”.
 - 🎙️ **Clone a voice** from 10 to 20 seconds of recording: your own, or that of someone who has given you permission. You can record it with your microphone right in the app, and with Whisper the transcript writes itself.
+- 💬 **Subtitles**: SRT and karaoke for Shorts, with the timing of each word.
 - 📖 **Narrate long scripts** paragraph by paragraph, with pauses, whispers and changes of emotion marked in the text. If you change a sentence, only that paragraph is generated again.
 - 📝 **Meeting minutes**: from a meeting recording (phone, recorder or Teams) to its minutes, with who said what, key points, decisions and tasks with owner and deadline, all with an AI on your computer. Saved as Word.
 - 🎬 **Dub videos from English into Spanish** keeping the speaker's voice: Calíope separates the voice from the music, transcribes, translates with an AI on your computer and says each sentence again with the original timbre and Spanish pronunciation, without an English accent. It tells apart each person who speaks (up to 4) and dubs them with their own voice; videos up to 10 minutes long.
 - 🔢 **Numbers, dates and abbreviations in words**: “1.250 €”, “13/11/2026”, “21:30”, “3.º”, “-5 °C” or “Sr.” are read correctly in Spanish, agreeing with the word that follows them.
 - ✨ **Better voice design**: describe it in Spanish in your own words, Calíope automatically discards the versions that don't fit, lets you hear “How it will sound narrating”, makes “More like this” and gives it a **Spain film-dubbing accent** with the Spanish engine.
+- 🔁 **Convert voice**: read it yourself with the emotion you want and convert it to another voice from your library, keeping rhythm, pauses and accent.
+- 🎛️ **Mix voices**: the way of speaking (accent, rhythm, intonation) of one voice with the timbre of another.
 - 🎭 **Variants of the same voice**: whispering, tense, frightened, sad, cheerful or shouting. If you don't have a recorded whisper, Calíope makes one from the voice's recording.
 - 🎚️ **Fine-tune the result**: expressiveness, speed and pitch (independent of each other), pauses and volume leveled for video or podcasts.
 - 📤 **Get the audio as MP3 or WAV**, or drag it straight into your video editor.

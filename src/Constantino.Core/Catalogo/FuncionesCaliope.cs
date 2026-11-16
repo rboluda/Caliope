@@ -28,6 +28,8 @@ public static class FuncionesCaliope
         new("disenar", T("Diseñar voces"), T("Inventa voces nuevas a partir de una descripción."), ["modelo-qwen-voicedesign"], []),
         new("doblar", T("Doblar vídeos"), T("Del inglés al castellano, con la voz de cada persona del vídeo."),
             ["whisper", "separador-voz", "traductor", "chatterbox"], []),
+        new("convertir", T("Convertir voz"), T("Una grabación (tú leyendo, por ejemplo) con otra voz de tu biblioteca, conservando cómo se dice."),
+            ["conversion-voz"], []),
         new("actas", T("Actas de reuniones"), T("De la grabación de una reunión a su acta, con quién dijo qué."), ["whisper", "traductor"], []),
     ];
 }

@@ -60,12 +60,32 @@ class MotorFalso:
         r = self._tono({"texto": "susurro" * 20, "salida": params["salida"]}, progreso)
         return {"salida": r["salida"], "duracion": r["duracion"]}
 
+    def op_convertir(self, params, progreso):
+        for clave in ("origen", "voz"):
+            if not os.path.isfile(params[clave]):
+                raise ErrorMotor("archivo_no_encontrado", t("No existe el audio."))
+        return self._tono({"texto": "convertida" * 5, "salida": params["salida"]}, progreso)
+
+    def op_prosodia(self, params, progreso):
+        return {"tramos": [{"volumen_db": -20.0, "tono_hz": 120.0, "movimiento": 5.0, "sonoridad": 0.7} for _ in params.get("tramos") or []]}
+
+    def op_palabras(self, params, progreso):
+        if not os.path.isfile(params["audio"]):
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio."))
+        return {"palabras": [{"texto": "Hola,", "inicio": 0.1, "fin": 0.5}, {"texto": "mundo.", "inicio": 0.6, "fin": 1.1}]}
+
+    def op_mezclar(self, params, progreso):
+        for clave in ("habla", "voz"):
+            if not os.path.isfile(params[clave]):
+                raise ErrorMotor("archivo_no_encontrado", t("No existe la grabación de referencia."))
+        return self._tono(params, progreso)
+
     def op_analizar_voz(self, params, progreso):
         if not os.path.isfile(params["audio"]):
             raise ErrorMotor("archivo_no_encontrado", t("No existe el audio."))
         with wave.open(params["audio"], "rb") as w:
             duracion = w.getnframes() / w.getframerate()
-        return {"tono_hz": 220.0, "sonoridad": 0.8, "duracion": round(duracion, 2)}
+        return {"tono_hz": 220.0, "sonoridad": 0.8, "duracion": round(duracion, 2), "movimiento": 6.0}
 
     def _tono(self, params, progreso):
         texto = params.get("texto", "")

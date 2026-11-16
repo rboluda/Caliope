@@ -107,6 +107,16 @@
                         <ui:SymbolIcon Symbol="Mic24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="{l:T 'Mezclar voces'}" TargetPageType="{x:Type paginas:PaginaMezclar}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="ArrowSwap24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="{l:T 'Convertir voz'}" TargetPageType="{x:Type paginas:PaginaConvertir}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="PersonVoice24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
                 <ui:NavigationViewItemHeader Margin="0,10,0,2" Text="{l:T 'Módulos'}" />
                 <ui:NavigationViewItem Content="{l:T 'Narrar'}" TargetPageType="{x:Type paginas:PaginaNarrar}">
                     <ui:NavigationViewItem.Icon>

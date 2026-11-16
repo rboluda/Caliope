@@ -34,7 +34,7 @@ public class CatalogoTests
         // Todo lo que nombran las cajas existe, y nada del catálogo se queda fuera de la pantalla.
         Assert.All(usados, id => Assert.True(catalogo.Contiene(id), id));
         Assert.Empty(catalogo.Componentes.Select(c => c.Id).Except(usados));
-        Assert.Equal(["narrar", "disenar", "doblar", "actas"], funciones.Select(f => f.Id));
+        Assert.Equal(["narrar", "disenar", "doblar", "convertir", "actas"], funciones.Select(f => f.Id));
     }
 
     [Fact]

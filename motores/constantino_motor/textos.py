@@ -37,6 +37,10 @@ INGLES = {
     "No hay texto que leer.": "There is no text to read.",
     "Chatterbox solo genera voz.": "Chatterbox only generates voice.",
     "Fabricando el susurro": "Making the whisper",
+    "Cargando la conversión de voz": "Loading voice conversion",
+    "Falta parte de la conversión de voz: repárala desde Componentes.": "Part of voice conversion is missing: repair it from Components.",
+    "Convirtiendo la voz: trozo {n} de {total}": "Converting the voice: part {n} of {total}",
+    "Midiendo la expresión de cada frase": "Measuring the expression of each sentence",
     "Falta una pieza del motor principal para fabricar susurros: actualízalo desde Componentes.":
         "The main engine is missing a piece to make whispers: update it from Components.",
     "Falta parte de Chatterbox: repáralo desde Componentes.":

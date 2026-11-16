@@ -44,7 +44,8 @@ public sealed record AjustesNarracion(
     string? Ambiente = null,
     double VolumenAmbiente = -20,
     string? Musica = null,
-    double VolumenMusica = -22)
+    double VolumenMusica = -22,
+    bool RuidoSala = false)
 {
     /// <summary>Velocidad entre 0,8 y 1,2: más allá se nota artificial.</summary>
     public const double VelocidadMinima = 0.8, VelocidadMaxima = 1.2, TonoMaximo = 3;
@@ -92,6 +93,10 @@ public static class Huellas
     /// <param name="firmaVoz">Algo que cambie si cambia la voz (id, transcripción, grabación de referencia).</param>
     /// <param name="firmaOtraVoz">Firma de las voces de [voz: …] (por id).</param>
     /// <param name="firmaEfecto">Firma de los efectos de [sfx: …] (por nombre).</param>
+    /// <summary>El texto y, solo si no es la normal, la velocidad de la línea (así las huellas antiguas siguen valiendo).</summary>
+    private static string TextoYVelocidad(EventoVoz v) =>
+        Math.Abs(v.Velocidad - 1) < 0.001 ? v.Texto : FormattableString.Invariant($"{v.Texto}@x{v.Velocidad:0.##}");
+
     public static string DeBloque(Bloque bloque, AjustesNarracion ajustes, string firmaVoz, string modelo,
         Func<string, string>? firmaOtraVoz = null, Func<string, string>? firmaEfecto = null)
     {
@@ -99,6 +104,8 @@ public static class Huellas
         var relevantes = JsonSerializer.SerializeToNode(ajustes with { PausaEntreBloques = 0, VozId = null })!.AsObject();
         // Ajustes añadidos en versiones posteriores: con su valor por defecto no cuentan, para que lo generado
         // antes siga valiendo.
+        if (!ajustes.RuidoSala)
+            relevantes.Remove(nameof(AjustesNarracion.RuidoSala));
         if (!ajustes.CambiaVelocidadOTono)
         {
             relevantes.Remove(nameof(AjustesNarracion.Velocidad));
@@ -125,9 +132,9 @@ public static class Huellas
             {
                 // La variante solo entra cuando hay una distinta del susurro: así las huellas de los bloques
                 // generados antes de existir las variantes siguen valiendo.
-                EventoVoz { VozId: { } otra } v => $"voz@{otra}={firmaOtraVoz?.Invoke(otra)}:{(v.Susurro ? "s" : "n")}:{v.Texto}",
-                EventoVoz v when v.Variante is null or CatalogoVariantes.Susurro => $"voz:{(v.Susurro ? "s" : "n")}:{v.Texto}",
-                EventoVoz v => $"voz:{v.Variante}:{v.Texto}",
+                EventoVoz { VozId: { } otra } v => $"voz@{otra}={firmaOtraVoz?.Invoke(otra)}:{(v.Susurro ? "s" : "n")}:{TextoYVelocidad(v)}",
+                EventoVoz v when v.Variante is null or CatalogoVariantes.Susurro => $"voz:{(v.Susurro ? "s" : "n")}:{TextoYVelocidad(v)}",
+                EventoVoz v => $"voz:{v.Variante}:{TextoYVelocidad(v)}",
                 EventoSilencio s => $"silencio:{s.Segundos:0.###}",
                 EventoEfecto ef => $"efecto:{ef.Nombre}={firmaEfecto?.Invoke(ef.Nombre)}",
                 _ => "",

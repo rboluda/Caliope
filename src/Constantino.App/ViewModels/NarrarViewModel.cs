@@ -160,6 +160,7 @@ public sealed partial class NarrarViewModel : ObservableObject
     [ObservableProperty] public partial double PausaLarga { get; set; } = 1.5;
     [ObservableProperty] public partial double PausaEntreBloques { get; set; } = 0.3;
     [ObservableProperty] public partial double SusurroDb { get; set; } = -8;
+    [ObservableProperty] public partial bool RuidoSala { get; set; }
     [ObservableProperty] public partial double Lufs { get; set; } = -16;
     [ObservableProperty] public partial FormatoSalida Formato { get; set; } = FormatoSalida.Mp3;
 
@@ -314,6 +315,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         PausaLarga = a.PausaLarga;
         PausaEntreBloques = a.PausaEntreBloques;
         SusurroDb = a.SusurroDb;
+        RuidoSala = a.RuidoSala;
         Lufs = a.Lufs;
         Formato = a.Formato;
         Revisar = a.Revisar;
@@ -346,6 +348,7 @@ public sealed partial class NarrarViewModel : ObservableObject
     partial void OnPausaLargaChanged(double value) => Programar();
     partial void OnPausaEntreBloquesChanged(double value) => Programar();
     partial void OnSusurroDbChanged(double value) => Programar();
+    partial void OnRuidoSalaChanged(bool value) => Programar();
     partial void OnLufsChanged(double value) => Programar();
     partial void OnFormatoChanged(FormatoSalida value) => Programar();
     partial void OnVelocidadChanged(double value) => Programar();
@@ -376,6 +379,7 @@ public sealed partial class NarrarViewModel : ObservableObject
         PausaLarga = PausaLarga,
         PausaEntreBloques = PausaEntreBloques,
         SusurroDb = SusurroDb,
+        RuidoSala = RuidoSala,
         Lufs = Lufs,
         Formato = Formato,
         Velocidad = Math.Round(Velocidad, 2),
@@ -749,6 +753,45 @@ public sealed partial class NarrarViewModel : ObservableObject
     }
 
     // --- Sacar los audios -----------------------------------------------------------------------
+
+    [ObservableProperty] public partial bool CreandoSubtitulos { get; set; }
+
+    /// <summary>
+    /// Subtítulos del audio completo: Whisper da el tiempo de cada palabra y se pasa a las palabras del guion tal como
+    /// están escritas. Deja junto al audio un .srt (por frases) y un .karaoke.ass (para Shorts, palabra a palabra).
+    /// </summary>
+    [RelayCommand]
+    private async Task CrearSubtitulosAsync()
+    {
+        if (Completo is not { } completo || _proyecto is null)
+            return;
+        Error = null;
+        CreandoSubtitulos = true;
+        AvisoSalida = T("Creando los subtítulos…");
+        try
+        {
+            var voz = await _narracion.VozAsync(VozId);
+            var idioma = voz?.Voz.Idioma ?? "Spanish";
+            var bloques = Guion.Leer(TextoGuion, _proyecto.Ajustes.Pausa, _proyecto.Ajustes.PausaLarga, voz?.IdsVariantes);
+            var texto = string.Join(" ", bloques.Select(b => Subtitulos.TextoVisible(b.Texto)));
+            var oidas = (await Motor.PalabrasAsync(completo, idioma)).Palabras;
+            var palabras = Subtitulos.Alinear(texto, oidas, idioma == "Spanish");
+            var srt = Path.ChangeExtension(completo, ".srt");
+            var ass = Path.ChangeExtension(completo, ".karaoke.ass");
+            await File.WriteAllTextAsync(srt, Subtitulos.Srt(palabras));
+            await File.WriteAllTextAsync(ass, Subtitulos.AssKaraoke(palabras));
+            AvisoSalida = T("Subtítulos listos junto al audio: {0} (frases) y {1} (karaoke para Shorts).", Path.GetFileName(srt), Path.GetFileName(ass));
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Error = ServicioMotor.Explicar(e);
+            AvisoSalida = null;
+        }
+        finally
+        {
+            CreandoSubtitulos = false;
+        }
+    }
 
     [RelayCommand]
     private void GuardarCompletoComo()

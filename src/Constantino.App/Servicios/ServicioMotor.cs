@@ -121,8 +121,14 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     /// Tono medio y sonoridad de una voz recién diseñada. No necesita modelo: se pide con el diseñador, que ya está
     /// cargado justo después de generar.
     /// </summary>
-    public Task<MedidasVoz> AnalizarVozAsync(string audio, CancellationToken ct = default) =>
-        EjecutarAsync(ModeloVoiceDesign, (motor, progreso) => motor.AnalizarVozAsync(new ParametrosAnalisisVoz(audio), progreso, ct), ct);
+    /// <param name="conDisenador">Medir con el diseñador cargado (en Diseñar voz); si no, con el modelo de voz principal.</param>
+    public async Task<MedidasVoz> AnalizarVozAsync(string audio, CancellationToken ct = default, bool conDisenador = true) =>
+        await EjecutarAsync(conDisenador ? ModeloVoiceDesign : await ModeloDeVozAsync(MotoresDeVoz.Qwen),
+            (motor, progreso) => motor.AnalizarVozAsync(new ParametrosAnalisisVoz(audio), progreso, ct), ct);
+
+    /// <summary>Herramientas de audio (ffmpeg y rubberband) para retocar la velocidad o el tono de una grabación.</summary>
+    public async Task<Constantino.Core.Narracion.ProcesadorFfmpeg> ProcesadorAsync() =>
+        new((await instalacion.InstaladorAsync()).Rutas.Ffmpeg, new Constantino.Core.Instalaciones.EjecutorProcesos());
 
     /// <summary>¿Está instalado el motor castellano? (para dar acento de España a las voces diseñadas)</summary>
     public async Task<bool> HayMotorCastellanoAsync() =>
@@ -140,9 +146,34 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             motor.TranscribirAsync(new ParametrosTranscripcion(audio, idioma), progreso, ct), ct);
     }
 
+    /// <summary>Cada palabra de <paramref name="audio"/> con su inicio y su fin (Whisper), para los subtítulos.</summary>
+    public async Task<ResultadoPalabras> PalabrasAsync(string audio, string idioma, CancellationToken ct = default)
+    {
+        if (!(await instalacion.InstaladorAsync()).EstaInstalado(ModeloWhisper))
+            throw new MotorNoDisponibleException(T("Los subtítulos necesitan la transcripción automática: instálala desde Componentes."));
+        return await EjecutarAsync(ModeloWhisper, (motor, progreso) =>
+            motor.PalabrasAsync(new ParametrosTranscripcion(audio, idioma), progreso, ct), ct);
+    }
+
     // --- Doblaje ---------------------------------------------------------------------------------
 
     public const string ComponenteSeparador = "separador-voz";
+
+    public const string ComponenteConversion = "conversion-voz";
+
+    /// <summary>Componentes que son un motor aparte sin leer textos: id del motor, entorno y nombre visible.</summary>
+    private static readonly Dictionary<string, (string Motor, string Entorno, string Nombre)> Auxiliares = new()
+    {
+        [ComponenteSeparador] = ("separador", "demucs", "separador de voz"),
+        [ComponenteConversion] = ("cosyvoice", "cosyvoice", "de conversión de voz"),
+    };
+
+    /// <summary>
+    /// Convierte la grabación <paramref name="origen"/> al timbre de <paramref name="voz"/> conservando cómo se dijo
+    /// (CosyVoice 3). Las grabaciones largas se convierten por trozos.
+    /// </summary>
+    public Task<ResultadoSintesis> ConvertirVozAsync(string origen, string voz, string salida, CancellationToken ct = default) =>
+        EjecutarAsync(ComponenteConversion, (motor, progreso) => motor.ConvertirAsync(new ParametrosConversion(origen, voz, salida), progreso, ct), ct);
 
     /// <summary>Divide <paramref name="audio"/> en la voz y el fondo (separador de voz).</summary>
     public Task<ResultadoSeparacion> SepararAsync(string audio, string voces, string fondo, CancellationToken ct = default) =>
@@ -165,9 +196,19 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
 
     /// <summary>Una frase doblada: pronunciación de la voz nativa y timbre de la original (motor castellano).</summary>
     public Task<ResultadoSintesis> SintetizarDoblajeAsync(string texto, string pronunciacion, string timbre, string salida, int semilla,
-        CancellationToken ct = default) =>
+        CancellationToken ct = default, double? intensidad = null) =>
         EjecutarAsync(MotoresDeVoz.Componente(MotoresDeVoz.Chatterbox), (motor, progreso) =>
-            motor.SintetizarDoblajeAsync(new ParametrosDoblaje(texto, pronunciacion, timbre, salida, semilla), progreso, ct), ct);
+            motor.SintetizarDoblajeAsync(new ParametrosDoblaje(texto, pronunciacion, timbre, salida, semilla, intensidad), progreso, ct), ct);
+
+    /// <summary>Cómo suena cada tramo de un audio (sin modelo; se pide con Whisper, que ya está cargado al doblar).</summary>
+    public Task<ResultadoProsodia> ProsodiaAsync(string audio, IReadOnlyList<TramoAudio> tramos, CancellationToken ct = default) =>
+        EjecutarAsync(ModeloWhisper, (motor, progreso) => motor.ProsodiaAsync(new ParametrosProsodia(audio, tramos), progreso, ct), ct);
+
+    /// <summary>Mezclador de voces: la forma de hablar de <paramref name="habla"/> y el timbre de <paramref name="voz"/> (motor castellano).</summary>
+    public Task<ResultadoSintesis> MezclarVocesAsync(string texto, string habla, string voz, string salida, string? otraVoz, double peso,
+        int semilla, CancellationToken ct = default) =>
+        EjecutarAsync(MotoresDeVoz.Componente(MotoresDeVoz.Chatterbox), (motor, progreso) =>
+            motor.MezclarAsync(new ParametrosMezcla(texto, habla, voz, salida, otraVoz, peso, semilla), progreso, ct), ct);
 
     // --- Actas -----------------------------------------------------------------------------------
 
@@ -182,9 +223,15 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         await EjecutarAsync(await ModeloDeVozAsync(MotoresDeVoz.Qwen), (motor, progreso) =>
             motor.HablantesTramosAsync(new ParametrosHablantesTramos(audio, tramos, personas), progreso, ct), ct);
 
+    /// <summary>Tras este tiempo sin usarse, el motor se apaga solo para dejar libre la tarjeta gráfica.</summary>
+    public static readonly TimeSpan Reposo = TimeSpan.FromMinutes(5);
+
+    private CancellationTokenSource? _reposo;
+
     /// <summary>Una operación a la vez, con el modelo que necesite ya cargado.</summary>
     private async Task<TResultado> EjecutarAsync<TResultado>(string modelo, Func<MotorQwen, IProgress<EventoMotor>, Task<TResultado>> trabajo, CancellationToken ct)
     {
+        _reposo?.Cancel();
         await _turno.WaitAsync(ct);
         try
         {
@@ -192,8 +239,21 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             Estado = EstadoMotor.Trabajando;
             Descripcion = T("Generando la voz…");
             var progreso = new Progress<EventoMotor>(e => Descripcion = e.Mensaje + "…");
-            var r = await trabajo(motor, progreso);
+            TResultado r;
+            try
+            {
+                r = await trabajo(motor, progreso);
+            }
+            catch (MotorException e) when (e.Codigo == "sin_memoria")
+            {
+                // Sin memoria en la tarjeta: se cierra el motor (libera todo lo que tuviera cargado) y se reintenta una vez.
+                await CerrarAsync();
+                Descripcion = T("La tarjeta se quedó sin memoria: liberándola y reintentando…");
+                motor = await PrepararAsync(modelo, ct);
+                r = await trabajo(motor, progreso);
+            }
             await MarcarListoAsync(motor);
+            ProgramarReposo();
             return r;
         }
         catch (OperationCanceledException)
@@ -225,6 +285,39 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         return (id, instalacion.Catalogo[id].Instalacion!.Pasos.OfType<PasoModelo>().First().Revision);
     }
 
+    /// <summary>Si nadie usa el motor en <see cref="Reposo"/>, se apaga solo y deja libre la tarjeta gráfica.</summary>
+    private void ProgramarReposo()
+    {
+        _reposo?.Cancel();
+        var cancelacion = _reposo = new CancellationTokenSource();
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(Reposo, cancelacion.Token);
+                if (!await _turno.WaitAsync(0))
+                    return;
+                try
+                {
+                    if (!cancelacion.IsCancellationRequested && _motor is not null)
+                    {
+                        await CerrarAsync();
+                        Estado = EstadoMotor.Apagado;
+                        Descripcion = T("Apagado tras {0:0} minutos sin uso, para dejar libre la tarjeta. Se encenderá solo cuando haga falta.",
+                            Reposo.TotalMinutes);
+                    }
+                }
+                finally
+                {
+                    _turno.Release();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
+    }
+
     /// <summary>Libera la memoria de la tarjeta cerrando el motor.</summary>
     public async Task ApagarAsync()
     {
@@ -249,10 +342,11 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     {
         var instalador = await instalacion.InstaladorAsync();
         // El separador de voz es un motor más (su propio proceso y entorno), aunque no lea textos.
-        var separador = modelo == ComponenteSeparador;
-        var motorId = separador ? "separador" : MotoresDeVoz.DeComponente(modelo) ?? MotoresDeVoz.Qwen;
-        var nombre = separador ? T("separador de voz") : MotoresDeVoz.Nombre(motorId);
-        if (!instalador.EstaInstalado(separador ? modelo : MotoresDeVoz.Componente(motorId)))
+        // Motores que no leen textos (separador, conversión de voz): su propio proceso y su entorno.
+        var auxiliar = Auxiliares.TryGetValue(modelo, out var datosAuxiliar);
+        var motorId = auxiliar ? datosAuxiliar.Motor : MotoresDeVoz.DeComponente(modelo) ?? MotoresDeVoz.Qwen;
+        var nombre = auxiliar ? T(datosAuxiliar.Nombre) : MotoresDeVoz.Nombre(motorId);
+        if (!instalador.EstaInstalado(auxiliar ? modelo : MotoresDeVoz.Componente(motorId)))
             throw new MotorNoDisponibleException(T("Falta el motor {0}: instálalo desde Componentes.", nombre));
 
         if (_motor is null || !_motor.Cliente.Vivo || _motorVivo != motorId)
@@ -271,7 +365,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
                 entorno["TQDM_DISABLE"] = "1"; // sin barras de progreso en el registro de diagnóstico
             }
             var cliente = await ClienteMotor.ArrancarAsync(
-                Path.Combine(rutas.Entornos, separador ? "demucs" : MotoresDeVoz.Entorno(motorId), "Scripts", "python.exe"),
+                Path.Combine(rutas.Entornos, auxiliar ? datosAuxiliar.Entorno : MotoresDeVoz.Entorno(motorId), "Scripts", "python.exe"),
                 Path.Combine(AppContext.BaseDirectory, "motores"),
                 entorno, TimeSpan.FromMinutes(2), ct);
             _motor = new MotorQwen(cliente);
@@ -289,6 +383,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
                 "chatterbox" => T("Preparando el motor castellano (unos segundos)…"),
                 "voxcpm2" => T("Preparando el motor de máximo parecido (medio minuto)…"),
                 ComponenteSeparador => T("Preparando el separador de voz (unos segundos)…"),
+                ComponenteConversion => T("Preparando la conversión de voz (unos segundos)…"),
                 _ => T("Preparando la voz (unos segundos la primera vez)…"),
             };
             var paso = instalacion.Catalogo[modelo].Instalacion!.Pasos.OfType<PasoModelo>().First();

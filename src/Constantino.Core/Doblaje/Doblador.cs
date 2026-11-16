@@ -20,7 +20,12 @@ public interface IMotoresDoblaje
     Task<IReadOnlyList<TramoTranscrito>> TranscribirAsync(string voces, string idioma, IReadOnlyList<double> cortes, CancellationToken ct);
 
     /// <summary>Genera <paramref name="texto"/> con la pronunciación de una voz y el timbre de otra; devuelve su duración.</summary>
-    Task<double> SintetizarAsync(string texto, string pronunciacion, string timbre, string salida, int semilla, CancellationToken ct);
+    /// <param name="intensidad">Intensidad emocional (0,25–1), copiada de la expresión del original; null: la normal.</param>
+    Task<double> SintetizarAsync(string texto, string pronunciacion, string timbre, string salida, int semilla, double? intensidad,
+        CancellationToken ct);
+
+    /// <summary>Cómo suena cada tramo del audio (volumen, tono, entonación): para copiar la expresión del original.</summary>
+    Task<IReadOnlyList<ProsodiaTramo>> ProsodiaAsync(string audio, IReadOnlyList<TramoAudio> tramos, CancellationToken ct);
 }
 
 /// <param name="Hablante">Quién la dice: ayuda a mantener el trato y la concordancia en los diálogos.</param>
@@ -29,7 +34,9 @@ public sealed record FraseATraducir(int Id, string Original, int MaxCaracteres, 
 public interface ITraductorDoblaje
 {
     /// <summary>Traduce todas las frases (con el resto del guion como contexto); devuelve id → traducción.</summary>
-    Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct);
+    /// <param name="alTerminarTanda">Recibe lo traducido hasta el momento después de cada tanda (para guardarlo y poder reanudar).</param>
+    Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct,
+        Action<IReadOnlyDictionary<int, string>>? alTerminarTanda = null);
 
     Task<string> AcortarAsync(string original, string traduccion, int maxCaracteres, CancellationToken ct);
 }
@@ -133,15 +140,11 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
             progreso.Report(new EventoDoblaje(T("Traduciendo el guion al castellano"), 0.5));
             var pendientes = p.ListaFrases.Where(f => string.IsNullOrWhiteSpace(f.Traduccion))
                 .Select(f => new FraseATraducir(f.Id, f.Original, MaxCaracteres(HuecoDisponible(p, f)), f.Hablante)).ToList();
-            var traducidas = await traductor.TraducirAsync(pendientes, ct).ConfigureAwait(false);
-            p = p with
-            {
-                Fase = FaseDoblaje.Traducido,
-                Frases = p.ListaFrases.Select(f => traducidas.TryGetValue(f.Id, out var es) && !string.IsNullOrWhiteSpace(es)
-                    ? f with { Traduccion = es.Trim() }
-                    : f).ToList(),
-            };
-            p = almacen.Guardar(p);
+            // Se guarda tras cada tanda: si algo falla, al volver se traduce solo lo que faltaba.
+            var guardado = p;
+            var traducidas = await traductor.TraducirAsync(pendientes, ct, parcial =>
+                guardado = almacen.Guardar(ConTraducciones(guardado, parcial))).ConfigureAwait(false);
+            p = almacen.Guardar(ConTraducciones(p, traducidas) with { Fase = FaseDoblaje.Traducido });
         }
         progreso.Report(new EventoDoblaje(T("Guion listo"), 1));
         return p;
@@ -267,9 +270,71 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
         return almacen.Guardar(p with { Frases = frases, Hablantes = p.ListaHablantes.Where(h => h.Id != origen).ToList() });
     }
 
+    private static ProyectoDoblaje ConTraducciones(ProyectoDoblaje p, IReadOnlyDictionary<int, string> traducidas) =>
+        p with
+        {
+            Frases = p.ListaFrases.Select(f => string.IsNullOrWhiteSpace(f.Traduccion) && traducidas.TryGetValue(f.Id, out var es)
+                                               && !string.IsNullOrWhiteSpace(es)
+                ? f with { Traduccion = es.Trim() }
+                : f).ToList(),
+        };
+
+    // La intensidad entra solo si no es la normal: así lo doblado antes sigue valiendo.
     private static string HuellaDe(FraseDoblaje f, string pronunciacion, string timbre) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(
-            $"{f.Traduccion}\n{pronunciacion}@{Marca(pronunciacion)}\n{timbre}@{Marca(timbre)}\n{Semilla}")))[..16];
+            $"{f.Traduccion}\n{pronunciacion}@{Marca(pronunciacion)}\n{timbre}@{Marca(timbre)}\n{Semilla}"
+            + (f.Intensidad is { } i && Math.Abs(i - IntensidadNormal) > 0.001 ? FormattableString.Invariant($"\n{i:0.00}") : ""))))[..16];
+
+    /// <summary>La intensidad emocional normal del motor castellano.</summary>
+    public const double IntensidadNormal = 0.5;
+
+    /// <summary>
+    /// «Prosody Mirror»: la intensidad con la que doblar cada frase, copiada de cómo suena el original comparado con lo
+    /// normal en esa persona. Más alto o con más movimiento de entonación → más intensa; más bajo → más contenida; casi
+    /// sin tono (un susurro) → la mínima. Entre 0,3 y 0,85.
+    /// </summary>
+    public static IReadOnlyList<double> Intensidades(IReadOnlyList<FraseDoblaje> frases, IReadOnlyList<ProsodiaTramo> prosodia)
+    {
+        var resultado = new double[frases.Count];
+        foreach (var grupo in Enumerable.Range(0, frases.Count).GroupBy(i => frases[i].Hablante))
+        {
+            var validos = grupo.Where(i => prosodia[i].VolumenDb > -80).ToList();
+            double Mediana(IEnumerable<double> v)
+            {
+                var o = v.OrderBy(x => x).ToList();
+                return o.Count == 0 ? 0 : o[o.Count / 2];
+            }
+            var volumen = Mediana(validos.Select(i => prosodia[i].VolumenDb));
+            var movimiento = Mediana(validos.Select(i => prosodia[i].Movimiento));
+            foreach (var i in grupo)
+            {
+                var t = prosodia[i];
+                if (t.VolumenDb <= -80)
+                {
+                    resultado[i] = IntensidadNormal;
+                    continue;
+                }
+                var intensidad = IntensidadNormal + 0.04 * (t.VolumenDb - volumen) + 0.04 * (t.Movimiento - movimiento);
+                if (t.Sonoridad < 0.25)
+                    intensidad = 0.3;
+                resultado[i] = Math.Round(Math.Clamp(intensidad, 0.3, 0.85), 2);
+            }
+        }
+        return resultado;
+    }
+
+    /// <summary>Mide la expresión de las frases que aún no la tienen (proyectos de antes o recién transcritos) y la guarda.</summary>
+    private async Task<ProyectoDoblaje> CopiarExpresionAsync(ProyectoDoblaje p, CancellationToken ct)
+    {
+        if (!p.ListaFrases.Any(f => f.Intensidad is null) || !File.Exists(Voces(p)))
+            return p;
+        var frases = p.ListaFrases;
+        var prosodia = await motores.ProsodiaAsync(Voces(p), [.. frases.Select(f => new TramoAudio(f.Inicio, f.Fin))], ct).ConfigureAwait(false);
+        if (prosodia.Count != frases.Count)
+            return p;
+        var intensidades = Intensidades(frases, prosodia);
+        return almacen.Guardar(p with { Frases = [.. frases.Select((f, i) => f with { Intensidad = intensidades[i] })] });
+    }
 
     private static string Marca(string archivo) => File.Exists(archivo) ? File.GetLastWriteTimeUtc(archivo).Ticks.ToString(CultureInfo.InvariantCulture) : "";
 
@@ -282,6 +347,8 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
     {
         Directory.CreateDirectory(almacen.Frases(p.Id));
         await CrearReferenciasAsync(p, ct).ConfigureAwait(false);
+        progreso.Report(new EventoDoblaje(T("Midiendo la expresión de cada frase"), 0));
+        p = await CopiarExpresionAsync(p, ct).ConfigureAwait(false);
         var hablantes = p.ListaHablantes.ToDictionary(h => h.Id);
         var todas = p.ListaFrases.Where(f => !string.IsNullOrWhiteSpace(f.Traduccion)).ToList();
         for (var k = 0; k < todas.Count; k++)
@@ -300,7 +367,7 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
             var bruto = Path.Combine(almacen.Frases(p.Id), $"{f.Id:000}_bruto.wav");
             // Las cifras, fechas y abreviaturas de la traducción, con palabras: el motor las lee mejor.
             var duracion = await motores.SintetizarAsync(NormalizadorEspanol.Normalizar(f.Traduccion), pronunciacion, timbre, bruto,
-                Semilla, ct).ConfigureAwait(false);
+                Semilla, f.Intensidad, ct).ConfigureAwait(false);
             // Si no cabe ni acelerando al máximo, la IA propone una frase más corta (hasta dos veces).
             for (var intento = 0; intento < IntentosAcortar && duracion / hueco > TempoMaximo; intento++)
             {
@@ -309,7 +376,7 @@ public sealed class Doblador(AlmacenDoblajes almacen, IMotoresDoblaje motores, I
                     break;
                 f = f with { Traduccion = corta };
                 duracion = await motores.SintetizarAsync(NormalizadorEspanol.Normalizar(f.Traduccion), pronunciacion, timbre, bruto,
-                    Semilla, ct).ConfigureAwait(false);
+                    Semilla, f.Intensidad, ct).ConfigureAwait(false);
             }
             var (tempo, encaje) = Encajar(duracion, hueco);
             if (tempo > 1.0)

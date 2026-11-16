@@ -72,6 +72,16 @@ public sealed record ParametrosDoblaje(string Texto, string ReferenciaPronunciac
 
 public sealed record ParametrosSeparacion(string Entrada, string Voces, string Fondo);
 
+/// <summary>Conversión de voz (CosyVoice 3): la grabación <paramref name="Origen"/> con el timbre de <paramref name="Voz"/>.</summary>
+public sealed record ParametrosConversion(string Origen, string Voz, string Salida);
+
+/// <summary>Mezclador de voces (solo el motor castellano): la forma de hablar de una grabación y el timbre de otra.</summary>
+/// <param name="Habla">De ella salen el acento, el ritmo y la entonación.</param>
+/// <param name="Voz">De ella sale el timbre: quién suena.</param>
+/// <param name="OtraVoz">Si se indica, el timbre se acerca a esta voz según <paramref name="Peso"/> (0–0,5).</param>
+public sealed record ParametrosMezcla(string Texto, string Habla, string Voz, string Salida, string? OtraVoz = null, double Peso = 0,
+    int Semilla = 1234);
+
 public sealed record ResultadoSeparacion(string Voces, string Fondo, int Frecuencia, double Duracion, double Segundos);
 
 public sealed record ResultadoSintesis(string Salida, double Duracion, double Segundos, int Frecuencia, double? VramPicoGib = null);
@@ -84,9 +94,24 @@ public sealed record ResultadoRetoque(string Salida, double Duracion);
 /// <summary>Medidas de una grabación de voz.</summary>
 /// <param name="TonoHz">Tono medio (mediana) de lo que suena con tono.</param>
 /// <param name="Sonoridad">Qué parte del tiempo suena con tono (0–1): un susurro o un silencio, casi nada.</param>
-public sealed record MedidasVoz(double TonoHz, double Sonoridad, double Duracion);
+/// <param name="Movimiento">Cuánto se mueve la entonación (semitonos entre los percentiles 10 y 90): más, más expresiva.</param>
+public sealed record MedidasVoz(double TonoHz, double Sonoridad, double Duracion, double Movimiento = 0);
 
 public sealed record ParametrosAnalisisVoz(string Audio);
+
+/// <summary>Una palabra que ha oído Whisper, con su inicio y su fin en segundos.</summary>
+public sealed record PalabraOida(string Texto, double Inicio, double Fin);
+
+public sealed record ResultadoPalabras(IReadOnlyList<PalabraOida> Palabras);
+
+public sealed record TramoAudio(double Inicio, double Fin);
+
+public sealed record ParametrosProsodia(string Audio, IReadOnlyList<TramoAudio> Tramos);
+
+/// <summary>Cómo suena un tramo: volumen (dB), tono medio (Hz), movimiento de la entonación (semitonos) y parte con tono (0–1).</summary>
+public sealed record ProsodiaTramo(double VolumenDb, double TonoHz, double Movimiento, double Sonoridad);
+
+public sealed record ResultadoProsodia(IReadOnlyList<ProsodiaTramo> Tramos);
 
 /// <summary>Operaciones del motor Qwen3-TTS con tipos, sobre el protocolo de <see cref="ClienteMotor"/>.</summary>
 public sealed class MotorQwen(ClienteMotor cliente)
@@ -110,6 +135,16 @@ public sealed class MotorQwen(ClienteMotor cliente)
         CancellationToken ct = default) =>
         cliente.PedirAsync<ResultadoTranscripcion>("transcribir", parametros, progreso, ct);
 
+    /// <summary>Solo el motor principal (sin modelo): cómo suena cada tramo, para copiar la expresión al doblar.</summary>
+    public Task<ResultadoProsodia> ProsodiaAsync(ParametrosProsodia parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoProsodia>("prosodia", parametros, progreso, ct);
+
+    /// <summary>Necesita Whisper cargado: cada palabra con su inicio y su fin (para subtítulos).</summary>
+    public Task<ResultadoPalabras> PalabrasAsync(ParametrosTranscripcion parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoPalabras>("palabras", parametros, progreso, ct);
+
     /// <summary>Necesita Whisper cargado: corta la voz por sus pausas y transcribe cada trozo.</summary>
     public Task<ResultadoTramos> TranscribirTramosAsync(ParametrosTramos parametros, IProgress<EventoMotor>? progreso = null,
         CancellationToken ct = default) =>
@@ -129,6 +164,16 @@ public sealed class MotorQwen(ClienteMotor cliente)
     public Task<ResultadoHablantesTramos> HablantesTramosAsync(ParametrosHablantesTramos parametros, IProgress<EventoMotor>? progreso = null,
         CancellationToken ct = default) =>
         cliente.PedirAsync<ResultadoHablantesTramos>("hablantes_tramos", parametros, progreso, ct);
+
+    /// <summary>Solo el motor castellano: lee el texto con la forma de hablar de una voz y el timbre de otra.</summary>
+    public Task<ResultadoSintesis> MezclarAsync(ParametrosMezcla parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoSintesis>("mezclar", parametros, progreso, ct);
+
+    /// <summary>Solo la conversión de voz: una grabación con el timbre de otra voz, conservando cómo se dijo.</summary>
+    public Task<ResultadoSintesis> ConvertirAsync(ParametrosConversion parametros, IProgress<EventoMotor>? progreso = null,
+        CancellationToken ct = default) =>
+        cliente.PedirAsync<ResultadoSintesis>("convertir", parametros, progreso, ct);
 
     /// <summary>Solo el separador de voz: divide un audio en la voz y el fondo.</summary>
     public Task<ResultadoSeparacion> SepararAsync(ParametrosSeparacion parametros, IProgress<EventoMotor>? progreso = null,

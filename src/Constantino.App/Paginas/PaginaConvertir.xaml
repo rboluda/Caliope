@@ -1,0 +1,141 @@
+<Page
+    x:Class="Constantino.App.Paginas.PaginaConvertir"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    x:Name="Raiz"
+    ScrollViewer.CanContentScroll="False"
+    Title="{l:T 'Convertir voz'}">
+    <Page.Resources>
+        <Style x:Key="Etiqueta" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+    </Page.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,32,32" MaxWidth="1040">
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Convertir voz'}" />
+            <TextBlock
+                Margin="0,4,0,16"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="{l:T 'Lee tú con la interpretación que quieras (o usa cualquier grabación) y Calíope la convierte a una voz de tu biblioteca: cambia el timbre y conserva lo que se dice, el ritmo, las pausas, la emoción y el acento.'}"
+                TextWrapping="Wrap" />
+
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.Instalado, Converter={StaticResource NegarBool}}"
+                Message="{l:T 'Hace falta la conversión de voz (CosyVoice 3). Instálala desde Componentes.'}"
+                Severity="Warning"
+                Title="{l:T 'Falta la conversión de voz'}">
+                <ui:InfoBar.Content>
+                    <ui:Button Command="{Binding ViewModel.IrAComponentesCommand}" Content="{l:T 'Ir a Componentes'}" />
+                </ui:InfoBar.Content>
+            </ui:InfoBar>
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.SinVoces}"
+                Message="{l:T 'Hace falta al menos una voz en «Mis voces»: diseña, clona o importa alguna.'}"
+                Severity="Informational"
+                Title="{l:T 'Necesitas una voz'}" />
+
+            <ui:Card>
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '1. La grabación'}" />
+                    <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Una grabación de voz (la tuya leyendo, por ejemplo). Puede ser larga: se convierte por trozos.'}" TextWrapping="Wrap" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBox PlaceholderText="{l:T 'Elige un archivo de audio'}" Text="{Binding ViewModel.Origen, UpdateSourceTrigger=PropertyChanged}" />
+                        <ui:Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding ViewModel.ExaminarCommand}" Content="{l:T 'Examinar…'}" />
+                        <ui:Button Grid.Column="2" Margin="8,0,0,0" Command="{Binding ViewModel.EscucharOrigenCommand}" ToolTip="{l:T 'Escuchar'}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Play24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '2. La voz que quieres'}" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Voces}" SelectedItem="{Binding ViewModel.Voz}" />
+                        <ui:Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding ViewModel.EscucharVozCommand}" ToolTip="{l:T 'Escuchar'}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Play24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '3. Convertir'}" />
+                    <WrapPanel Margin="0,8,0,0">
+                        <ui:Button
+                            Margin="0,0,8,8"
+                            Appearance="Primary"
+                            Command="{Binding ViewModel.ConvertirCommand}"
+                            Content="{l:T 'Convertir'}"
+                            IsEnabled="{Binding ViewModel.PuedeConvertir}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ArrowSwap24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="0,0,8,8"
+                            Command="{Binding ViewModel.EscucharResultadoCommand}"
+                            Content="{l:T 'Escuchar el resultado'}"
+                            Visibility="{Binding ViewModel.Resultado, Converter={StaticResource NoNuloAVisibilidad}}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Play24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="0,0,8,8"
+                            Command="{Binding ViewModel.GuardarComoCommand}"
+                            Content="{l:T 'Guardar como…'}"
+                            Visibility="{Binding ViewModel.Resultado, Converter={StaticResource NoNuloAVisibilidad}}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Save24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:ProgressRing
+                            Width="18"
+                            Height="18"
+                            Margin="4,0,0,8"
+                            VerticalAlignment="Center"
+                            IsIndeterminate="True"
+                            Visibility="{Binding ViewModel.Trabajando, Converter={StaticResource BoolAVisibilidad}}" />
+                    </WrapPanel>
+                    <TextBlock Text="{Binding ViewModel.Mensaje}" TextWrapping="Wrap" />
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        Text="{Binding ViewModel.Motor.Descripcion}"
+                        TextWrapping="Wrap" />
+                    <ui:InfoBar
+                        Margin="0,8,0,0"
+                        IsClosable="False"
+                        IsOpen="{Binding ViewModel.Error, Converter={StaticResource TextoNoVacio}}"
+                        Message="{Binding ViewModel.Error}"
+                        Severity="Error"
+                        Title="{l:T 'Algo ha fallado'}" />
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

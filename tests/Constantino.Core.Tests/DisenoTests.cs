@@ -52,29 +52,40 @@ public class DisenoTests
     }
 
     [Fact]
-    public void Mas_asi_comprueba_que_el_cambio_se_cumple()
+    public void Mas_asi_comprueba_que_cada_cambio_se_nota()
     {
-        var partida = new MedidasVoz(114, 0.8, 17.4);
+        var partida = new MedidasVoz(114, 0.8, 17.4, 8);
         Assert.True(RevisionDiseno.Cumple(CambioDiseno.MasGrave, partida, partida with { TonoHz = 88 }));
-        Assert.False(RevisionDiseno.Cumple(CambioDiseno.MasGrave, partida, partida with { TonoHz = 113 }));
+        // Un 3 % más grave no se nota: hace falta un semitono.
+        Assert.False(RevisionDiseno.Cumple(CambioDiseno.MasGrave, partida, partida with { TonoHz = 110 }));
         // En las pruebas, «más pausada» salió más rápida: eso no vale.
         Assert.False(RevisionDiseno.Cumple(CambioDiseno.MasPausada, partida, partida with { Duracion = 16.1 }));
         Assert.True(RevisionDiseno.Cumple(CambioDiseno.MasPausada, partida, partida with { Duracion = 19 }));
-        Assert.True(RevisionDiseno.Cumple(CambioDiseno.MasIntensa, partida, partida with { TonoHz = 140 }));
+        Assert.True(RevisionDiseno.Cumple(CambioDiseno.MasIntensa, partida, partida with { Movimiento = 9.5 }));
+        Assert.False(RevisionDiseno.Cumple(CambioDiseno.MasIntensa, partida, partida with { Movimiento = 8.2 }));
+        Assert.True(RevisionDiseno.Cumple(CambioDiseno.MasSuave, partida, partida with { Movimiento = 6 }));
+        Assert.True(RevisionDiseno.Cumple(CambioDiseno.MasMayor, partida, partida));
 
-        var problemas = RevisionDiseno.Problemas(partida with { TonoHz = 113 }, null, Texto, "Spanish", null,
-            (CambioDiseno.MasGrave, partida));
-        Assert.Contains(problemas, p => p.Contains("más grave"));
+        // Varios a la vez: se dice cuáles no se notan.
+        var pedido = new CambiosPedidos("x", [CambioDiseno.MasGrave, CambioDiseno.MasPausada], partida, 0);
+        var nueva = partida with { TonoHz = 100, Duracion = 17.5 };
+        Assert.Equal([CambioDiseno.MasPausada], RevisionDiseno.NoCumplidos(pedido, nueva));
+        var problemas = RevisionDiseno.Problemas(nueva, null, Texto, "Spanish", null, pedido);
+        Assert.Contains(problemas, p => p.Contains("más pausada"));
+        Assert.DoesNotContain(problemas, p => p.Contains("más grave"));
     }
 
     [Fact]
-    public void Mas_asi_retoca_la_descripcion()
+    public void Mas_asi_retoca_la_descripcion_con_varios_cambios_y_mas_fuerza()
     {
         const string original = "A man around 40 years old. Deep voice.";
-        Assert.Equal(original, RevisionDiseno.Instruccion(original, CambioDiseno.Igual, false));
-        Assert.Equal("A man around 40 years old. Deep voice. Make the voice a little deeper and lower-pitched.",
-            RevisionDiseno.Instruccion(original, CambioDiseno.MasGrave, false));
-        Assert.Contains("noticeably", RevisionDiseno.Instruccion(original, CambioDiseno.MasPausada, true));
+        Assert.Equal(original, RevisionDiseno.Instruccion(original, [CambioDiseno.Igual], 0));
+        Assert.Equal("A man around 40 years old. Deep voice. Make the voice clearly deeper and lower-pitched. " +
+                     "Speak clearly more slowly, with longer pauses.",
+            RevisionDiseno.Instruccion(original, [CambioDiseno.MasGrave, CambioDiseno.MasPausada], 0));
+        Assert.Contains("very much", new CambiosPedidos(original, [CambioDiseno.MasMayor], new MedidasVoz(100, 1, 10), 2).Instruccion);
+        Assert.Equal(CambioDiseno.MasAguda, RevisionDiseno.Opuesto(CambioDiseno.MasGrave));
+        Assert.Null(RevisionDiseno.Opuesto(CambioDiseno.Igual));
         Assert.True(RevisionDiseno.CambiaElTono(CambioDiseno.MasMayor));
         Assert.False(RevisionDiseno.CambiaElTono(CambioDiseno.MasPausada));
     }

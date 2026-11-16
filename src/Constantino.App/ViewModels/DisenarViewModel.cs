@@ -20,10 +20,29 @@ public sealed record EjemploDiseno(string Nombre, DescripcionGuiada Descripcion)
 /// <summary>De dónde sale la pronunciación de España: una voz de la biblioteca o (Ruta vacía) la de serie del motor castellano.</summary>
 public sealed record OpcionPronunciacion(string Ruta, string Nombre);
 
-/// <summary>Un botón de «Más así» en una variante concreta.</summary>
-public sealed record CambioDeVariante(VarianteVoz Variante, OpcionCambio Opcion)
+/// <summary>Una casilla de «Más así» en una variante concreta. Al marcarla se desmarca su contraria (y «Parecidas», que va sola).</summary>
+public sealed partial class CambioDeVariante(VarianteVoz variante, OpcionCambio opcion) : ObservableObject
 {
+    public VarianteVoz Variante { get; } = variante;
+    public OpcionCambio Opcion { get; } = opcion;
     public string Nombre => Opcion.Nombre;
+
+    [ObservableProperty] public partial bool Elegido { get; set; }
+
+    partial void OnElegidoChanged(bool value)
+    {
+        if (!value)
+            return;
+        var opuesto = RevisionDiseno.Opuesto(Opcion.Cambio);
+        foreach (var otro in Variante.Cambios.Where(o => o != this))
+        {
+            var choca = otro.Opcion.Cambio == opuesto
+                        || otro.Opcion.Cambio == CambioDiseno.Igual
+                        || Opcion.Cambio == CambioDiseno.Igual;
+            if (choca)
+                otro.Elegido = false;
+        }
+    }
 }
 
 /// <summary>Una voz candidata: el mismo texto leído con otra semilla.</summary>
@@ -92,7 +111,7 @@ public sealed partial class DisenarViewModel : ObservableObject
 
     /// <summary>Lo que se pide al generar una variante.</summary>
     private sealed record Encargo(string Instruccion, int Semilla, string? Etiqueta, (double Min, double Max)? Rango,
-        (CambioDiseno Cambio, MedidasVoz Partida)? Cambio = null);
+        CambiosPedidos? Cambio = null);
 
     public DisenarViewModel(ServicioMotor motor, ServicioVoces voces, ServicioReproductor reproductor, ServicioInstalacion instalacion,
         INavigationService navegacion)
@@ -267,17 +286,24 @@ public sealed partial class DisenarViewModel : ObservableObject
     }
 
     /// <summary>
-    /// «Más así»: la misma semilla con la descripción retocada (un poco y bastante). Salen voces parecidas, no
-    /// idénticas: el diseñador no garantiza la misma voz con la misma semilla si cambia la descripción.
+    /// «Más así»: la misma semilla con la descripción retocada con los cambios elegidos (varios a la vez), en dos fuerzas.
+    /// Salen voces parecidas, no idénticas. Al revisarlas se comprueba que cada cambio medible se nota; si no, se pide con
+    /// más fuerza y, al final, con otra semilla.
     /// </summary>
     [RelayCommand]
-    private async Task MasAsiAsync(CambioDeVariante c)
+    private async Task MasAsiAsync(VarianteVoz v)
     {
-        var v = c.Variante;
+        var elegidos = v.Cambios.Where(c => c.Elegido).Select(c => c.Opcion.Cambio).ToList();
+        if (elegidos.Count == 0)
+        {
+            Error = T("Marca al menos un cambio.");
+            return;
+        }
         v.MostrarCambios = false;
-        var cambio = c.Opcion.Cambio;
+        foreach (var c in v.Cambios)
+            c.Elegido = false;
         List<Encargo> encargos;
-        if (cambio == CambioDiseno.Igual)
+        if (elegidos.Contains(CambioDiseno.Igual))
         {
             var aleatorio = new Random();
             encargos = [.. Enumerable.Range(0, 2).Select(_ =>
@@ -288,22 +314,22 @@ public sealed partial class DisenarViewModel : ObservableObject
             var partida = v.Medidas;
             try
             {
-                partida ??= v.Medidas = await _motor.AnalizarVozAsync(v.Ruta);
+                // Se compara con la voz del diseñador (la de antes del acento de España, si lo tiene).
+                partida ??= v.Medidas = await _motor.AnalizarVozAsync(v.RutaDiseno);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 Error = ServicioMotor.Explicar(e);
                 return;
             }
-            var rango = RevisionDiseno.CambiaElTono(cambio) ? null : v.Rango;
-            var nombre = c.Nombre.ToLowerInvariant();
-            encargos =
-            [
-                new(RevisionDiseno.Instruccion(v.Instruccion, cambio, fuerte: false), v.Semilla,
-                    T("de la {0}: {1}, un poco", v.Numero, nombre), rango, (cambio, partida)),
-                new(RevisionDiseno.Instruccion(v.Instruccion, cambio, fuerte: true), v.Semilla,
-                    T("de la {0}: {1}, bastante", v.Numero, nombre), rango, (cambio, partida)),
-            ];
+            var rango = elegidos.Any(RevisionDiseno.CambiaElTono) ? null : v.Rango;
+            var nombres = string.Join(" + ", elegidos.Select(c => RevisionDiseno.NombreCambio(c).ToLowerInvariant()));
+            encargos = [.. new[] { 0, 1 }.Select(fuerza =>
+            {
+                var pedido = new CambiosPedidos(v.Instruccion, elegidos, partida, fuerza);
+                return new Encargo(pedido.Instruccion, v.Semilla,
+                    T("de la {0}: {1}, {2}", v.Numero, nombres, fuerza == 0 ? T("algo") : T("bastante")), rango, pedido);
+            })];
         }
         await CrearAsync(encargos, T("Las nuevas están al final de la lista: parecidas a la {0}, no idénticas.", v.Numero));
     }
@@ -372,11 +398,16 @@ public sealed partial class DisenarViewModel : ObservableObject
                         oido = (await _motor.TranscribirAsync(v.Ruta, idioma, ct)).Texto;
                     }
                     var problemas = RevisionDiseno.Problemas(v.Medidas!, oido, texto, idioma, encargo.Rango, encargo.Cambio);
+                    // Solo falla que un cambio no se nota: se pide con más fuerza y la misma semilla (sigue siendo «hermana»).
+                    var soloCambios = encargo.Cambio is { } pedido
+                                      && RevisionDiseno.Problemas(v.Medidas!, oido, texto, idioma, encargo.Rango).Count == 0
+                                      && pedido.Fuerza < CambiosPedidos.FuerzaMaxima;
                     var leeBien = whisper && RevisionDiseno.LeeElTexto(texto, oido!, idioma);
                     v.Revision = RevisionDiseno.Resumen(v.Medidas!, texto) + (leeBien ? " · " + T("lee el texto exacto") : "");
                     v.Avisos = problemas.Count == 0 ? null : string.Join(" ", problemas);
                     if (problemas.Count > 0 && ronda < Reintentos)
-                        pendientes.Add((encargo with { Semilla = aleatorio.Next(1, 1_000_000) }, Variantes.IndexOf(v)));
+                        pendientes.Add((soloCambios ? MasFuerte(encargo) : encargo with { Semilla = aleatorio.Next(1, 1_000_000) },
+                            Variantes.IndexOf(v)));
                 }
             }
             if (espana)
@@ -442,6 +473,13 @@ public sealed partial class DisenarViewModel : ObservableObject
                     Reproductor.Reproducir(v.Ruta);
             }
         }
+    }
+
+    /// <summary>El mismo encargo de «Más así», pidiendo los cambios con más fuerza.</summary>
+    private static Encargo MasFuerte(Encargo encargo)
+    {
+        var pedido = encargo.Cambio! with { Fuerza = encargo.Cambio.Fuerza + 1 };
+        return encargo with { Cambio = pedido, Instruccion = pedido.Instruccion };
     }
 
     [RelayCommand]
@@ -511,6 +549,28 @@ public sealed partial class DisenarViewModel : ObservableObject
         {
             Describiendo = false;
         }
+    }
+
+    /// <summary>Vuelve a dejar la pantalla como al abrirla: ejemplo inicial, texto de muestra y sin variantes.</summary>
+    [RelayCommand]
+    private void Empezar()
+    {
+        Reproductor.Detener();
+        Variantes.Clear();
+        _contador = 0;
+        DescripcionLibre = "";
+        Idioma = "Spanish";
+        TextoMuestra = TextosDeReferencia.Para(Idioma);
+        NumeroVariantes = 3;
+        RehacerSolas = true;
+        AcentoEspana = true;
+        Pronunciacion = Pronunciaciones.FirstOrDefault();
+        if (Ejemplo == Ejemplos[0])
+            Aplicar(Ejemplos[0]);
+        else
+            Ejemplo = Ejemplos[0];
+        Mensaje = "";
+        Error = null;
     }
 
     [RelayCommand]

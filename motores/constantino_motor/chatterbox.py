@@ -163,6 +163,34 @@ class MotorChatterbox:
         self._modelo.conds = type(nativa)(nativa.t3, original.gen)
         return self._generar(texto, intensidad, params, progreso)
 
+    def op_mezclar(self, params, progreso):
+        """Mezclador de voces: la forma de hablar (acento, ritmo, entonación) de una grabación y la voz (timbre) de otra.
+
+        T3 sale de «habla» y S3Gen de «voz». Con «otra_voz» y «peso» (0–0,5), la huella del timbre se acerca a la de otra
+        voz: un efecto suave (medido: el parecido se mueve unas centésimas y el tono, unos 20 Hz).
+        """
+        if self._modelo is None:
+            raise ErrorMotor("sin_modelo", t("No hay ningún modelo cargado."))
+        habla, voz = params["habla"], params["voz"]
+        otra = params.get("otra_voz") or ""
+        for ruta in [habla, voz] + ([otra] if otra else []):
+            if not os.path.isfile(ruta):
+                raise ErrorMotor("archivo_no_encontrado", t("No existe la grabación de referencia: {ruta}", ruta=ruta))
+        texto = (params.get("texto") or "").strip()
+        if not texto:
+            raise ErrorMotor("texto_vacio", t("No hay texto que leer."))
+        intensidad = float(params.get("intensidad") or 0.5)
+        progreso(None, t("Preparando la voz"))
+        forma = self._condiciones_de(habla, intensidad)
+        timbre = self._condiciones_de(voz, intensidad)
+        gen = timbre.gen
+        peso = min(max(float(params.get("peso") or 0.0), 0.0), 0.5)
+        if otra and peso > 0:
+            gen = dict(timbre.gen)
+            gen["embedding"] = (1 - peso) * timbre.gen["embedding"] + peso * self._condiciones_de(otra, intensidad).gen["embedding"]
+        self._modelo.conds = type(forma)(forma.t3, gen)
+        return self._generar(texto, intensidad, params, progreso)
+
     def _generar(self, texto, intensidad, params, progreso):
         ajustes = {"exaggeration": intensidad}
         for clave_app, clave_cb in (("cfg", "cfg_weight"), ("temperatura", "temperature"), ("top_p", "top_p"),

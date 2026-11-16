@@ -118,6 +118,7 @@ public sealed partial class TarjetaVoz : ObservableObject
     {
         OrigenVoz.Disenada => T("Diseñada"),
         OrigenVoz.Clonada => T("Clonada"),
+        OrigenVoz.Mezclada => T("Mezclada"),
         _ => T("Importada"),
     };
 

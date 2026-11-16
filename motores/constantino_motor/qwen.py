@@ -103,6 +103,33 @@ class MotorQwen:
                                  generate_kwargs={"language": idioma, "task": "transcribe"})
         return {"texto": resultado["text"].strip(), "segundos": round(time.perf_counter() - inicio, 1)}
 
+    def op_palabras(self, params, progreso):
+        """Cada palabra con su inicio y su fin (para los subtítulos). Necesita Whisper cargado."""
+        self._exigir_modelo("asr", t("transcribir"))
+        audio = params["audio"]
+        if not os.path.isfile(audio):
+            raise ErrorMotor("archivo_no_encontrado", t("No existe el audio: {ruta}", ruta=audio))
+        import librosa
+        import soundfile as sf
+
+        datos, sr = sf.read(audio, dtype="float32", always_2d=True)
+        datos = datos.mean(axis=1)
+        if sr != 16000:
+            datos = librosa.resample(datos, orig_sr=sr, target_sr=16000)
+        progreso(None, t("Transcribiendo"))
+        idioma = (params.get("idioma") or "Spanish").lower()
+        resultado = self._modelo({"array": datos, "sampling_rate": 16000}, chunk_length_s=30, batch_size=8,
+                                 return_timestamps="word", generate_kwargs={"language": idioma, "task": "transcribe"})
+        palabras = []
+        for trozo in resultado.get("chunks") or []:
+            inicio, fin = trozo.get("timestamp") or (None, None)
+            texto = (trozo.get("text") or "").strip()
+            if inicio is None or not texto:
+                continue
+            palabras.append({"texto": texto, "inicio": round(float(inicio), 2),
+                             "fin": round(float(fin if fin is not None else inicio + 0.3), 2)})
+        return {"palabras": palabras}
+
     def op_transcribir_tramos(self, params, progreso):
         """Corta la voz por sus pausas y transcribe cada trozo: frases con su inicio y fin exactos.
 
@@ -266,6 +293,13 @@ class MotorQwen:
         from .retoque import susurrar
 
         return susurrar(params["entrada"], params["salida"], progreso)
+
+    def op_prosodia(self, params, progreso):
+        """Volumen, tono y entonación de cada tramo de un audio (doblaje: copiar la expresión del original). Sin modelo."""
+        from .retoque import prosodia
+
+        progreso(None, t("Midiendo la expresión de cada frase"))
+        return prosodia(params["audio"], params.get("tramos") or [])
 
     def op_analizar_voz(self, params, progreso):
         """Tono medio, sonoridad y duración de una grabación (para revisar las voces diseñadas). No necesita modelo."""

@@ -10,7 +10,8 @@ public abstract record Evento;
 /// <param name="Susurro">Se lee con la variante de susurro (o más bajo si no la hay).</param>
 /// <param name="Variante">Variante de la voz con la que se lee (null = la voz normal). Con susurro, «susurro».</param>
 /// <param name="VozId">Otra voz de la biblioteca ([voz: …]); null = la voz del proyecto.</param>
-public sealed record EventoVoz(string Texto, bool Susurro = false, string? Variante = null, string? VozId = null) : Evento;
+/// <param name="Velocidad">Por línea ([lento], [rápido], [velocidad 1.2]): 1 = como el resto.</param>
+public sealed record EventoVoz(string Texto, bool Susurro = false, string? Variante = null, string? VozId = null, double Velocidad = 1.0) : Evento;
 
 public sealed record EventoSilencio(double Segundos) : Evento;
 
@@ -59,6 +60,9 @@ public sealed record Bloque(int Indice, string Nombre, string Texto, IReadOnlyLi
 /// el final de la línea o [/whispers]. Las etiquetas con el nombre de una variante de la voz ([tenso], [alegre]…)
 /// funcionan igual. [voz: Nombre] lee con otra voz de la biblioteca hasta el final de la línea; [normal] vuelve a la
 /// voz del proyecto. [sfx: nombre] inserta un efecto de sonido. Cualquier otra etiqueta se quita y se avisa.</item>
+/// <item>Etiquetas finas: [pause 2s] o [pausa 0,5] (silencio exacto), [lento], [muy lento], [rápido], [muy rápido] o
+/// [velocidad 1.2] (hasta el final de la línea o [normal]), [emoción: miedo] (la variante de la voz para esa emoción) y
+/// [[escrito|dicho]] (cómo se pronuncia una palabra solo ahí).</item>
 /// <item>El diccionario de pronunciación sustituye palabras antes de leerlas. Después, con una voz en español, las
 /// cifras, fechas, horas, monedas y abreviaturas se pasan a palabras (<see cref="NormalizadorEspanol"/>): así una
 /// entrada del diccionario puede decidir cómo se lee una cifra concreta.</item>
@@ -113,10 +117,13 @@ public static partial class Guion
             var susurro = false;
             string? variante = null;
             string? voz = null;
+            var velocidad = 1.0;
             var pos = 0;
-            foreach (Match m in Etiqueta().Matches(linea))
+            // [[escrito|dicho]]: la pronunciación de esa palabra solo ahí.
+            var lineaLeida = PronunciacionEnLinea().Replace(linea, "$2");
+            foreach (Match m in Etiqueta().Matches(lineaLeida))
             {
-                AnadirVoz(eventos, linea[pos..m.Index], susurro, variante, voz, contexto);
+                AnadirVoz(eventos, lineaLeida[pos..m.Index], susurro, variante, voz, velocidad, contexto);
                 pos = m.Index + m.Length;
                 var etiqueta = NormalizarEtiqueta(m.Groups[1].Value);
                 var comoVariante = CatalogoVariantes.DesdeIngles(Textos.Slug(etiqueta.TrimStart('/'), ""));
@@ -150,6 +157,25 @@ public static partial class Guion
                     AnadirSilencio(eventos, etiqueta == "pause" ? pausa : pausaLarga);
                     (susurro, variante) = (false, null);
                 }
+                else if (PausaExacta(etiqueta) is { } segundos)
+                {
+                    AnadirSilencio(eventos, segundos);
+                    (susurro, variante) = (false, null);
+                }
+                else if (VelocidadDe(etiqueta) is { } nueva)
+                {
+                    velocidad = nueva;
+                }
+                else if ((Parametro(etiqueta, "emoción") ?? Parametro(etiqueta, "emocion") ?? Parametro(etiqueta, "emotion")) is { } emocion)
+                {
+                    var id = VarianteDeEmocion(emocion);
+                    if (id == CatalogoVariantes.Susurro)
+                        (susurro, variante) = (true, CatalogoVariantes.Susurro);
+                    else if (variantes.Contains(id))
+                        (susurro, variante) = (false, id);
+                    else
+                        avisos.Add(T("La voz no tiene variante para la emoción «{0}»: se lee normal. Puedes añadirla en «Mis voces».", emocion));
+                }
                 else if (EtiquetasSusurro.Contains(etiqueta))
                 {
                     (susurro, variante) = (true, "susurro");
@@ -158,7 +184,7 @@ public static partial class Guion
                 {
                     (susurro, variante) = (false, null);
                     if (etiqueta == "normal")
-                        voz = null;
+                        (voz, velocidad) = (null, 1.0);
                 }
                 else if (variantes.Contains(comoVariante))
                 {
@@ -169,12 +195,12 @@ public static partial class Guion
                     avisos.Add(T("Etiqueta desconocida eliminada: [{0}]", m.Groups[1].Value));
                 }
             }
-            AnadirVoz(eventos, linea[pos..], susurro, variante, voz, contexto);
+            AnadirVoz(eventos, lineaLeida[pos..], susurro, variante, voz, velocidad, contexto);
         }
         return new Bloque(indice, nombre, string.Join("\n", lineas).Trim(), eventos, avisos);
     }
 
-    private static void AnadirVoz(List<Evento> eventos, string texto, bool susurro, string? variante, string? voz,
+    private static void AnadirVoz(List<Evento> eventos, string texto, bool susurro, string? variante, string? voz, double velocidad,
         ContextoGuion contexto)
     {
         texto = Espacios().Replace(texto, " ").Trim();
@@ -184,11 +210,50 @@ public static partial class Guion
         if (contexto.LeerCifras)
             texto = NormalizadorEspanol.Normalizar(texto);
         if (eventos.Count > 0 && eventos[^1] is EventoVoz anterior && anterior.Susurro == susurro && anterior.Variante == variante
-            && anterior.VozId == voz)
+            && anterior.VozId == voz && anterior.Velocidad == velocidad)
             eventos[^1] = anterior with { Texto = anterior.Texto + " " + texto };
         else
-            eventos.Add(new EventoVoz(texto, susurro, variante, voz));
+            eventos.Add(new EventoVoz(texto, susurro, variante, voz, velocidad));
     }
+
+    /// <summary>[pause 2s], [pausa 0,5], [pausa: 1.5 segundos] → segundos (de 0,1 a 10); null si no es eso.</summary>
+    private static double? PausaExacta(string etiqueta)
+    {
+        var m = PausaConDuracion().Match(etiqueta);
+        return m.Success && double.TryParse(m.Groups[1].Value.Replace(',', '.'), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var s)
+            ? Math.Clamp(s, 0.1, 10)
+            : null;
+    }
+
+    /// <summary>[lento], [rápido], [velocidad 1.2], [speed:0.9]… → factor de velocidad (de 0,7 a 1,3); null si no es eso.</summary>
+    private static double? VelocidadDe(string etiqueta)
+    {
+        switch (Textos.Slug(etiqueta, ""))
+        {
+            case "lento" or "despacio" or "slow": return 0.85;
+            case "muy-lento" or "very-slow": return 0.75;
+            case "rapido" or "deprisa" or "fast": return 1.15;
+            case "muy-rapido" or "very-fast": return 1.25;
+        }
+        var m = VelocidadConValor().Match(etiqueta);
+        return m.Success && double.TryParse(m.Groups[1].Value.Replace(',', '.'), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var v)
+            ? Math.Clamp(v, 0.7, 1.3)
+            : null;
+    }
+
+    /// <summary>La variante de la voz que corresponde a una emoción escrita a mano («miedo» → «asustado»).</summary>
+    private static string VarianteDeEmocion(string emocion) => Textos.Slug(emocion, "") switch
+    {
+        "miedo" or "terror" or "panico" or "asustada" or "fear" => "asustado",
+        "tension" or "tensa" or "nervios" or "nervioso" or "nerviosa" => "tenso",
+        "tristeza" or "pena" => "triste",
+        "alegria" or "felicidad" or "alegre" or "contento" or "contenta" => "alegre",
+        "gritando" or "gritar" or "grito" or "furia" => "grito",
+        "susurro" or "susurrando" or "whisper" or "whispering" or "susurrar" => CatalogoVariantes.Susurro,
+        var otra => CatalogoVariantes.DesdeIngles(otra),
+    };
 
     /// <summary>Aplica el diccionario: palabras completas, sin distinguir mayúsculas.</summary>
     public static string Pronunciar(string texto, IReadOnlyList<Pronunciacion> diccionario)
@@ -243,6 +308,15 @@ public static partial class Guion
 
     [GeneratedRegex(@"\[([^\[\]]+)\]")]
     private static partial Regex Etiqueta();
+
+    [GeneratedRegex(@"\[\[([^\[\]|]+)\|([^\[\]]+)\]\]")]
+    private static partial Regex PronunciacionEnLinea();
+
+    [GeneratedRegex(@"^(?:pause|pausa)\s*:?\s*(\d+(?:[.,]\d+)?)\s*(?:s|seg|segundo|segundos|sec|seconds?)?$")]
+    private static partial Regex PausaConDuracion();
+
+    [GeneratedRegex(@"^(?:speed|rate|velocidad)\s*:?\s*(\d+(?:[.,]\d+)?)\s*x?$")]
+    private static partial Regex VelocidadConValor();
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Espacios();

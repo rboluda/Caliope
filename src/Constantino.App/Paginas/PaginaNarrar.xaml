@@ -367,6 +367,9 @@
                                     <ui:NumberBox Maximum="10" Minimum="0" SmallChange="0.1" Value="{Binding ViewModel.PausaEntreBloques}" />
                                     <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Volumen del susurro (dB respecto a la voz normal)'}" />
                                     <ui:NumberBox Maximum="0" Minimum="-30" SmallChange="1" Value="{Binding ViewModel.SusurroDb}" />
+                                    <CheckBox Margin="0,10,0,0" IsChecked="{Binding ViewModel.RuidoSala}">
+                                        <TextBlock Text="{l:T 'Ruido de sala en las pausas: el fondo de la propia voz en vez de silencio total (suena menos a corte)'}" TextWrapping="Wrap" />
+                                    </CheckBox>
                                     <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Volumen final (LUFS; −16 es lo habitual en YouTube)'}" />
                                     <ui:NumberBox Maximum="-8" Minimum="-30" SmallChange="1" Value="{Binding ViewModel.Lufs}" />
                                     <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Semilla (otra semilla, otra forma de decirlo)'}" />
@@ -483,6 +486,16 @@
                                 <ui:Button Margin="6,0,0,0" Command="{Binding ViewModel.CopiarCompletoCommand}" ToolTip="{l:T 'Copiar el archivo para pegarlo en una carpeta o en el editor'}">
                                     <ui:Button.Icon>
                                         <ui:SymbolIcon Symbol="Copy24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                                <ui:Button
+                                    Margin="6,0,0,0"
+                                    Command="{Binding ViewModel.CrearSubtitulosCommand}"
+                                    Content="{l:T 'Subtítulos'}"
+                                    IsEnabled="{Binding ViewModel.CreandoSubtitulos, Converter={StaticResource NegarBool}}"
+                                    ToolTip="{l:T 'Crea un .srt por frases y un .ass con efecto karaoke para Shorts, junto al audio (necesita la transcripción automática)'}">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="ClosedCaption24" />
                                     </ui:Button.Icon>
                                 </ui:Button>
                                 <ui:Button Margin="6,0,0,0" Appearance="Primary" Command="{Binding ViewModel.GuardarCompletoComoCommand}" Content="{l:T 'Guardar como…'}">

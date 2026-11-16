@@ -20,6 +20,14 @@ public enum CambioDiseno
 
 public sealed record OpcionCambio(CambioDiseno Cambio, string Nombre);
 
+/// <summary>Lo pedido en «Más así»: los cambios, con qué fuerza (0 un poco, 1 bastante, 2 mucho) y desde qué voz.</summary>
+/// <param name="Base">La descripción de la voz de partida, sin los cambios.</param>
+public sealed record CambiosPedidos(string Base, IReadOnlyList<CambioDiseno> Cambios, MedidasVoz Partida, int Fuerza)
+{
+    public const int FuerzaMaxima = 2;
+    public string Instruccion => RevisionDiseno.Instruccion(Base, Cambios, Fuerza);
+}
+
 /// <summary>
 /// Revisa las voces que inventa el diseñador, que no siempre obedece: en las pruebas, «hombre de sesenta años» dio
 /// voces de 200–280 Hz, y con la misma descripción de «voz grave» salieron de 75 a 114 Hz según la semilla. También
@@ -58,7 +66,7 @@ public static class RevisionDiseno
     /// <param name="rango">Tono esperado (null: no se comprueba).</param>
     /// <param name="cambio">Para «Más así»: el cambio pedido y las medidas de la voz de partida.</param>
     public static IReadOnlyList<string> Problemas(MedidasVoz medidas, string? oido, string texto, string idioma,
-        (double Min, double Max)? rango, (CambioDiseno Cambio, MedidasVoz Partida)? cambio = null)
+        (double Min, double Max)? rango, CambiosPedidos? cambio = null)
     {
         var problemas = new List<string>();
         if (oido is not null && !LeeElTexto(texto, oido, idioma))
@@ -72,10 +80,14 @@ public static class RevisionDiseno
             else if (medidas.TonoHz < r.Min)
                 problemas.Add(T("Suena más grave de lo pedido ({0:0} Hz).", medidas.TonoHz));
         }
-        if (cambio is { } c && !Cumple(c.Cambio, c.Partida, medidas))
-            problemas.Add(T("No ha salido {0}.", NombreCambio(c.Cambio).ToLowerInvariant()));
+        if (cambio is not null)
+            problemas.AddRange(NoCumplidos(cambio, medidas).Select(c => T("No se nota «{0}».", NombreCambio(c).ToLowerInvariant())));
         return problemas;
     }
+
+    /// <summary>Los cambios pedidos que no se notan en la voz nueva.</summary>
+    public static IReadOnlyList<CambioDiseno> NoCumplidos(CambiosPedidos cambio, MedidasVoz nueva) =>
+        cambio.Cambios.Where(c => !Cumple(c, cambio.Partida, nueva)).ToList();
 
     /// <summary>Letras distintas a partir de las que se considera que se ha saltado o cambiado algo (una palabra mediana).</summary>
     private const int LetrasDistintas = 6;
@@ -107,15 +119,37 @@ public static class RevisionDiseno
         return anterior[b.Length];
     }
 
-    /// <summary>Si la voz nueva ha cambiado en el sentido pedido (los cambios que se pueden medir).</summary>
+    /// <summary>
+    /// Si la voz nueva ha cambiado en el sentido pedido, lo bastante para notarse (un semitono de tono, un 8 % de ritmo, un
+    /// 12 % de entonación). «Más mayor» y «más joven» no se pueden medir: se dan por buenos.
+    /// </summary>
     public static bool Cumple(CambioDiseno cambio, MedidasVoz partida, MedidasVoz nueva) => cambio switch
     {
-        CambioDiseno.MasGrave => nueva.TonoHz < partida.TonoHz * 0.97,
-        CambioDiseno.MasAguda => nueva.TonoHz > partida.TonoHz * 1.03,
+        CambioDiseno.MasGrave => nueva.TonoHz < partida.TonoHz * 0.944,
+        CambioDiseno.MasAguda => nueva.TonoHz > partida.TonoHz * 1.059,
         // El mismo texto: más pausada es más larga.
-        CambioDiseno.MasPausada => nueva.Duracion > partida.Duracion * 1.04,
-        CambioDiseno.MasAgil => nueva.Duracion < partida.Duracion * 0.96,
+        CambioDiseno.MasPausada => nueva.Duracion > partida.Duracion * 1.08,
+        CambioDiseno.MasAgil => nueva.Duracion < partida.Duracion * 0.92,
+        CambioDiseno.MasIntensa => partida.Movimiento <= 0 || nueva.Movimiento > partida.Movimiento * 1.12,
+        CambioDiseno.MasSuave => partida.Movimiento <= 0 || nueva.Movimiento < partida.Movimiento * 0.88,
         _ => true,
+    };
+
+    /// <summary>Los cambios que se pueden comprobar midiendo.</summary>
+    public static bool SeMide(CambioDiseno cambio) => cambio is not (CambioDiseno.Igual or CambioDiseno.MasMayor or CambioDiseno.MasJoven);
+
+    /// <summary>El cambio contrario («más grave» frente a «más aguda»): no se pueden pedir los dos a la vez.</summary>
+    public static CambioDiseno? Opuesto(CambioDiseno cambio) => cambio switch
+    {
+        CambioDiseno.MasGrave => CambioDiseno.MasAguda,
+        CambioDiseno.MasAguda => CambioDiseno.MasGrave,
+        CambioDiseno.MasPausada => CambioDiseno.MasAgil,
+        CambioDiseno.MasAgil => CambioDiseno.MasPausada,
+        CambioDiseno.MasMayor => CambioDiseno.MasJoven,
+        CambioDiseno.MasJoven => CambioDiseno.MasMayor,
+        CambioDiseno.MasIntensa => CambioDiseno.MasSuave,
+        CambioDiseno.MasSuave => CambioDiseno.MasIntensa,
+        _ => null,
     };
 
     /// <summary>«Tono 112 Hz · 160 palabras por minuto», para quien quiera el dato.</summary>
@@ -143,11 +177,20 @@ public static class RevisionDiseno
 
     public static string NombreCambio(CambioDiseno cambio) => Cambios.First(c => c.Cambio == cambio).Nombre;
 
-    /// <summary>La descripción con el cambio pedido, «un poco» o (con <paramref name="fuerte"/>) «bastante».</summary>
-    public static string Instruccion(string instruccion, CambioDiseno cambio, bool fuerte)
+    /// <summary>
+    /// La descripción con los cambios pedidos. La fuerza va de 0 («un poco») a 2 («mucho»): si un cambio no se nota, se
+    /// vuelve a pedir con más fuerza.
+    /// </summary>
+    public static string Instruccion(string instruccion, IReadOnlyList<CambioDiseno> cambios, int fuerza)
     {
-        var cuanto = fuerte ? "noticeably" : "a little";
-        var frase = cambio switch
+        var frases = cambios.Select(c => Frase(c, fuerza)).Where(f => f.Length > 0).ToList();
+        return frases.Count == 0 ? instruccion : $"{instruccion.Trim().TrimEnd('.')}. {string.Join(" ", frases)}";
+    }
+
+    private static string Frase(CambioDiseno cambio, int fuerza)
+    {
+        var cuanto = fuerza switch { 0 => "clearly", 1 => "much", _ => "very much" };
+        return cambio switch
         {
             CambioDiseno.MasGrave => $"Make the voice {cuanto} deeper and lower-pitched.",
             CambioDiseno.MasAguda => $"Make the voice {cuanto} higher-pitched.",
@@ -159,7 +202,6 @@ public static class RevisionDiseno
             CambioDiseno.MasSuave => $"Make the delivery {cuanto} softer and gentler.",
             _ => "",
         };
-        return frase.Length == 0 ? instruccion : $"{instruccion.Trim().TrimEnd('.')}. {frase}";
     }
 
     /// <summary>Los cambios que mueven el tono a propósito: con ellos no se comprueba el rango de tono pedido al principio.</summary>

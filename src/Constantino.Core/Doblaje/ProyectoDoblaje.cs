@@ -39,7 +39,8 @@ public sealed record FraseDoblaje(
     EncajeFrase Encaje = EncajeFrase.SinGenerar,
     double? Duracion = null,
     double Tempo = 1.0,
-    string? Huella = null)
+    string? Huella = null,
+    double? Intensidad = null)
 {
     [JsonIgnore] public double Hueco => Fin - Inicio;
 }

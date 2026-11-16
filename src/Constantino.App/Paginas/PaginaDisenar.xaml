@@ -16,7 +16,19 @@
     </Page.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="32,24,32,32" MaxWidth="1180">
-            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Diseñar voz'}" />
+            <Grid>
+                <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Diseñar voz'}" />
+                <ui:Button
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Command="{Binding ViewModel.EmpezarCommand}"
+                    Content="{l:T 'Empezar de nuevo'}"
+                    IsEnabled="{Binding ViewModel.Libre}">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="ArrowCounterclockwise24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+            </Grid>
             <TextBlock
                 Margin="0,4,0,12"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -348,7 +360,7 @@
                                                 <TextBlock
                                                     FontSize="12"
                                                     Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                    Text="{l:T 'Crea dos voces con la misma semilla y el cambio que elijas, una con un poco y otra con bastante. Salen parecidas, no idénticas.'}"
+                                                    Text="{l:T 'Marca uno o varios cambios. Se crean dos voces con la misma semilla, una con algo de cambio y otra con bastante; Calíope mide si cada cambio se nota y, si no, lo repite con más fuerza o con otra semilla. El diseñador no siempre obedece (sobre todo con el ritmo): para el ritmo y el tono, lo seguro son la velocidad y el tono de Narrar. «Más mayor» y «más joven» no se pueden comprobar.'}"
                                                     TextWrapping="Wrap" />
                                                 <ItemsControl ItemsSource="{Binding Cambios}">
                                                     <ItemsControl.ItemsPanel>
@@ -358,14 +370,17 @@
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate DataType="{x:Type vm:CambioDeVariante}">
-                                                            <ui:Button
-                                                                Margin="0,6,6,0"
-                                                                Command="{Binding DataContext.ViewModel.MasAsiCommand, ElementName=Raiz}"
-                                                                CommandParameter="{Binding}"
-                                                                Content="{Binding Nombre}" />
+                                                            <ToggleButton Margin="0,6,6,0" Content="{Binding Nombre}" IsChecked="{Binding Elegido}" />
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
+                                                <ui:Button
+                                                    Margin="0,8,0,0"
+                                                    Appearance="Primary"
+                                                    Command="{Binding DataContext.ViewModel.MasAsiCommand, ElementName=Raiz}"
+                                                    CommandParameter="{Binding}"
+                                                    Content="{l:T 'Crear con los cambios marcados'}"
+                                                    IsEnabled="{Binding DataContext.ViewModel.Libre, ElementName=Raiz}" />
                                             </StackPanel>
                                             <StackPanel Margin="0,10,0,0" Orientation="Horizontal" Visibility="{Binding Guardada, Converter={StaticResource NoNuloAVisibilidad}, ConverterParameter=inverso}">
                                                 <ui:TextBox MinWidth="200" PlaceholderText="{l:T 'Nombre de la voz'}" Text="{Binding Nombre, UpdateSourceTrigger=PropertyChanged}" />

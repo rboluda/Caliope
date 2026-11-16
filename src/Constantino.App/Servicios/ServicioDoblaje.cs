@@ -82,17 +82,21 @@ public sealed class ServicioDoblaje(ServicioInstalacion instalacion, ServicioMot
             (await motor.TranscribirTramosAsync(voces, idioma, cortes, ct)).Frases;
 
         public async Task<double> SintetizarAsync(string texto, string pronunciacion, string timbre, string salida, int semilla,
-            CancellationToken ct) =>
-            (await motor.SintetizarDoblajeAsync(texto, pronunciacion, timbre, salida, semilla, ct)).Duracion;
+            double? intensidad, CancellationToken ct) =>
+            (await motor.SintetizarDoblajeAsync(texto, pronunciacion, timbre, salida, semilla, ct, intensidad)).Duracion;
+
+        public async Task<IReadOnlyList<ProsodiaTramo>> ProsodiaAsync(string audio, IReadOnlyList<TramoAudio> tramos, CancellationToken ct) =>
+            (await motor.ProsodiaAsync(audio, tramos, ct)).Tramos;
     }
 
     /// <summary>El traductor necesita la tarjeta: antes de usarlo se apaga el motor de voz que hubiera.</summary>
     private sealed class TraductorSinMotor(ITraductorDoblaje traductor, ServicioMotor motor) : ITraductorDoblaje
     {
-        public async Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct)
+        public async Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct,
+            Action<IReadOnlyDictionary<int, string>>? alTerminarTanda = null)
         {
             await motor.ApagarAsync();
-            return await traductor.TraducirAsync(frases, ct);
+            return await traductor.TraducirAsync(frases, ct, alTerminarTanda);
         }
 
         public Task<string> AcortarAsync(string original, string traduccion, int maxCaracteres, CancellationToken ct) =>

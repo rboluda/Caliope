@@ -13,6 +13,7 @@ Calíope **no redistribuye** los motores ni los modelos: los descarga de sus fue
 | [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS): modelos Base 1.7B / 0.6B y VoiceDesign 1.7B | Alibaba (equipo Qwen) | Apache 2.0 | El motor de voz principal: clonar voces, diseñarlas a partir de una descripción y leer los guiones. |
 | [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox) v3 y su [paquete de castellano de España](https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-es) | Resemble AI | MIT | El motor castellano rápido, con control de la intensidad emocional. |
 | [VoxCPM2](https://github.com/OpenBMB/VoxCPM) | OpenBMB | Apache 2.0 | El motor de máximo parecido: imita la voz con más fidelidad y genera audio a 48 kHz. |
+| [CosyVoice 3](https://github.com/FunAudioLLM/CosyVoice) (Fun-CosyVoice3-0.5B) y [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS) | FunAudioLLM (Alibaba) y Shivam Mehta | Apache 2.0 / MIT | La conversión de voz: cambia el timbre de una grabación conservando cómo se dijo. |
 | [Demucs](https://github.com/adefossez/demucs) con el modelo htdemucs | Meta (Alexandre Défossez) | MIT | Separa la voz de la música y los efectos al doblar un vídeo. |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | ggml-org | MIT | Ejecuta en tu equipo el modelo que traduce los vídeos. |
 | [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) (GGUF de [unsloth](https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF)) | Alibaba (equipo Qwen) | Apache 2.0 | Traduce el guion de los vídeos al castellano. |

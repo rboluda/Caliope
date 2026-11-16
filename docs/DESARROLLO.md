@@ -48,6 +48,35 @@ Cada versión sale firmada sola con el certificado personal de firma de código 
 
 - **1.3.1 · susurro fabricado**: comparación a ciegas con ElevenLabs v4 (mismo texto, 5 rondas, notas del usuario). El motor principal con una referencia expresiva y una variante de susurro grabada se acerca en narración tranquila, tensión y final; VoxCPM2 (también con indicaciones de estilo), Chatterbox y una ecualización «de brillo» no mejoran al oído. El motor copia el tono de la referencia (consejo nuevo al clonar y en la Ayuda) y un susurro de referencia de menos de 3 s no sale susurrado. Variante «susurro» fabricada sin grabarla: `retoque.py` analiza la voz con WORLD (pyworld 0.3.5, MIT), pone f0 = 0 y aperiodicidad total, sube los formantes un 6 % y quita lo de debajo de 300 Hz (op `susurrar`, sin modelo). Suena peor que un susurro grabado (4/4/4 frente a 4/4/5 en el final), pero mucho mejor que bajar el volumen. Un primer intento con LPC + ruido sonaba «horrible» al clonarlo: el motor copia los defectos de la referencia.
 
+- **1.5 · conversión de voz** (componente `conversion-voz`, idea vista en VoiceStudio, sin su código):
+  - CosyVoice 3 (`inference_vc`, Apache 2.0) en su propio entorno con PyTorch 2.6 cu124, el del motor castellano, que también funciona aunque ellos fijen la 2.3.1.
+  - El código se descarga de GitHub en commits fijos (CosyVoice 074ca6d, Matcha-TTS dd9105b) con SHA-256. Del modelo solo se bajan las piezas necesarias (5,4 GB de 9,75).
+  - Su normalizador de texto (wetext) se descarga de ModelScope, que llegó a responder 403. La conversión no lee textos, así que el adaptador pone un normalizador vacío y no hace falta conexión.
+  - Las grabaciones largas se trocean por silencios (25 s como mucho) y cada trozo convertido vuelve a su sitio.
+  - Medido: parecido 0,982 con la voz destino, mismo ritmo, acento de España conservado; 8,5 s por 14 s de audio y 3,4 GB de VRAM.
+- **1.5 · doblaje**:
+  - **«Prosody Mirror»** (op `prosodia`, WORLD): volumen, tono y movimiento de la entonación de cada frase original. `Doblador.Intensidades` lo compara con la mediana de esa persona → intensidad de Chatterbox = 0,5 + 0,04·Δvolumen(dB) + 0,04·Δmovimiento(st), entre 0,3 y 0,85, con 0,3 si casi no tiene tono (susurro).
+    - Medido en la leyenda: el grito da unos 0,71, los susurros 0,3 y las frases normales 0,5.
+    - La intensidad entra en la huella solo si no es 0,5.
+  - **Reanudar:** las frases dobladas ya se guardaban una a una. La traducción ahora también guarda tras cada tanda.
+- **1.5 · narración (ideas de VoiceStudio, sin su código)**:
+  - **Etiquetas finas:** `[pause 2s]`, `[lento]`/`[rápido]`/`[velocidad 1.2]` (rubberband por línea; la velocidad entra en la huella solo si no es 1), `[emoción: X]` (la variante de la voz) y `[[escrito|dicho]]`.
+  - **Ruido de sala** (`RuidoDeSala`): el 15 % de tramos de 20 ms más tranquilos de las tomas, unidos con fundidos, rellenan las pausas. Desactivado por defecto: así no cambia la huella de lo ya generado.
+  - **Subtítulos:** op `palabras` (Whisper con tiempo por palabra). `Subtitulos.Alinear` empareja por formas normalizadas (cifras a palabras) con distancia de edición y reparte las palabras sin pareja. Salen un SRT por frases equilibradas y un ASS karaoke a 1080×1920.
+  - **Liberar la GPU:** el motor se apaga tras 5 minutos sin uso; si se queda sin memoria, se cierra y se reintenta una vez.
+- **1.5 · mezclar voces y «Más así» con varios cambios**:
+  - **Mezclador** (op `mezclar` del motor castellano): T3 de la voz de la «forma de hablar» y S3Gen de la del timbre. Con «acercar», la huella de S3Gen se mezcla con la de la otra voz (de 0 a 0,5).
+  - Medido con dos voces muy distintas:
+    - el ritmo y el acento siguen exactamente a T3 (12,2 s frente a 14,1 s; −8,8 frente a +0,1 dB);
+    - el timbre sigue a S3Gen (parecido 0,98);
+    - el tono sale a medias (139 Hz entre 98 y 181);
+    - mezclar huellas de S3Gen es un efecto suave y asimétrico; mezclar la de T3 no cambia nada.
+  - Después, el motor principal clona el resultado: parecido 0,985 y −12,8 dB.
+  - **«Más así»**:
+    - Se pueden marcar varios cambios a la vez; los contrarios se excluyen.
+    - Fuerzas «clearly», «much» y «very much». Si solo falla que un cambio no se nota, se sube la fuerza con la misma semilla; si falla otra cosa, se cambia de semilla.
+    - El diseñador responde mal: «más pausada» salió más rápida en 6 de 6 pruebas y el tono cambia de forma errática. Por eso se mide (umbral: un semitono, un 8 % de duración, un 12 % de movimiento de la entonación) y se avisa.
+
 - **1.4 · diseñar voces**: el diseñador (Qwen3-TTS VoiceDesign) no obedece del todo. Pidiendo «hombre de sesenta años» salieron voces de 200–280 Hz; con «voz grave», de 75 a 114 Hz según la semilla. Y **siempre sesea**: 0 de 12 voces tuvieron acento de España, con tres descripciones distintas, incluida «actor de doblaje de Madrid» explicando la /θ/. Lo medí con un detector de seseo: el pico de 4–11 kHz en palabras con z/ce/ci frente a palabras con s da −9/−10 dB en España y unos 0 dB con seseo. Mejoras:
   - `RevisionDiseno`:
     - El motor mide el tono (op `analizar_voz`, WORLD) y comprueba que encaja con el sexo, el timbre y la edad pedidos.

@@ -44,11 +44,43 @@ def analizar(entrada):
     x = _leer(entrada)
     f0, _ = pw.harvest(x, FRECUENCIA, f0_floor=55, f0_ceil=500, frame_period=10.0)
     sonoros = f0[f0 > 0]
+    movimiento = 0.0
+    if len(sonoros) > 10:
+        st = 12 * np.log2(sonoros / np.median(sonoros))
+        movimiento = float(np.percentile(st, 90) - np.percentile(st, 10))
     return {
         "tono_hz": round(float(np.median(sonoros)), 1) if len(sonoros) else 0.0,
+        "movimiento": round(movimiento, 2),
         "sonoridad": round(len(sonoros) / max(len(f0), 1), 3),
         "duracion": round(len(x) / FRECUENCIA, 2),
     }
+
+
+def prosodia(audio, tramos):
+    """Cómo suena cada tramo (para que el doblaje copie la expresión): volumen (dB), tono medio (Hz), movimiento de la
+    entonación (semitonos entre los percentiles 10 y 90) y qué parte tiene tono (0–1)."""
+    import numpy as np
+
+    pw = _world()
+    x = _leer(audio)
+    resultado = []
+    for tramo in tramos:
+        a = max(0, int(float(tramo["inicio"]) * FRECUENCIA))
+        b = min(len(x), int(float(tramo["fin"]) * FRECUENCIA))
+        trozo = np.ascontiguousarray(x[a:b])
+        if len(trozo) < FRECUENCIA // 5:
+            resultado.append({"volumen_db": -90.0, "tono_hz": 0.0, "movimiento": 0.0, "sonoridad": 0.0})
+            continue
+        volumen = 20 * np.log10(max(float(np.sqrt(np.mean(trozo ** 2))), 1e-6))
+        f0, _ = pw.harvest(trozo, FRECUENCIA, f0_floor=55, f0_ceil=500, frame_period=10.0)
+        sonoros = f0[f0 > 0]
+        movimiento = 0.0
+        if len(sonoros) > 10:
+            st = 12 * np.log2(sonoros / np.median(sonoros))
+            movimiento = float(np.percentile(st, 90) - np.percentile(st, 10))
+        resultado.append({"volumen_db": round(volumen, 1), "tono_hz": round(float(np.median(sonoros)), 1) if len(sonoros) else 0.0,
+                          "movimiento": round(movimiento, 2), "sonoridad": round(len(sonoros) / max(len(f0), 1), 3)})
+    return {"tramos": resultado}
 
 
 def susurrar(entrada, salida, progreso):

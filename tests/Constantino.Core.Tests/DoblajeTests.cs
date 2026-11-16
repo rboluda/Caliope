@@ -267,6 +267,27 @@ public sealed class DoblajeTests : IDisposable
         Assert.Equal(new Dictionary<int, string> { [1] = "Hola", [2] = "Adiós" }, f);
     }
 
+    [Fact]
+    public void La_intensidad_copia_la_expresion_del_original_respecto_a_su_misma_persona()
+    {
+        var frases = new List<FraseDoblaje>
+        {
+            new(1, 1, 0, 2, "normal"), new(2, 1, 2, 4, "gritando"), new(3, 1, 4, 6, "en voz baja"), new(4, 1, 6, 8, "susurrando"),
+            new(5, 2, 8, 10, "otra persona, más alta de por sí"),
+        };
+        var prosodia = new List<ProsodiaTramo>
+        {
+            new(-20, 120, 5, 0.7), new(-12, 160, 9, 0.7), new(-27, 110, 3, 0.7), new(-30, 0, 0, 0.1), new(-10, 200, 5, 0.7),
+        };
+        var i = Constantino.Core.Doblaje.Doblador.Intensidades(frases, prosodia);
+        Assert.Equal(Constantino.Core.Doblaje.Doblador.IntensidadNormal, i[0], 2);
+        Assert.True(i[1] > 0.7);
+        Assert.True(i[2] < 0.4);
+        Assert.Equal(0.3, i[3], 2);
+        // Comparada con su propia media, no con la de los demás: la única frase de la persona 2 es «normal».
+        Assert.Equal(Constantino.Core.Doblaje.Doblador.IntensidadNormal, i[4], 2);
+    }
+
     private sealed class MotoresFalsos : IMotoresDoblaje
     {
         public int Separaciones, Transcripciones;
@@ -293,8 +314,15 @@ public sealed class DoblajeTests : IDisposable
                 [new(0.5, 2.5, "Hello there."), new(3.0, 5.0, "How are you?"), new(6.0, 7.0, "Bye.")]);
         }
 
-        public Task<double> SintetizarAsync(string texto, string pronunciacion, string timbre, string salida, int semilla, CancellationToken ct)
+        public List<double?> Intensidades { get; } = [];
+
+        public Task<IReadOnlyList<ProsodiaTramo>> ProsodiaAsync(string audio, IReadOnlyList<TramoAudio> tramos, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<ProsodiaTramo>>([.. tramos.Select((t, i) => new ProsodiaTramo(i == 0 ? -10 : -20, 120, 5, 0.7))]);
+
+        public Task<double> SintetizarAsync(string texto, string pronunciacion, string timbre, string salida, int semilla, double? intensidad,
+            CancellationToken ct)
         {
+            Intensidades.Add(intensidad);
             Sintesis.Add((texto, pronunciacion, timbre));
             File.WriteAllText(salida, texto);
             return Task.FromResult(texto.Length / 14.0);
@@ -306,7 +334,8 @@ public sealed class DoblajeTests : IDisposable
         public int Tandas, Acortadas;
         public List<int> Hablantes { get; } = [];
 
-        public Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct)
+        public Task<IReadOnlyDictionary<int, string>> TraducirAsync(IReadOnlyList<FraseATraducir> frases, CancellationToken ct,
+            Action<IReadOnlyDictionary<int, string>>? alTerminarTanda = null)
         {
             Tandas++;
             Hablantes.AddRange(frases.Select(f => f.Hablante));

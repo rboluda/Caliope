@@ -1,0 +1,259 @@
+<Page
+    x:Class="Constantino.App.Paginas.PaginaMezclar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    x:Name="Raiz"
+    ScrollViewer.CanContentScroll="False"
+    Title="{l:T 'Mezclar voces'}">
+    <Page.Resources>
+        <Style x:Key="Etiqueta" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+    </Page.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,32,32" MaxWidth="1040">
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Mezclar voces'}" />
+            <TextBlock
+                Margin="0,4,0,16"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="{l:T 'Crea una voz nueva a partir de dos de tu biblioteca, eligiendo de cuál tomas cada cosa: el acento y la entonación, el timbre, la gravedad y el ritmo. La mezcla habla en español.'}"
+                TextWrapping="Wrap" />
+
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.MotorCastellanoInstalado, Converter={StaticResource NegarBool}}"
+                Message="{l:T 'El mezclador usa el motor castellano (Chatterbox), que separa la forma de hablar del timbre. Instálalo desde Componentes.'}"
+                Severity="Warning"
+                Title="{l:T 'Falta el motor castellano'}">
+                <ui:InfoBar.Content>
+                    <ui:Button Command="{Binding ViewModel.IrAComponentesCommand}" Content="{l:T 'Ir a Componentes'}" />
+                </ui:InfoBar.Content>
+            </ui:InfoBar>
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.SinVoces}"
+                Message="{l:T 'Hacen falta al menos dos voces en «Mis voces»: diseña, clona o importa alguna.'}"
+                Severity="Informational"
+                Title="{l:T 'Necesitas dos voces'}" />
+
+            <!--  1. Las dos voces  -->
+            <ui:Card>
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '1. Las dos voces'}" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Voz A'}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Voces}" SelectedItem="{Binding ViewModel.VozA}" />
+                                <ui:Button
+                                    Grid.Column="1"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding ViewModel.EscucharVozCommand}"
+                                    CommandParameter="{Binding ViewModel.VozA}"
+                                    ToolTip="{l:T 'Escuchar'}">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Play24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Voz B'}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox DisplayMemberPath="Nombre" ItemsSource="{Binding ViewModel.Voces}" SelectedItem="{Binding ViewModel.VozB}" />
+                                <ui:Button
+                                    Grid.Column="1"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding ViewModel.EscucharVozCommand}"
+                                    CommandParameter="{Binding ViewModel.VozB}"
+                                    ToolTip="{l:T 'Escuchar'}">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Play24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+
+            <!--  2. Qué tomas de cada una  -->
+            <ui:Card Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '2. Qué tomas de cada una'}" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="260" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Margin="0,8,0,8">
+                            <TextBlock FontWeight="SemiBold" Text="{l:T 'Acento y entonación'}" />
+                            <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Cómo habla: acento, entonación y emoción'}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                            <RadioButton MinWidth="140" Content="{l:T 'De la voz A'}" GroupName="Habla" IsChecked="{Binding ViewModel.HablaDeA}" />
+                            <RadioButton MinWidth="140" Content="{l:T 'De la voz B'}" GroupName="Habla" IsChecked="{Binding ViewModel.HablaDeB}" />
+                        </WrapPanel>
+
+                        <StackPanel Grid.Row="1" Margin="0,8,0,8">
+                            <TextBlock FontWeight="SemiBold" Text="{l:T 'Timbre'}" />
+                            <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Quién suena'}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <WrapPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center">
+                            <RadioButton MinWidth="140" Content="{l:T 'De la voz A'}" GroupName="Timbre" IsChecked="{Binding ViewModel.TimbreDeA}" />
+                            <RadioButton MinWidth="140" Content="{l:T 'De la voz B'}" GroupName="Timbre" IsChecked="{Binding ViewModel.TimbreDeB}" />
+                        </WrapPanel>
+
+                        <StackPanel Grid.Row="2" Margin="0,8,0,8">
+                            <TextBlock FontWeight="SemiBold" Text="{l:T 'Gravedad'}" />
+                            <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Lo grave o agudo'}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <WrapPanel Grid.Row="2" Grid.Column="1" VerticalAlignment="Center">
+                            <RadioButton MinWidth="140" Content="{l:T 'Como salga'}" GroupName="Gravedad" IsChecked="{Binding ViewModel.GravedadComoSalga}" />
+                            <RadioButton MinWidth="140" Content="{l:T 'De la voz A'}" GroupName="Gravedad" IsChecked="{Binding ViewModel.GravedadDeA}" />
+                            <RadioButton MinWidth="140" Content="{l:T 'De la voz B'}" GroupName="Gravedad" IsChecked="{Binding ViewModel.GravedadDeB}" />
+                        </WrapPanel>
+
+                        <StackPanel Grid.Row="3" Margin="0,8,0,8">
+                            <TextBlock FontWeight="SemiBold" Text="{l:T 'Ritmo'}" />
+                            <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{l:T 'Lo rápido o pausado'}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <WrapPanel Grid.Row="3" Grid.Column="1" VerticalAlignment="Center">
+                            <RadioButton MinWidth="140" Content="{l:T 'Como salga'}" GroupName="Ritmo" IsChecked="{Binding ViewModel.RitmoComoSalga}" />
+                            <RadioButton MinWidth="140" Content="{l:T 'De la voz A'}" GroupName="Ritmo" IsChecked="{Binding ViewModel.RitmoDeA}" />
+                            <RadioButton MinWidth="140" Content="{l:T 'De la voz B'}" GroupName="Ritmo" IsChecked="{Binding ViewModel.RitmoDeB}" />
+                        </WrapPanel>
+                    </Grid>
+                    <TextBlock Style="{StaticResource Etiqueta}">
+                        <Run Text="{l:T 'Acercar el timbre a la otra voz: '}" /><Run FontWeight="SemiBold" Text="{Binding ViewModel.Acercar, Mode=OneWay, StringFormat={}{0:0} %}" />
+                    </TextBlock>
+                    <Slider IsSnapToTickEnabled="True" Maximum="50" Minimum="0" TickFrequency="5" Value="{Binding ViewModel.Acercar}" />
+                    <TextBlock
+                        Margin="0,10,0,0"
+                        FontWeight="SemiBold"
+                        Text="{Binding ViewModel.Resumen}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Margin="0,6,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{l:T 'Cómo funciona: el motor castellano (Chatterbox) separa la forma de hablar (T3) del timbre (S3Gen). «Como salga», la gravedad queda a medias entre las dos voces y el ritmo es el de la voz del acento; si eliges de qué voz, Calíope mide su tono y su velocidad y los iguala (con rubberband, como mucho 5 semitonos y entre un 25 % más lento y un 33 % más rápido). «Acercar» es un efecto suave.'}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </ui:Card>
+
+            <!--  3. Prueba y guarda  -->
+            <ui:Card Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '3. Prueba y guarda'}" />
+                    <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Texto de muestra (será la grabación de referencia de la voz nueva)'}" TextWrapping="Wrap" />
+                    <ui:TextBox AcceptsReturn="True" MinHeight="70" Text="{Binding ViewModel.TextoMuestra, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" />
+                    <WrapPanel Margin="0,12,0,0">
+                        <ui:Button
+                            Margin="0,0,8,8"
+                            Appearance="Primary"
+                            Command="{Binding ViewModel.MezclarCommand}"
+                            Content="{l:T 'Crear la mezcla'}"
+                            IsEnabled="{Binding ViewModel.PuedeMezclar}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Wand24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="0,0,8,8"
+                            Command="{Binding ViewModel.EscucharMezclaCommand}"
+                            Content="{l:T 'Escuchar la mezcla'}"
+                            Visibility="{Binding ViewModel.Resultado, Converter={StaticResource NoNuloAVisibilidad}}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Play24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="0,0,8,8"
+                            Command="{Binding ViewModel.NarrarCommand}"
+                            Content="{l:T 'Así sonará al narrar'}"
+                            IsEnabled="{Binding ViewModel.Libre}"
+                            Visibility="{Binding ViewModel.Resultado, Converter={StaticResource NoNuloAVisibilidad}}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="BookOpen24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:ProgressRing
+                            Width="18"
+                            Height="18"
+                            Margin="4,0,0,8"
+                            VerticalAlignment="Center"
+                            IsIndeterminate="True"
+                            Visibility="{Binding ViewModel.Trabajando, Converter={StaticResource BoolAVisibilidad}}" />
+                    </WrapPanel>
+                    <TextBlock Text="{Binding ViewModel.Mensaje}" TextWrapping="Wrap" />
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{Binding ViewModel.Ajustes}"
+                        TextWrapping="Wrap"
+                        Visibility="{Binding ViewModel.Ajustes, Converter={StaticResource NoNuloAVisibilidad}}" />
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        Text="{Binding ViewModel.Motor.Descripcion}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Margin="0,6,0,0"
+                        Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                        Text="{Binding ViewModel.Aviso}"
+                        TextWrapping="Wrap"
+                        Visibility="{Binding ViewModel.Aviso, Converter={StaticResource NoNuloAVisibilidad}}" />
+                    <ui:InfoBar
+                        Margin="0,8,0,0"
+                        IsClosable="False"
+                        IsOpen="{Binding ViewModel.Error, Converter={StaticResource TextoNoVacio}}"
+                        Message="{Binding ViewModel.Error}"
+                        Severity="Error"
+                        Title="{l:T 'Algo ha fallado'}" />
+
+                    <StackPanel Margin="0,12,0,0" Orientation="Horizontal" Visibility="{Binding ViewModel.Resultado, Converter={StaticResource NoNuloAVisibilidad}}">
+                        <ui:TextBox MinWidth="260" PlaceholderText="{l:T 'Nombre de la voz'}" Text="{Binding ViewModel.NombreNueva, UpdateSourceTrigger=PropertyChanged}" />
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Appearance="Primary"
+                            Command="{Binding ViewModel.GuardarCommand}"
+                            Content="{l:T 'Guardar como voz nueva'}"
+                            IsEnabled="{Binding ViewModel.Libre}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,8,0,0" Visibility="{Binding ViewModel.Guardada, Converter={StaticResource NoNuloAVisibilidad}}">
+                        <TextBlock Foreground="{DynamicResource SystemFillColorSuccessBrush}" Text="{Binding ViewModel.Guardada}" TextWrapping="Wrap" />
+                        <ui:Button Margin="0,6,0,0" Command="{Binding ViewModel.IrAVocesCommand}" Content="{l:T 'Ir a Mis voces'}" />
+                    </StackPanel>
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

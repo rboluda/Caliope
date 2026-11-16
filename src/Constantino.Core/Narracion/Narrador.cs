@@ -324,7 +324,8 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         var totalLetras = Math.Max(1, trozos.OfType<EventoVoz>().Sum(v => v.Texto.Length));
         var letrasHechas = 0;
         var avisos = new List<string>();
-        var partes = new List<(Pcm Audio, double Ganancia)>();
+        // Silencio: las pausas, que con «ruido de sala» se rellenan con el fondo de la propia toma.
+        var partes = new List<(Pcm Audio, double Ganancia, bool Silencio)>();
         int? frecuencia = null;
         var anteriorVoz = false;
         var gananciaSusurro = sintetizador.Variantes.Contains(Voces.CatalogoVariantes.Susurro) ? 0 : a.SusurroDb;
@@ -333,7 +334,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         {
             if (evento is EventoSilencio s)
             {
-                partes.Add((Pcm.Silencio(s.Segundos, frecuencia ?? FrecuenciaPorDefecto), 0));
+                partes.Add((Pcm.Silencio(s.Segundos, frecuencia ?? FrecuenciaPorDefecto), 0, true));
                 anteriorVoz = false;
                 continue;
             }
@@ -343,7 +344,7 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 {
                     var wavEfecto = Path.Combine(temporal, $"{b.Archivo}_{partes.Count:000}_efecto.wav");
                     await procesador.ConvertirAsync(rutaEfecto, wavEfecto, frecuencia ?? FrecuenciaPorDefecto, ct).ConfigureAwait(false);
-                    partes.Add((Pcm.LeerWav(wavEfecto), 0));
+                    partes.Add((Pcm.LeerWav(wavEfecto), 0, false));
                 }
                 anteriorVoz = false;
                 continue;
@@ -355,6 +356,13 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
             var variante = v.VozId is null && v.Variante is { } id && sintetizador.Variantes.Contains(id) ? id : null;
             var ruta = await sintetizador.SintetizarAsync(v.Texto, variante, v.VozId, a,
                 Path.Combine(temporal, $"{b.Archivo}_{partes.Count:000}.wav"), ct).ConfigureAwait(false);
+            // Velocidad de esa línea ([lento], [rápido]…): rubberband, sin cambiar el tono.
+            if (Math.Abs(v.Velocidad - 1) > 0.001)
+            {
+                var cambiada = Path.Combine(temporal, $"{b.Archivo}_{partes.Count:000}_velocidad.wav");
+                await procesador.CambiarTempoAsync(ruta, cambiada, v.Velocidad, ct).ConfigureAwait(false);
+                ruta = cambiada;
+            }
             var audio = Pcm.LeerWav(ruta);
             if (a.RecortarSilencios)
                 audio = audio.Recortar(a.UmbralSilencioDb, a.MargenRecorte);
@@ -364,24 +372,35 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
                 // Lo añadido antes de conocer la frecuencia del modelo (silencios, efectos) se rehace con la correcta.
                 for (var i = 0; i < partes.Count; i++)
                     if (partes[i].Audio.Frecuencia != audio.Frecuencia)
-                        partes[i] = (Pcm.Silencio(partes[i].Audio.Segundos, audio.Frecuencia), 0);
+                        partes[i] = (Pcm.Silencio(partes[i].Audio.Segundos, audio.Frecuencia), 0, partes[i].Silencio);
             }
             var esperado = v.Texto.Length / LetrasPorSegundo;
             if (audio.Segundos > 2.5 * esperado + 1 || audio.Segundos < 0.4 * esperado)
                 avisos.Add(T("Duración anómala ({0:0.0} s, se esperaban ~{1:0.0} s): «{2}». Revisa cómo suena.", audio.Segundos, esperado, Resumen(v.Texto)));
             if (anteriorVoz)
-                partes.Add((Pcm.Silencio(a.PausaEntreFrases, audio.Frecuencia), 0));
+                partes.Add((Pcm.Silencio(a.PausaEntreFrases, audio.Frecuencia), 0, true));
             // Otra voz no sabemos si tiene variante de susurro: se simula bajando el volumen.
-            partes.Add((audio, v.Susurro ? (v.VozId is null ? gananciaSusurro : a.SusurroDb) : 0));
+            partes.Add((audio, v.Susurro ? (v.VozId is null ? gananciaSusurro : a.SusurroDb) : 0, false));
             anteriorVoz = true;
             letrasHechas += v.Texto.Length;
         }
         var sr = frecuencia ?? FrecuenciaPorDefecto;
+        var inicio = Pcm.Silencio(a.SilencioInicio, sr);
+        var fin = Pcm.Silencio(a.SilencioFin, sr);
+        // Ruido de sala: los silencios se rellenan con el fondo de las propias tomas de voz (igual en las dos versiones).
+        if (a.RuidoSala && RuidoDeSala.Modelar(partes.Where(p => !p.Silencio).Select(p => p.Audio), sr) is { } fondo)
+        {
+            for (var i = 0; i < partes.Count; i++)
+                if (partes[i].Silencio && partes[i].Audio.Muestras.Length > 0)
+                    partes[i] = (RuidoDeSala.Rellenar(fondo, partes[i].Audio.Segundos, b.Indice * 1000 + i), 0, true);
+            inicio = RuidoDeSala.Rellenar(fondo, a.SilencioInicio, b.Indice * 1000 - 1);
+            fin = RuidoDeSala.Rellenar(fondo, a.SilencioFin, b.Indice * 1000 - 2);
+        }
         Pcm Montar(bool conGanancia)
         {
-            var piezas = new List<Pcm> { Pcm.Silencio(a.SilencioInicio, sr) };
+            var piezas = new List<Pcm> { inicio };
             piezas.AddRange(partes.Select(p => conGanancia && p.Ganancia != 0 ? p.Audio.ConGanancia(p.Ganancia) : p.Audio));
-            piezas.Add(Pcm.Silencio(a.SilencioFin, sr));
+            piezas.Add(fin);
             return Pcm.Unir(piezas, sr);
         }
         avance(1, 1, 0, T("Bloque {0}: ajustando el volumen", b.Indice));
@@ -694,6 +713,12 @@ public sealed partial class ProcesadorFfmpeg(string ffmpeg, IEjecutorProcesos ej
         return Ejecutar(["-y", "-i", origen, "-af", "loudnorm=I=-20:TP=-2:LRA=11",
             "-ar", frecuencia.ToString(CultureInfo.InvariantCulture), "-ac", "1", "-c:a", "pcm_s16le", destinoWav], ct);
     }
+
+    /// <summary>Cambia a la vez la velocidad (sin tocar el tono) y el tono (conservando los formantes), con rubberband.</summary>
+    public Task CambiarTempoYTonoAsync(string wav, string destinoWav, double tempo, double semitonos, CancellationToken ct) =>
+        Ejecutar(["-y", "-i", wav, "-af", FormattableString.Invariant(
+            $"rubberband=tempo={tempo:0.####}:pitch={Math.Pow(2, semitonos / 12):0.#####}:formant=preserved:pitchq=quality:transients=mixed"),
+            "-c:a", "pcm_f32le", destinoWav], ct);
 
     public Task CambiarTempoAsync(string wav, string destinoWav, double factor, CancellationToken ct) =>
         Ejecutar(["-y", "-i", wav, "-af", FormattableString.Invariant($"rubberband=tempo={factor:0.####}:pitchq=quality:transients=mixed"),

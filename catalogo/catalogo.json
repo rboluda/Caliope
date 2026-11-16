@@ -1012,6 +1012,297 @@
       }
     },
     {
+      "id": "conversion-voz",
+      "nombre": "Conversión de voz (CosyVoice 3)",
+      "grupo": "Más funciones",
+      "necesidad": "opcional",
+      "resumen": "Convierte una grabación a otra voz de tu biblioteca y conserva cómo se dijo: ritmo, pausas, emoción y acento.",
+      "detalle": "Lees tú (o usas cualquier grabación) con la interpretación que quieras, y Calíope la convierte a otra voz de tu biblioteca. Cambia el timbre y respeta todo lo demás. En las pruebas, una lectura con acento de España quedó con la voz destino (parecido 0,98), el mismo ritmo y el mismo acento. Unos 9 segundos por cada 14 de audio con tarjeta gráfica.",
+      "consejo": "Útil para narrar con una voz que no tiene la interpretación que buscas: grábate tú y conviértelo. Si ya tienes el motor castellano, reaprovecha su parte más pesada.",
+      "tecnico": "CosyVoice 3 (FunAudioLLM, Alibaba; Apache 2.0), modelo Fun-CosyVoice3-0.5B-2512 (revisión 29e01c4, solo las piezas que hacen falta, unos 5,4 GB), código en el commit 074ca6d con Matcha-TTS dd9105b. Entorno propio con PyTorch 2.6 (CUDA 12.4), el mismo que el motor castellano.",
+      "habilita": [
+        "Convertir voz: una grabación a otra voz de tu biblioteca"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 9.5,
+        "sinGpuGb": 7.0
+      },
+      "requisitos": {
+        "vramMinimaGb": 4.0,
+        "vramRecomendadaGb": 6.0,
+        "funcionaEnCpu": true
+      },
+      "licencias": [
+        {
+          "nombre": "CosyVoice: Apache 2.0",
+          "url": "https://github.com/FunAudioLLM/CosyVoice/blob/main/LICENSE"
+        },
+        {
+          "nombre": "Fun-CosyVoice3-0.5B: Apache 2.0",
+          "url": "https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
+        },
+        {
+          "nombre": "Matcha-TTS: MIT",
+          "url": "https://github.com/shivammehta25/Matcha-TTS/blob/main/LICENSE"
+        },
+        {
+          "nombre": "PyTorch: BSD-3",
+          "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
+        }
+      ],
+      "instalacion": {
+        "version": "cosyvoice 074ca6d · matcha dd9105b · torch 2.6.0 · modelo 29e01c4",
+        "pasos": [
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Preparando la conversión de voz",
+            "programa": "{uv}",
+            "argumentos": [
+              "venv",
+              "{entornos}/cosyvoice",
+              "--python",
+              "3.11",
+              "--clear"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Descargando la parte más pesada de la conversión de voz",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--python",
+              "{entornos}/cosyvoice/Scripts/python.exe",
+              "torch==2.6.0",
+              "torchaudio==2.6.0",
+              "--index-url",
+              "{indiceTorchCu124}"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/cosyvoice"
+              ],
+              "bytesConGpu": 2600000000,
+              "bytesSinGpu": 800000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Preparando las herramientas de instalación",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--python",
+              "{entornos}/cosyvoice/Scripts/python.exe",
+              "setuptools==80.9.0",
+              "wheel==0.48.0"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando la conversión de voz",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--no-deps",
+              "--no-build-isolation",
+              "--python",
+              "{entornos}/cosyvoice/Scripts/python.exe",
+              "aiohappyeyeballs==2.7.1",
+              "aiohttp==3.14.5",
+              "aiosignal==1.4.0",
+              "antlr4-python3-runtime==4.9.3",
+              "attrs==26.1.0",
+              "audioread==3.1.0",
+              "beautifulsoup4==4.15.0",
+              "certifi==2026.10.23",
+              "cffi==2.1.1",
+              "charset-normalizer==3.5.2",
+              "cloudpickle==3.1.2",
+              "colorama==0.4.6",
+              "coloredlogs==15.0.1",
+              "conformer==0.3.2",
+              "contourpy==1.3.3",
+              "cycler==0.12.1",
+              "decorator==5.3.1",
+              "diffusers==0.29.0",
+              "einops==0.8.2",
+              "einx==0.4.3",
+              "filelock==4.2.4",
+              "flatbuffers==25.12.19",
+              "fonttools==4.68.0",
+              "frozendict==2.5.1",
+              "frozenlist==1.8.0",
+              "fsspec==2024.12.0",
+              "gdown==5.1.0",
+              "huggingface-hub==0.36.2",
+              "humanfriendly==10.0",
+              "hydra-core==1.3.2",
+              "hyperpyyaml==1.2.3",
+              "idna==3.20",
+              "importlib-metadata==10.2.0",
+              "inflect==7.3.1",
+              "jinja2==3.1.6",
+              "joblib==1.6.0",
+              "kaldifst==1.9.0",
+              "kiwisolver==1.5.1",
+              "lazy-importer==0.1.0",
+              "lazy-loader==0.6",
+              "librosa==0.10.2",
+              "lightning==2.2.4",
+              "lightning-utilities==0.15.3",
+              "llvmlite==0.50.0",
+              "loguru==0.8.0",
+              "markdown-it-py==4.3.0",
+              "markupsafe==3.0.3",
+              "matplotlib==3.11.2",
+              "mdurl==0.1.2",
+              "modelscope==1.20.0",
+              "more-itertools==11.2.1",
+              "mpmath==1.3.0",
+              "msgpack==1.2.4",
+              "multidict==7.2.1",
+              "narwhals==2.28.0",
+              "networkx==3.6.1",
+              "numba==0.68.1",
+              "numpy==1.26.4",
+              "omegaconf==2.3.0",
+              "onnx==1.16.0",
+              "onnxruntime==1.18.0",
+              "openai-whisper==20231117",
+              "packaging==24.2",
+              "pillow==13.0.0",
+              "platformdirs==4.14.5",
+              "pooch==1.9.0",
+              "propcache==0.5.4",
+              "protobuf==4.25.9",
+              "pyarrow==18.1.0",
+              "pycparser==3.12",
+              "pygments==2.21.0",
+              "pyparsing==3.3.3",
+              "pyreadline3==3.5.6",
+              "pysocks==1.7.1",
+              "python-dateutil==4.0.0",
+              "pytorch-lightning==2.6.6",
+              "pyworld==0.3.5",
+              "pyyaml==6.0.3",
+              "regex==2026.11.15",
+              "requests==2.34.2",
+              "rich==13.7.1",
+              "ruamel-yaml==0.18.17",
+              "ruamel-yaml-clib==0.2.15",
+              "safetensors==0.8.0",
+              "scikit-learn==1.9.1",
+              "scipy==1.17.1",
+              "soundfile==0.14.0",
+              "soupsieve==4.1.1",
+              "soxr==1.1.0",
+              "sympy==1.13.1",
+              "threadpoolctl==3.8.0",
+              "tiktoken==0.14.0",
+              "tokenizers==0.21.4",
+              "torchmetrics==1.9.0",
+              "tqdm==4.70.1",
+              "transformers==4.51.3",
+              "typeguard==4.6.0",
+              "typing-extensions==4.16.0",
+              "tzdata==2026.6",
+              "urllib3==2.8.0",
+              "wetext==0.0.4",
+              "wget==3.2",
+              "win32-setctime==1.2.1",
+              "x-transformers==2.11.24",
+              "yarl==1.25.1",
+              "zipp==4.1.2"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/cosyvoice"
+              ],
+              "bytesConGpu": 900000000,
+              "bytesSinGpu": 900000000
+            }
+          },
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando el código de CosyVoice",
+            "url": "https://github.com/FunAudioLLM/CosyVoice/archive/074ca6dc9e80a2f424f1f74b48bdd7d3fea531cc.zip",
+            "sha256": "4e7b1ce909f97abcc8afa0a890f92ccf2839ff435c698d4f04a1ba7aa71a022f",
+            "destino": "{descargas}/cosyvoice-074ca6d.zip",
+            "tamanoBytes": 1633232
+          },
+          {
+            "tipo": "extraer",
+            "descripcion": "Colocando el código de CosyVoice",
+            "archivo": "{descargas}/cosyvoice-074ca6d.zip",
+            "destino": "{entornos}/cosyvoice/codigo",
+            "quitarCarpetaRaiz": true
+          },
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando el código de Matcha-TTS",
+            "url": "https://github.com/shivammehta25/Matcha-TTS/archive/dd9105b34bf2be2230f4aa1e4769fb586a3c824e.zip",
+            "sha256": "75701744385a813822b2561b02562e4efe5e241d0142c21969642fcb15f61c15",
+            "destino": "{descargas}/matcha-dd9105b.zip",
+            "tamanoBytes": 525858
+          },
+          {
+            "tipo": "extraer",
+            "descripcion": "Colocando el código de Matcha-TTS",
+            "archivo": "{descargas}/matcha-dd9105b.zip",
+            "destino": "{entornos}/cosyvoice/codigo/third_party/Matcha-TTS",
+            "quitarCarpetaRaiz": true
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modelo de conversión de voz",
+            "python": "{entornos}/cosyvoice/Scripts/python.exe",
+            "repositorio": "FunAudioLLM/Fun-CosyVoice3-0.5B-2512",
+            "revision": "29e01c4e8d000f4bcd70751be16fa94bf3d85a18",
+            "tamanoBytes": 5430000000,
+            "archivos": [
+              "CosyVoice-BlankEN/*",
+              "campplus.onnx",
+              "config.json",
+              "configuration.json",
+              "cosyvoice3.yaml",
+              "flow.pt",
+              "hift.pt",
+              "llm.pt",
+              "speech_tokenizer_v3.onnx"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando la conversión de voz",
+            "programa": "{entornos}/cosyvoice/Scripts/python.exe",
+            "argumentos": [
+              "-c",
+              "import sys, os, torch; c = os.path.join(sys.prefix, 'codigo'); sys.path += [c, os.path.join(c, 'third_party', 'Matcha-TTS')]; from cosyvoice.cli.cosyvoice import AutoModel; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
+            ],
+            "debeContener": "dispositivo={dispositivo}"
+          }
+        ],
+        "rutas": [
+          "{entornos}/cosyvoice"
+        ],
+        "comprobar": [
+          "{entornos}/cosyvoice/Scripts/python.exe",
+          "{entornos}/cosyvoice/codigo/cosyvoice/cli/cosyvoice.py"
+        ]
+      }
+    },
+    {
       "id": "traductor",
       "nombre": "Traductor con IA (llama.cpp + Qwen3-4B)",
       "grupo": "Doblaje de vídeo",

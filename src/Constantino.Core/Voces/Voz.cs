@@ -8,6 +8,8 @@ public enum OrigenVoz
     Importada,
     /// <summary>Creada con VoiceDesign a partir de una descripción.</summary>
     Disenada,
+    /// <summary>Creada en el mezclador con la forma de hablar de una voz y el timbre de otra.</summary>
+    Mezclada,
     /// <summary>Grabada o importada en la pantalla de clonar.</summary>
     Clonada,
 }

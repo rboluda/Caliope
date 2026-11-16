@@ -59,6 +59,10 @@ public partial class App : Application
         s.AddSingleton<PaginaDoblar>();
         s.AddSingleton<DoblarViewModel>();
         s.AddSingleton<PaginaActas>();
+        s.AddSingleton<PaginaMezclar>();
+        s.AddSingleton<PaginaConvertir>();
+        s.AddSingleton<ConvertirViewModel>();
+        s.AddSingleton<MezclarViewModel>();
         s.AddSingleton<ActasViewModel>();
 
         return builder.Build();
