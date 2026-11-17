@@ -466,11 +466,40 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
         }
 
         var destino = Path.Combine(almacen.CarpetaSalida(p.Id), ArchivoCompleto(p));
-        await procesador.CodificarAsync(unido, destino, a, ct).ConfigureAwait(false);
+        // Se codifica aparte y luego sustituye al anterior: si el anterior está abierto en otro programa (un reproductor,
+        // un editor), escribir encima fallaba y se quedaba el viejo, que podía ser de otra voz.
+        var nuevo = Path.Combine(temporal, "completo-final" + Path.GetExtension(destino));
+        await procesador.CodificarAsync(unido, nuevo, a, ct).ConfigureAwait(false);
+        await SustituirAsync(nuevo, destino, ct).ConfigureAwait(false);
         info["archivo"] = Path.GetFileName(destino);
         info["duracion_s"] = Math.Round(t, 2);
         info["bloques"] = inicios;
         return (destino, info);
+    }
+
+    /// <summary>
+    /// Pone <paramref name="nuevo"/> en lugar de <paramref name="destino"/>. Si otro programa lo tiene abierto, lo
+    /// reintenta unos segundos (un reproductor recién cerrado tarda en soltarlo) y, si sigue abierto, lo dice claro.
+    /// </summary>
+    internal static async Task SustituirAsync(string nuevo, string destino, CancellationToken ct, int intentos = 10)
+    {
+        for (var i = 1; ; i++)
+        {
+            try
+            {
+                File.Move(nuevo, destino, overwrite: true);
+                return;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                if (i >= intentos)
+                {
+                    throw new IOException(T("No se ha podido guardar la narración completa: «{0}» está abierto en otro programa (un reproductor o un editor de vídeo). Ciérralo y pulsa «Generar» otra vez; los bloques ya están hechos y solo se vuelven a unir.",
+                        Path.GetFileName(destino)), e);
+                }
+                await Task.Delay(300, ct).ConfigureAwait(false);
+            }
+        }
     }
 
     // --- Otras tomas ---------------------------------------------------------------------------

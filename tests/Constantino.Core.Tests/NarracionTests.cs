@@ -195,6 +195,27 @@ public sealed class NarradorTests : IDisposable
     }
 
     [Fact]
+    public async Task Si_el_completo_esta_abierto_en_otro_programa_lo_dice_y_al_cerrarlo_se_rehace()
+    {
+        var p = _almacen.Crear("p", Ajustes, GuionTres);
+        var r = await Narrador().NarrarAsync(p, GuionTres, null, false, Sin, CancellationToken.None);
+        var antes = File.ReadAllBytes(r.Completo!);
+
+        // Como un reproductor que lo tiene abierto sin dejar escribir.
+        IOException error;
+        using (new FileStream(r.Completo!, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            error = await Assert.ThrowsAsync<IOException>(() =>
+                Narrador().NarrarAsync(r.Proyecto, GuionTres + "\n\nOtro bloque.", null, false, Sin, CancellationToken.None));
+        }
+
+        Assert.Contains("está abierto en otro programa", error.Message);
+        Assert.Equal(antes, File.ReadAllBytes(r.Completo!));
+        var r2 = await Narrador().NarrarAsync(_almacen.Leer(p.Id)!, GuionTres + "\n\nOtro bloque.", null, false, Sin, CancellationToken.None);
+        Assert.NotEqual(antes, File.ReadAllBytes(r2.Completo!));
+    }
+
+    [Fact]
     public async Task Solo_regenera_lo_que_cambia()
     {
         var p = _almacen.Crear("p", Ajustes, GuionTres);
