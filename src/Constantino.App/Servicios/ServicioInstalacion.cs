@@ -175,6 +175,9 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
     /// <summary>Desinstala; devuelve el mensaje de error o null si fue bien.</summary>
     public async Task<string?> DesinstalarAsync(string id)
     {
+        // Desinstalar vacía la caché de instalación, que una instalación en marcha está usando.
+        if (Ocupado)
+            return T("Hay una instalación en marcha. Espera a que termine para desinstalar.");
         try
         {
             var instalador = await InstaladorAsync();

@@ -269,6 +269,9 @@
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Arrancar el motor y cargar el modelo lleva entre 20 y 60 segundos. Después queda en memoria y cada bloque va mucho más rápido.'}" />
                     <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Un componente da errores'}" />
                     <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'En «Componentes», pulsa «Reparar»: vuelve a instalarlo aprovechando lo ya descargado. Si quieres verlo, el registro de lo que ha pasado está en «Programas internos», dentro de la carpeta de Calíope (en Ajustes → Almacenamiento ves cada carpeta y lo que ocupa).'}" />
+                    <TextBlock Style="{StaticResource Subtitulo}" Text="{l:T 'Me estoy quedando sin espacio'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Ve a «Espacio» (en el menú, debajo de Componentes). Ahí ves lo que ocupa cada cosa y lo que se libera de verdad al quitarla. «Liberar todo esto» borra lo que no hace falta (la caché de instalación, restos, descargas a medias, temporales y registros) sin perder nada. Si un componente solo lo querías para probar, desinstálalo desde ahí. Tus narraciones, doblajes y actas van a la papelera de Windows, de donde se pueden recuperar.'}" />
+                    <TextBlock Style="{StaticResource Parrafo}" Text="{l:T 'Para los curiosos: los motores comparten muchos archivos (PyTorch, por ejemplo, es un único archivo en disco aunque lo usen tres motores y la caché), así que lo que «ocupa» un componente y lo que se «libera» al quitarlo no es lo mismo. Calíope cuenta cada archivo una vez y solo da por liberado lo que nadie más usa.'}" />
                     <StackPanel Orientation="Horizontal">
                         <ui:Button Click="AlAbrirDatos" Content="{l:T 'Abrir la carpeta de datos'}">
                             <ui:Button.Icon>

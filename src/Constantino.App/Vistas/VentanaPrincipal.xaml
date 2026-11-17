@@ -146,6 +146,11 @@
                         <ui:SymbolIcon Symbol="PuzzlePiece24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="{l:T 'Espacio'}" TargetPageType="{x:Type paginas:PaginaEspacio}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="HardDrive24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
                 <ui:NavigationViewItem Content="{l:T 'Ajustes'}" TargetPageType="{x:Type paginas:PaginaAjustes}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Settings24" />

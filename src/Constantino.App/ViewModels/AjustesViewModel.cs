@@ -7,6 +7,7 @@ using Constantino.Core;
 using Constantino.Core.Instalaciones;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Wpf.Ui;
 using static Constantino.Core.Idioma;
 
 namespace Constantino.App.ViewModels;
@@ -33,9 +34,12 @@ public sealed partial class AjustesViewModel : ObservableObject
         new(TemaApp.Oscuro, T("Oscuro")),
     ];
 
+    private readonly INavigationService _navegacion;
+
     public AjustesViewModel(ServicioAjustes ajustes, ServicioInstalacion instalacion, ServicioActualizaciones actualizaciones,
-        AvisosViewModel avisos)
+        AvisosViewModel avisos, INavigationService navegacion)
     {
+        _navegacion = navegacion;
         _ajustes = ajustes;
         _instalacion = instalacion;
         _actualizaciones = actualizaciones;
@@ -173,6 +177,9 @@ public sealed partial class AjustesViewModel : ObservableObject
             Carpetas.Add(new FilaCarpeta(u.Nombre, u.Descripcion, u.Ruta, Formato.Bytes(u.Bytes)));
         TotalOcupado = T("En total, unos {0}.", Formato.Gb(usos.Sum(u => u.Bytes) / 1e9));
     }
+
+    [RelayCommand]
+    private void IrAEspacio() => _navegacion.Navigate(typeof(Paginas.PaginaEspacio));
 
     [RelayCommand]
     private static void Abrir(string ruta)

@@ -62,6 +62,13 @@ Cada versión sale firmada sola con el certificado personal de firma de código 
     - Al instalar VB-CABLE, Windows lo dejó como dispositivo predeterminado de grabación y de reproducción, y no se oía nada. Se arregla a mano en Sonido › Predeterminar.
     - Los números de dispositivo de MME cambian cuando Windows cambia el predeterminado, porque el predeterminado va el primero. Con la lista vieja, la salida al cable acabó sonando por los altavoces y se acopló. Ahora `iniciar` recibe también los nombres (`entrada_nombre`, `salidas_nombres`), vuelve a leer la lista y busca cada dispositivo por su nombre. Si dos nombres coinciden (MME los corta a 31 letras), decide el número. Si el nombre ya no está, avisa en vez de abrir otro dispositivo.
 
+- **Espacio** (página `PaginaEspacio`, `Espacio` en Core, `ServicioEspacio`):
+  - uv instala los paquetes en su caché y los entornos usan esos mismos archivos (enlaces duros). PyTorch, por ejemplo, es un único archivo aunque aparezca en tres entornos y en la caché. Quitar un entorno no libera nada mientras otro nombre del archivo siga existiendo.
+  - Por eso `Espacio.Medir` identifica cada archivo de 64 KB o más por su número en el disco (`GetFileInformationByHandle`) y cuenta cuántos nombres tiene y dónde. Un archivo se da por liberado solo si todos sus nombres están en lo que se borra. Los archivos pequeños se cuentan sin identificar: los de la caché como no liberables y los demás como de su carpeta. Con 48 GB tarda 4 s en vez de 20, con 0,15 GB de error como mucho por componente.
+  - `Desinstalar` ya no deja atrás los modelos de Hugging Face del componente (antes se quedaban los de «Convertir voz» y «Voz en directo»), salvo los que use otro componente instalado, y vacía la caché de uv: los demás entornos conservan sus enlaces. No se puede desinstalar durante una instalación.
+  - Limpieza sin perder nada: la caché, los restos (modelos y entornos sin componente instalado y la carpeta `modelscope`), las descargas a medias, los temporales de más de una hora y los registros.
+  - Lo del usuario (narraciones, doblajes y actas) va a la papelera de Windows. Las voces se quitan desde «Mis voces».
+
 - **1.5 · conversión de voz** (componente `conversion-voz`, idea vista en VoiceStudio, sin su código):
   - CosyVoice 3 (`inference_vc`, Apache 2.0) en su propio entorno con PyTorch 2.6 cu124, el del motor castellano, que también funciona aunque ellos fijen la 2.3.1.
   - El código se descarga de GitHub en commits fijos (CosyVoice 074ca6d, Matcha-TTS dd9105b) con SHA-256. Del modelo solo se bajan las piezas necesarias (5,4 GB de 9,75).

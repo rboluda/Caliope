@@ -169,7 +169,11 @@ public sealed class Instalador
                 T("Antes hay que desinstalar lo que depende de «{0}»: {1}.", c.Nombre, string.Join(", ", dependientes.Select(d => d.Nombre))));
         }
         Registrar($"=== Desinstalando {id}");
-        foreach (var ruta in inst.Rutas.Select(_rutas.Ruta))
+        // Sus carpetas y sus modelos, salvo los que también use otro componente instalado.
+        var deOtros = new HashSet<string>(_catalogo.Componentes
+            .Where(o => o.Id != id && EstadoDe(o.Id) is not (EstadoComponente.NoInstalado or EstadoComponente.NoDisponible))
+            .SelectMany(o => Espacio.RutasDe(_rutas, o)), StringComparer.OrdinalIgnoreCase);
+        foreach (var ruta in Espacio.RutasDe(_rutas, c).Where(r => !deOtros.Contains(r)))
         {
             try
             {
@@ -185,6 +189,14 @@ public sealed class Instalador
             }
         }
         Estado.Quitar(id);
+        // Los entornos comparten sus archivos con la caché de uv: hasta vaciarla, quitar un entorno apenas libera
+        // espacio. Los demás componentes no la necesitan para funcionar (tienen sus propios enlaces a cada archivo).
+        var fallos = new List<string>();
+        if (Directory.Exists(_rutas.Cache))
+            foreach (var hijo in Directory.EnumerateDirectories(_rutas.Cache))
+                Espacio.BorrarCarpeta(hijo, fallos);
+        if (fallos.Count > 0)
+            Registrar($"No se pudo vaciar del todo la caché ({fallos.Count} elementos en uso)");
     }
 
     /// <summary>Espera a todas las tareas y, si alguna falla, lanza su error (no el de la primera de la lista).</summary>

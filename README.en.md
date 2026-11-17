@@ -36,6 +36,7 @@ Calíope turns text into speech with artificial intelligence models that **run o
 - 🔁 **Convert voice**: read it yourself with the emotion you want and convert it to another voice from your library, keeping rhythm, pauses and accent.
 - 🎛️ **Mix voices**: the way of speaking (accent, rhythm, intonation) of one voice with the timbre of another.
 - 🎙️ **Live voice** (beta): speak into the microphone and come out with another voice from your library, almost instantly; also in Teams, Zoom or Discord (with [VB-CABLE](https://vb-audio.com/Cable/), which Calíope helps install and renames “Salida de Calíope”).
+- 🧹 **Space**: see what each thing takes up and what is really freed when you remove it (the engines share files), and free up space without losing anything. Install a component, try it and remove it.
 - 🎭 **Variants of the same voice**: whispering, tense, frightened, sad, cheerful or shouting. If you don't have a recorded whisper, Calíope makes one from the voice's recording.
 - 🎚️ **Fine-tune the result**: expressiveness, speed and pitch (independent of each other), pauses and volume leveled for video or podcasts.
 - 📤 **Get the audio as MP3 or WAV**, or drag it straight into your video editor.

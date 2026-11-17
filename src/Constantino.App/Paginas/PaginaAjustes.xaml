@@ -80,16 +80,22 @@
                             <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.CarpetaDatos}" TextWrapping="Wrap" />
                             <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ViewModel.TotalOcupado}" />
                         </StackPanel>
-                        <ui:Button
-                            Grid.Column="2"
-                            VerticalAlignment="Top"
-                            Command="{Binding ViewModel.AbrirCommand}"
-                            CommandParameter="{Binding ViewModel.CarpetaDatos}"
-                            Content="{l:T 'Abrir'}">
-                            <ui:Button.Icon>
-                                <ui:SymbolIcon Symbol="FolderOpen24" />
-                            </ui:Button.Icon>
-                        </ui:Button>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Top" Orientation="Horizontal">
+                            <ui:Button Command="{Binding ViewModel.IrAEspacioCommand}" Content="{l:T 'Liberar espacio'}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Broom24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <ui:Button
+                                Margin="8,0,0,0"
+                                Command="{Binding ViewModel.AbrirCommand}"
+                                CommandParameter="{Binding ViewModel.CarpetaDatos}"
+                                Content="{l:T 'Abrir'}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="FolderOpen24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                        </StackPanel>
                     </Grid>
                     <ItemsControl Margin="38,12,0,0" ItemsSource="{Binding ViewModel.Carpetas}">
                         <ItemsControl.ItemTemplate>

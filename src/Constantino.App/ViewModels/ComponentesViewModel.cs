@@ -124,8 +124,11 @@ public sealed partial class ComponentesViewModel : ObservableObject
     private readonly List<TarjetaComponente> _tarjetas = [];
     private bool _usaGpu;
 
-    public ComponentesViewModel(ServicioEquipo equipo, ServicioInstalacion instalacion, INavigationService navegacion)
+    private readonly ServicioEspacio _espacio;
+
+    public ComponentesViewModel(ServicioEquipo equipo, ServicioInstalacion instalacion, INavigationService navegacion, ServicioEspacio espacio)
     {
+        _espacio = espacio;
         _equipo = equipo;
         _navegacion = navegacion;
         Instalacion = instalacion;
@@ -324,10 +327,30 @@ public sealed partial class ComponentesViewModel : ObservableObject
     [RelayCommand]
     private async Task DesinstalarAsync(TarjetaComponente tarjeta)
     {
+        // Lo que se libera de verdad (no lo que ocupa: parte la comparte con otros componentes). Tarda unos segundos.
+        long libera;
+        System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+        try
+        {
+            libera = await _espacio.LiberaAsync(tarjeta.Id);
+        }
+        finally
+        {
+            System.Windows.Input.Mouse.OverrideCursor = null;
+        }
         if (!await ConfirmarAsync(T("Desinstalar {0}", tarjeta.Nombre),
-                T("Se borrará de tu equipo y se liberarán unos {0}. Podrás volver a instalarlo cuando quieras.", tarjeta.Tamano), T("Desinstalar")))
+                T("Se borrará de tu equipo: el programa, sus modelos (salvo los que use otro componente) y la caché de instalación. Se liberarán unos {0}. Podrás volver a instalarlo cuando quieras.", Formato.Bytes(libera)),
+                T("Desinstalar")))
             return;
-        Aviso = await Instalacion.DesinstalarAsync(tarjeta.Id);
+        System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+        try
+        {
+            Aviso = await Instalacion.DesinstalarAsync(tarjeta.Id);
+        }
+        finally
+        {
+            System.Windows.Input.Mouse.OverrideCursor = null;
+        }
     }
 
     [RelayCommand]

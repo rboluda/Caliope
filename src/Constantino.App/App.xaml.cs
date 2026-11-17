@@ -49,6 +49,9 @@ public partial class App : Application
         s.AddSingleton<PaginaAyuda>();
         s.AddSingleton<PaginaAjustes>();
         s.AddSingleton<AjustesViewModel>();
+        s.AddSingleton<ServicioEspacio>();
+        s.AddSingleton<PaginaEspacio>();
+        s.AddSingleton<EspacioViewModel>();
         s.AddSingleton<PaginaVoces>();
         s.AddSingleton<VocesViewModel>();
         s.AddSingleton<PaginaDisenar>();
