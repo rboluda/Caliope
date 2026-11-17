@@ -1,0 +1,173 @@
+<Page
+    x:Class="Constantino.App.Paginas.PaginaEnDirecto"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:Constantino.App.Controles"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    x:Name="Raiz"
+    ScrollViewer.CanContentScroll="False"
+    Title="{l:T 'Voz en directo'}">
+    <Page.Resources>
+        <Style x:Key="Etiqueta" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+    </Page.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,32,32" MaxWidth="1040">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock FontSize="28" FontWeight="SemiBold" Text="{l:T 'Voz en directo'}" />
+                <Border Margin="12,6,0,0" Padding="8,2" VerticalAlignment="Center" Background="{DynamicResource SystemFillColorCautionBackgroundBrush}" CornerRadius="4">
+                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="BETA" />
+                </Border>
+            </StackPanel>
+            <TextBlock
+                Margin="0,4,0,16"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="{l:T 'Habla por el micrófono y sal con otra voz de tu biblioteca, casi al instante. Te puedes oír en los auriculares y, a la vez, usarla en Teams, Zoom o Discord. Es una versión de prueba: puede fallar.'}"
+                TextWrapping="Wrap" />
+
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.Instalado, Converter={StaticResource NegarBool}}"
+                Message="{l:T 'Hace falta la voz en directo. Instálala desde Componentes.'}"
+                Severity="Warning"
+                Title="{l:T 'Falta la voz en directo'}">
+                <ui:InfoBar.Content>
+                    <ui:Button Command="{Binding ViewModel.IrAComponentesCommand}" Content="{l:T 'Ir a Componentes'}" />
+                </ui:InfoBar.Content>
+            </ui:InfoBar>
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.SinVoces}"
+                Message="{l:T 'Hace falta al menos una voz en «Mis voces»: diseña, clona o importa alguna.'}"
+                Severity="Informational"
+                Title="{l:T 'Necesitas una voz'}" />
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                IsClosable="False"
+                IsOpen="{Binding ViewModel.SinMicrofono}"
+                Message="{l:T 'Windows no tiene ningún micrófono. Conecta uno (mejor unos auriculares con micrófono) y pulsa «Buscar de nuevo». Mientras, puedes probar con una grabación.'}"
+                Severity="Informational"
+                Title="{l:T 'No hay micrófono'}" />
+
+            <ui:Card>
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '1. La voz con la que quieres sonar'}" />
+                    <ComboBox Margin="0,8,0,0" DisplayMemberPath="Nombre" IsEnabled="{Binding ViewModel.Libre}" ItemsSource="{Binding ViewModel.Voces}" SelectedItem="{Binding ViewModel.Voz}" />
+                    <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Modo'}" />
+                    <ComboBox IsEnabled="{Binding ViewModel.Libre}" ItemsSource="{Binding ViewModel.Modos}" SelectedItem="{Binding ViewModel.Modo}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding Nombre}" />
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Descripcion}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '2. Micrófono y salidas'}" />
+                    <TextBlock Style="{StaticResource Etiqueta}" Text="{l:T 'Micrófono'}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox DisplayMemberPath="Nombre" IsEnabled="{Binding ViewModel.Libre}" ItemsSource="{Binding ViewModel.Microfonos}" SelectedItem="{Binding ViewModel.Microfono}" />
+                        <ui:Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding ViewModel.ActualizarDispositivosCommand}" Content="{l:T 'Buscar de nuevo'}" IsEnabled="{Binding ViewModel.Libre}" />
+                    </Grid>
+
+                    <CheckBox Margin="0,12,0,0" Content="{l:T 'Oírme yo, en:'}" IsChecked="{Binding ViewModel.Oirme}" IsEnabled="{Binding ViewModel.Libre}" />
+                    <ComboBox Margin="28,4,0,0" DisplayMemberPath="Nombre" IsEnabled="{Binding ViewModel.Libre}" ItemsSource="{Binding ViewModel.Auriculares}" SelectedItem="{Binding ViewModel.Oido}" />
+                    <TextBlock Margin="28,4,0,0" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="{l:T 'Usa auriculares: por los altavoces, la voz convertida volvería a entrar por el micrófono.'}" TextWrapping="Wrap" />
+
+                    <CheckBox
+                        Margin="0,12,0,0"
+                        Content="{l:T 'Mandarla a Teams, Zoom o Discord (por la «Salida de Calíope»)'}"
+                        IsChecked="{Binding ViewModel.ATeams}"
+                        IsEnabled="{Binding ViewModel.HayCable}" />
+                    <StackPanel Margin="28,4,0,0" Visibility="{Binding ViewModel.SalidaLista, Converter={StaticResource BoolAVisibilidad}}">
+                        <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="{l:T 'En Teams: Configuración › Dispositivos › Micrófono › «Salida de Calíope». Lo mismo en Zoom o Discord.'}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Margin="28,4,0,0" Visibility="{Binding ViewModel.SalidaSinInstalar, Converter={StaticResource BoolAVisibilidad}}">
+                        <TextBlock Text="{l:T 'Windows no deja que un programa haga de micrófono. Para eso, Calíope usa VB-CABLE, un cable de sonido virtual gratuito de VB-Audio (donationware: si te es útil, sobre todo en el trabajo, VB-Audio pide una donación o una licencia).'}" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,4,0,0" Text="{l:T 'Al pulsar el botón, Calíope lo descarga de la web de VB-Audio y abre su instalador: Windows te pedirá permiso y, en la ventana de VB-Audio, pulsas «Install Driver». Después Calíope le pone el nombre «Salida de Calíope» para que lo encuentres fácilmente en Teams.'}" TextWrapping="Wrap" />
+                        <WrapPanel Margin="0,8,0,0">
+                            <ui:Button Margin="0,0,8,0" Appearance="Primary" Command="{Binding ViewModel.PrepararSalidaCommand}" Content="{l:T 'Preparar la salida para Teams'}" IsEnabled="{Binding ViewModel.Libre}" />
+                            <ui:Button Command="{Binding ViewModel.AbrirWebVbCableCommand}" Content="{l:T 'Qué es VB-CABLE'}" />
+                        </WrapPanel>
+                    </StackPanel>
+                    <StackPanel Margin="28,4,0,0" Visibility="{Binding ViewModel.SalidaSinRenombrar, Converter={StaticResource BoolAVisibilidad}}">
+                        <TextBlock Text="{l:T 'VB-CABLE está instalado. Calíope puede ponerle el nombre «Salida de Calíope» para que lo reconozcas en Teams (Windows pedirá permiso). Si acabas de instalarlo y no aparece, reinicia el equipo.'}" TextWrapping="Wrap" />
+                        <ui:Button Margin="0,8,0,0" Command="{Binding ViewModel.RenombrarSalidaCommand}" Content="{l:T 'Ponerle el nombre de Calíope'}" IsEnabled="{Binding ViewModel.Libre}" />
+                    </StackPanel>
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{l:T '3. Hablar'}" />
+                    <WrapPanel Margin="0,8,0,0">
+                        <ui:Button Margin="0,0,8,8" Appearance="Primary" Command="{Binding ViewModel.EmpezarCommand}" Content="{l:T 'Empezar'}" IsEnabled="{Binding ViewModel.PuedeEmpezar}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Mic24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button Margin="0,0,8,8" Command="{Binding ViewModel.PararCommand}" Content="{l:T 'Parar'}" IsEnabled="{Binding ViewModel.Encendido}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Stop24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button Margin="0,0,8,8" Command="{Binding ViewModel.ProbarConArchivoCommand}" Content="{l:T 'Probar con una grabación…'}" IsEnabled="{Binding ViewModel.PuedeEmpezar}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="PlayCircle24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:ProgressRing
+                            Width="18"
+                            Height="18"
+                            Margin="4,0,0,8"
+                            VerticalAlignment="Center"
+                            IsIndeterminate="True"
+                            Visibility="{Binding ViewModel.Trabajando, Converter={StaticResource BoolAVisibilidad}}" />
+                    </WrapPanel>
+                    <TextBlock Text="{Binding ViewModel.Mensaje}" TextWrapping="Wrap" />
+                    <Grid Margin="0,8,0,0" Visibility="{Binding ViewModel.Encendido, Converter={StaticResource BoolAVisibilidad}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Margin="0,0,12,4" Text="{l:T 'Tu voz'}" />
+                        <ProgressBar Grid.Column="1" Height="6" Margin="0,0,0,4" Maximum="1" Value="{Binding ViewModel.NivelEntrada}" />
+                        <TextBlock Grid.Row="1" Margin="0,0,12,0" Text="{l:T 'La otra voz'}" />
+                        <ProgressBar Grid.Row="1" Grid.Column="1" Height="6" Maximum="1" Value="{Binding ViewModel.NivelSalida}" />
+                    </Grid>
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        Text="{Binding ViewModel.Detalles}"
+                        TextWrapping="Wrap" />
+                    <ui:InfoBar
+                        Margin="0,8,0,0"
+                        IsClosable="False"
+                        IsOpen="{Binding ViewModel.Error, Converter={StaticResource TextoNoVacio}}"
+                        Message="{Binding ViewModel.Error}"
+                        Severity="Error"
+                        Title="{l:T 'Algo ha fallado'}" />
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -46,6 +46,9 @@ public sealed partial class ServicioInstalacion(ServicioEquipo equipo, ServicioA
 {
     private const int MaxLineas = 400;
     private static readonly HttpClient Http = CrearHttp();
+
+    /// <summary>Descargas sueltas fuera del catálogo (con reintentos y comprobación de la huella).</summary>
+    public static Descargador Descargador => new(Http);
     private CancellationTokenSource? _cancelacion;
 
     [ObservableProperty]

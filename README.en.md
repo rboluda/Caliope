@@ -35,6 +35,7 @@ Calíope turns text into speech with artificial intelligence models that **run o
 - ✨ **Better voice design**: describe it in Spanish in your own words, Calíope automatically discards the versions that don't fit, lets you hear “How it will sound narrating”, makes “More like this” and gives it a **Spain film-dubbing accent** with the Spanish engine.
 - 🔁 **Convert voice**: read it yourself with the emotion you want and convert it to another voice from your library, keeping rhythm, pauses and accent.
 - 🎛️ **Mix voices**: the way of speaking (accent, rhythm, intonation) of one voice with the timbre of another.
+- 🎙️ **Live voice** (beta): speak into the microphone and come out with another voice from your library, almost instantly; also in Teams, Zoom or Discord (with [VB-CABLE](https://vb-audio.com/Cable/), which Calíope helps install and renames “Salida de Calíope”).
 - 🎭 **Variants of the same voice**: whispering, tense, frightened, sad, cheerful or shouting. If you don't have a recorded whisper, Calíope makes one from the voice's recording.
 - 🎚️ **Fine-tune the result**: expressiveness, speed and pitch (independent of each other), pauses and volume leveled for video or podcasts.
 - 📤 **Get the audio as MP3 or WAV**, or drag it straight into your video editor.

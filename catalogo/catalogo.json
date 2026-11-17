@@ -1303,6 +1303,334 @@
       }
     },
     {
+      "id": "voz-en-directo",
+      "nombre": "Voz en directo (beta)",
+      "grupo": "Más funciones",
+      "necesidad": "opcional",
+      "resumen": "Hablas por el micrófono y sales con otra voz de tu biblioteca, casi al instante. También en Teams o Zoom.",
+      "detalle": "Calíope escucha tu micrófono y convierte tu voz a otra de tu biblioteca mientras hablas, con un retraso de entre 0,2 y 0,6 segundos según el modo. Te puedes oír en los auriculares y, a la vez, mandar la voz a Teams, Zoom o Discord por la «Salida de Calíope». Dos modos: «calidad» (más natural; necesita tarjeta gráfica NVIDIA) y «ligero» (funciona con el procesador, con menos retraso y conservando mejor la zeta de España). Es una versión de prueba: puede fallar.",
+      "consejo": "Usa auriculares: por los altavoces, la voz convertida volvería a entrar por el micrófono. Para usarla en reuniones hace falta además la «Salida de Calíope» (se prepara desde la propia pantalla).",
+      "tecnico": "Modo «calidad»: Seed-VC, modelo seed-uvit-tat-xlsr-tiny (Plachta/Seed-VC, revisión 257283f; GPL-3.0), código del fork seed-vc-realtime (commit 58d0ca3, GPL-3.0, sin modificar), con wav2vec2-xls-r-300m (Meta, Apache 2.0), CAM++ y FSMN-VAD (FunASR, Apache 2.0) y el vocoder HiFT de CosyVoice-300M (Apache 2.0). Modo «ligero»: MeanVC2 (ASLP-lab, commit 13acf84 y modelos revisión 39cdd19; Apache 2.0) con el codificador de hablante WavLM-Large ajustado de Microsoft UniSpeech (MIT; se descarga de su enlace oficial en Google Drive). Entorno propio con PyTorch 2.6 (CUDA 12.4), el mismo que el motor castellano. El sonido va por MME a 16 o 22,05 kHz.",
+      "habilita": [
+        "Voz en directo: habla con otra voz por el micrófono (beta)"
+      ],
+      "dependeDe": [
+        "nucleo"
+      ],
+      "tamano": {
+        "conGpuGb": 6.5,
+        "sinGpuGb": 4.5
+      },
+      "requisitos": {
+        "vramMinimaGb": 2.0,
+        "vramRecomendadaGb": 4.0,
+        "funcionaEnCpu": true
+      },
+      "licencias": [
+        {
+          "nombre": "Seed-VC (código y modelo): GPL-3.0",
+          "url": "https://github.com/jiaheguo521/seed-vc-realtime/blob/main/LICENSE"
+        },
+        {
+          "nombre": "MeanVC2: Apache 2.0",
+          "url": "https://huggingface.co/ASLP-lab/MeanVC2"
+        },
+        {
+          "nombre": "WavLM / UniSpeech: MIT",
+          "url": "https://github.com/microsoft/UniSpeech/blob/main/LICENSE"
+        },
+        {
+          "nombre": "wav2vec2-xls-r-300m: Apache 2.0",
+          "url": "https://huggingface.co/facebook/wav2vec2-xls-r-300m"
+        },
+        {
+          "nombre": "FunASR (CAM++, FSMN-VAD): Apache 2.0",
+          "url": "https://github.com/modelscope/FunASR/blob/main/LICENSE"
+        },
+        {
+          "nombre": "CosyVoice-300M (vocoder HiFT): Apache 2.0",
+          "url": "https://huggingface.co/FunAudioLLM/CosyVoice-300M"
+        },
+        {
+          "nombre": "PyTorch: BSD-3",
+          "url": "https://github.com/pytorch/pytorch/blob/main/LICENSE"
+        }
+      ],
+      "instalacion": {
+        "version": "seedvc 58d0ca3 · meanvc2 13acf84 · torch 2.6.0 · modelos 257283f/39cdd19",
+        "pasos": [
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Preparando la voz en directo",
+            "programa": "{uv}",
+            "argumentos": [
+              "venv",
+              "{entornos}/endirecto",
+              "--python",
+              "3.11",
+              "--clear"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Descargando la parte más pesada de la voz en directo",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--python",
+              "{entornos}/endirecto/Scripts/python.exe",
+              "--index-url",
+              "{indiceTorchCu124}",
+              "torch==2.6.0",
+              "torchaudio==2.6.0"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/endirecto"
+              ],
+              "bytesConGpu": 2600000000,
+              "bytesSinGpu": 800000000
+            }
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Instalando la voz en directo",
+            "programa": "{uv}",
+            "argumentos": [
+              "pip",
+              "install",
+              "--compile-bytecode",
+              "--no-deps",
+              "--python",
+              "{entornos}/endirecto/Scripts/python.exe",
+              "aliyun-python-sdk-core==2.16.1",
+              "aliyun-python-sdk-kms==2.16.5",
+              "antlr4-python3-runtime==4.9.3",
+              "audioread==3.1.0",
+              "certifi==2026.10.23",
+              "cffi==2.1.1",
+              "charset-normalizer==3.5.2",
+              "cloudpickle==3.1.2",
+              "colorama==0.4.6",
+              "crcmod==1.7",
+              "cryptography==50.0.2",
+              "decorator==5.3.1",
+              "einops==0.8.0",
+              "einx==0.4.3",
+              "filelock==4.2.4",
+              "frozendict==2.5.1",
+              "fsspec==2026.9.0",
+              "funasr==1.4.27",
+              "huggingface-hub==0.36.2",
+              "hydra-core==1.3.8",
+              "idna==3.20",
+              "jaconv==0.5.0",
+              "jamo==0.4.1",
+              "jieba==0.42.1",
+              "jinja2==3.1.6",
+              "jmespath==1.1.0",
+              "joblib==1.6.0",
+              "kaldiio==2.18.1",
+              "lazy-loader==0.6",
+              "librosa==0.10.2",
+              "llvmlite==0.50.0",
+              "loguru==0.8.0",
+              "markupsafe==3.0.3",
+              "modelscope==1.18.1",
+              "mpmath==1.3.0",
+              "msgpack==1.2.4",
+              "munch==4.0.0",
+              "narwhals==2.28.0",
+              "networkx==3.6.1",
+              "numba==0.68.1",
+              "numpy==1.26.4",
+              "omegaconf==2.3.1",
+              "oss2==2.19.1",
+              "packaging==26.3",
+              "platformdirs==4.14.5",
+              "pooch==1.9.0",
+              "protobuf==7.36.2",
+              "pycparser==3.12",
+              "pycryptodome==4.5.0",
+              "pydub==0.25.1",
+              "pynndescent==0.7.0",
+              "python-dotenv==1.2.4",
+              "pyyaml==6.0.3",
+              "rapidfuzz==3.14.6",
+              "regex==2026.11.15",
+              "requests==2.34.2",
+              "s3prl==0.4.18",
+              "safetensors==0.8.0",
+              "scikit-learn==1.9.1",
+              "scipy==1.13.1",
+              "sentencepiece==0.2.3",
+              "setuptools==84.2.1",
+              "six==1.17.0",
+              "sounddevice==0.5.0",
+              "soundfile==0.14.0",
+              "soxr==1.1.0",
+              "sympy==1.13.1",
+              "tensorboardx==2.6.5",
+              "threadpoolctl==3.8.0",
+              "tiktoken==0.14.0",
+              "tokenizers==0.20.3",
+              "torch-complex==0.4.4",
+              "tqdm==4.70.1",
+              "transformers==4.46.3",
+              "typing-extensions==4.16.0",
+              "umap-learn==0.5.12",
+              "urllib3==2.8.0",
+              "websockets==17.4",
+              "win32-setctime==1.2.1",
+              "x-transformers==2.2.11"
+            ],
+            "progreso": {
+              "carpetas": [
+                "{cache}/uv",
+                "{entornos}/endirecto"
+              ],
+              "bytesConGpu": 700000000,
+              "bytesSinGpu": 700000000
+            }
+          },
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando el código de Seed-VC",
+            "url": "https://github.com/jiaheguo521/seed-vc-realtime/archive/58d0ca372cc76f60a798d9f84611f053f9029f3a.zip",
+            "sha256": "d2f3c8260d5033a9f350e9db4a8972363b8971782d97e0ffcfbce1f5fed9a931",
+            "destino": "{descargas}/seedvc-58d0ca3.zip",
+            "tamanoBytes": 21780584
+          },
+          {
+            "tipo": "extraer",
+            "descripcion": "Colocando el código de Seed-VC",
+            "archivo": "{descargas}/seedvc-58d0ca3.zip",
+            "destino": "{entornos}/endirecto/seedvc",
+            "quitarCarpetaRaiz": true
+          },
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando el código de MeanVC2",
+            "url": "https://github.com/ASLP-lab/MeanVC2/archive/13acf84c1bf135ea5edad9c245b345289b06b33e.zip",
+            "sha256": "df33c51677d3bfeb230ffcf9c7d4a010beba0fee740ccca020aa004832abc095",
+            "destino": "{descargas}/meanvc2-13acf84.zip",
+            "tamanoBytes": 316021
+          },
+          {
+            "tipo": "extraer",
+            "descripcion": "Colocando el código de MeanVC2",
+            "archivo": "{descargas}/meanvc2-13acf84.zip",
+            "destino": "{entornos}/endirecto/meanvc2",
+            "quitarCarpetaRaiz": true
+          },
+          {
+            "tipo": "descargar",
+            "descripcion": "Descargando el reconocedor de voces (WavLM)",
+            "url": "https://drive.usercontent.google.com/download?id=1-aE1NfzpRCLxA4GUxX9ITI3F9LlbtEGP&export=download&confirm=t",
+            "sha256": "51f07e3b94d9e0262a6a675ef5a087be3dd09e8c62e9d886827f44f82fe7f94b",
+            "destino": "{entornos}/endirecto/modelos/wavlm_large_finetune.pth",
+            "tamanoBytes": 1301926579
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modo ligero (MeanVC2)",
+            "python": "{entornos}/endirecto/Scripts/python.exe",
+            "repositorio": "ASLP-lab/MeanVC2",
+            "revision": "39cdd19522fe896c227da691314d9a0e3b995486",
+            "tamanoBytes": 350338765,
+            "archivos": [
+              "fastu2pp_160ms.pt",
+              "meanvc2_120ms_40ms.safetensors",
+              "vocos.pt"
+            ]
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el modo calidad (Seed-VC)",
+            "python": "{entornos}/endirecto/Scripts/python.exe",
+            "repositorio": "Plachta/Seed-VC",
+            "revision": "257283f9f41585055e8f858fba4fd044e5caed6e",
+            "tamanoBytes": 142114303,
+            "archivos": [
+              "DiT_uvit_tat_xlsr_ema.pth",
+              "config_dit_mel_seed_uvit_xlsr_tiny.yml"
+            ]
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el reconocedor de sonidos (wav2vec2)",
+            "python": "{entornos}/endirecto/Scripts/python.exe",
+            "repositorio": "facebook/wav2vec2-xls-r-300m",
+            "revision": "1a640f32ac3e39899438a2931f9924c02f080a54",
+            "tamanoBytes": 1269738936,
+            "archivos": [
+              "config.json",
+              "preprocessor_config.json",
+              "pytorch_model.bin"
+            ]
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando la huella de voz (CAM++)",
+            "python": "{entornos}/endirecto/Scripts/python.exe",
+            "repositorio": "funasr/campplus",
+            "revision": "e4b6ede7ce16997aff4ae69fbca1f0175e2afede",
+            "tamanoBytes": 28036335,
+            "archivos": [
+              "campplus_cn_common.bin"
+            ]
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el generador de sonido (HiFT)",
+            "python": "{entornos}/endirecto/Scripts/python.exe",
+            "repositorio": "FunAudioLLM/CosyVoice-300M",
+            "revision": "24c40509c3c5ea6fe06b5f8790ff99e3714a6bee",
+            "tamanoBytes": 81896716,
+            "archivos": [
+              "hift.pt"
+            ]
+          },
+          {
+            "tipo": "modelo",
+            "descripcion": "Descargando el detector de voz (FSMN-VAD)",
+            "python": "{entornos}/endirecto/Scripts/python.exe",
+            "repositorio": "funasr/fsmn-vad",
+            "revision": "df20e6b30c653645fa4ff125cacfcabd1020a669",
+            "tamanoBytes": 1730979,
+            "archivos": [
+              "am.mvn",
+              "config.yaml",
+              "configuration.json",
+              "model.pt"
+            ]
+          },
+          {
+            "tipo": "ejecutar",
+            "descripcion": "Comprobando la voz en directo",
+            "programa": "{entornos}/endirecto/Scripts/python.exe",
+            "argumentos": [
+              "-c",
+              "import torch, funasr, s3prl, sounddevice, x_transformers, transformers; print('dispositivo=' + ('cuda' if torch.cuda.is_available() else 'cpu'))"
+            ],
+            "debeContener": "dispositivo={dispositivo}"
+          }
+        ],
+        "rutas": [
+          "{entornos}/endirecto"
+        ],
+        "comprobar": [
+          "{entornos}/endirecto/Scripts/python.exe",
+          "{entornos}/endirecto/seedvc/realtime_vc_engine.py",
+          "{entornos}/endirecto/meanvc2/runtime/run_rt.py",
+          "{entornos}/endirecto/modelos/wavlm_large_finetune.pth"
+        ]
+      }
+    },
+    {
       "id": "traductor",
       "nombre": "Traductor con IA (llama.cpp + Qwen3-4B)",
       "grupo": "Doblaje de vídeo",

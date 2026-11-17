@@ -133,6 +133,11 @@
                         <ui:SymbolIcon Symbol="DocumentText24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="{l:T 'Voz en directo (beta)'}" TargetPageType="{x:Type paginas:PaginaEnDirecto}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Live24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
                 <ui:NavigationViewItemHeader Margin="0,10,0,2" Text="{l:T 'Configuración'}" />

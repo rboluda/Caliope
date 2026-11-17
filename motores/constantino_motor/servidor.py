@@ -62,6 +62,9 @@ def _crear_motor():
     if os.environ.get("CONSTANTINO_MOTOR") == "cosyvoice":
         from .cosyvoice import MotorCosyVoice
         return MotorCosyVoice()
+    if os.environ.get("CONSTANTINO_MOTOR") == "endirecto":
+        from .endirecto import MotorEnDirecto
+        return MotorEnDirecto()
     if os.environ.get("CONSTANTINO_MOTOR") == "voxcpm":
         from .voxcpm import MotorVoxCpm
         return MotorVoxCpm()

@@ -31,5 +31,7 @@ public static class FuncionesCaliope
         new("convertir", T("Convertir voz"), T("Una grabación (tú leyendo, por ejemplo) con otra voz de tu biblioteca, conservando cómo se dice."),
             ["conversion-voz"], []),
         new("actas", T("Actas de reuniones"), T("De la grabación de una reunión a su acta, con quién dijo qué."), ["whisper", "traductor"], []),
+        new("endirecto", T("Voz en directo (beta)"), T("Habla por el micrófono con otra voz de tu biblioteca, también en Teams o Zoom."),
+            ["voz-en-directo"], []),
     ];
 }

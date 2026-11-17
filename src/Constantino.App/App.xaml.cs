@@ -27,6 +27,7 @@ public partial class App : Application
         s.AddSingleton<ServicioEquipo>();
         s.AddSingleton<ServicioInstalacion>();
         s.AddSingleton<ServicioMotor>();
+        s.AddSingleton<ServicioEnDirecto>();
         s.AddSingleton<ServicioVoces>();
         s.AddSingleton<ServicioReproductor>();
         s.AddSingleton<ServicioNarracion>();
@@ -62,6 +63,8 @@ public partial class App : Application
         s.AddSingleton<PaginaMezclar>();
         s.AddSingleton<PaginaConvertir>();
         s.AddSingleton<ConvertirViewModel>();
+        s.AddSingleton<PaginaEnDirecto>();
+        s.AddSingleton<EnDirectoViewModel>();
         s.AddSingleton<MezclarViewModel>();
         s.AddSingleton<ActasViewModel>();
 
@@ -70,6 +73,12 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        // Calíope arrancado con permisos de administrador solo para preparar la «Salida de Calíope» (VB-CABLE).
+        if (SalidaCaliope.EsOrdenElevada(e.Args))
+        {
+            Shutdown(SalidaCaliope.EjecutarElevada(e.Args));
+            return;
+        }
         // La ventana se dibuja con el procesador: la tarjeta gráfica queda entera para los motores de voz. Si la
         // llenan (o la llena otro programa), WPF no se queda sin memoria para dibujar y no se cierra con
         // UCEERR_RENDERTHREADFAILURE. La interfaz es sencilla y no lo nota.
@@ -93,6 +102,7 @@ public partial class App : Application
     {
         // El motor de voz se cierra con la app para liberar la memoria de la tarjeta.
         await _host.Services.GetRequiredService<ServicioMotor>().DisposeAsync();
+        await _host.Services.GetRequiredService<ServicioEnDirecto>().DisposeAsync();
         await _host.StopAsync();
         _host.Dispose();
         base.OnExit(e);

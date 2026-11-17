@@ -7,6 +7,12 @@ progreso): nada de lo que lee la aplicación ni de los registros.
 import os
 
 INGLES = {
+    # Voz en directo
+    "Falta parte de la voz en directo: repárala desde Componentes.": "Part of live voice is missing: repair it from Components.",
+    "El modo «calidad» necesita una tarjeta gráfica NVIDIA. Usa el modo «ligero».": "“Quality” mode needs an NVIDIA graphics card. Use “light” mode.",
+    "Preparando la voz en directo": "Preparing live voice",
+    "Elige al menos una salida: tus auriculares o la «Salida de Calíope».": "Choose at least one output: your headphones or the “Calíope output”.",
+    "No se ha podido abrir el sonido: {error}. Comprueba que el micrófono y la salida están conectados y no los tiene en exclusiva otro programa.": "Couldn't open the audio: {error}. Check that the microphone and the output are connected and not held exclusively by another program.",
     # Doblaje
     "Cargando el separador de voz": "Loading the voice separator",
     "Separando la voz del fondo": "Separating the voice from the background",

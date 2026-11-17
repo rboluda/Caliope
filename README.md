@@ -35,6 +35,7 @@ Calíope convierte texto en voz con modelos de inteligencia artificial que **se 
 - ✨ **Diseñar voces mejor**: descríbela en español con tus palabras, Calíope descarta sola las versiones que no encajan, te deja oír «Así sonará al narrar», crea «Más así» y le da **acento de España de doblaje** con el motor castellano.
 - 🔁 **Convertir voz**: lee tú con la emoción que quieras y conviértelo a otra voz de tu biblioteca, conservando ritmo, pausas y acento.
 - 🎛️ **Mezclar voces**: la forma de hablar (acento, ritmo, entonación) de una voz con el timbre de otra.
+- 🎙️ **Voz en directo** (beta): habla por el micrófono y sal con otra voz de tu biblioteca, casi al instante; también en Teams, Zoom o Discord (con [VB-CABLE](https://vb-audio.com/Cable/), que Calíope ayuda a instalar y renombra como «Salida de Calíope»).
 - 🎭 **Variantes de una misma voz**: susurrando, tensa, asustada, triste, alegre o gritando. Si no tienes un susurro grabado, Calíope lo fabrica a partir de la grabación de la voz.
 - 🎚️ **Afina el resultado**: expresividad, velocidad y tono (independientes entre sí), pausas y volumen normalizado para vídeo o pódcast.
 - 📤 **Saca el audio en MP3 o WAV** o arrástralo directamente a tu editor de vídeo.
