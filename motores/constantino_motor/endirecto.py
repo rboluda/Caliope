@@ -250,6 +250,26 @@ class Salida:
         self._stream.stop()
         self._stream.close()
 
+    def cerrar(self):
+        """Cierra sin haber empezado (o tras un fallo), sin que un error al cerrar tape el de verdad."""
+        try:
+            self._stream.close()
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _primero_que_abra(opciones, abrir, sd, abiertos):
+    """Abre el primer dispositivo de <opciones> que Windows deje abrir; si ninguno, el error del primero."""
+    primero = None
+    for d in opciones:
+        try:
+            resultado = abrir(d)
+            abiertos.append(d)
+            return resultado
+        except sd.PortAudioError as e:
+            primero = primero or e
+    raise primero
+
 
 class Sesion:
     """Micrófono (o archivo) → convertidor → salidas, en hilos propios."""
@@ -268,9 +288,27 @@ class Sesion:
         self.nivel_entrada = -90.0
         self.nivel_salida = -90.0
         sr, n = conversor.sr, conversor.bloque
-        self._salidas = [Salida(sd, d, sr, n) for d in salidas]
+        self._salidas = []
         self._entrada = None
         self._lector = None
+        self.dispositivos = []
+        try:
+            # Cada salida y la entrada llegan como una lista de candidatos con el mismo nombre: vale el primero que abra.
+            for opciones in salidas:
+                self._salidas.append(_primero_que_abra(opciones, lambda d: Salida(sd, d, sr, n), sd, self.dispositivos))
+            if archivo:
+                self._abrir_entrada(sd, conversor, None, archivo)
+            else:
+                _primero_que_abra(entrada, lambda d: self._abrir_entrada(sd, conversor, d, None), sd, self.dispositivos)
+        except Exception:
+            # Si una no abre, las que ya estaban abiertas se cierran: si no, el dispositivo se queda ocupado.
+            for s in self._salidas:
+                s.cerrar()
+            raise
+        self._trabajador = threading.Thread(target=self._trabajar, daemon=True)
+
+    def _abrir_entrada(self, sd, conversor, entrada, archivo):
+        sr, n = conversor.sr, conversor.bloque
         if archivo:
             import librosa
 
@@ -282,7 +320,6 @@ class Sesion:
             self._entrada = sd.InputStream(samplerate=sr, blocksize=n, device=entrada, channels=1, dtype="float32",
                                            latency="low", callback=self._llamada_entrada)
             self.latencia_entrada = self._entrada.latency
-        self._trabajador = threading.Thread(target=self._trabajar, daemon=True)
 
     def empezar(self):
         self._conv.reiniciar()
@@ -461,19 +498,25 @@ class MotorEnDirecto:
         # primero): con la lista vieja, la «Salida de Calíope» podía acabar sonando por los altavoces. Así que se
         # vuelve a leer la lista y se busca cada dispositivo por su nombre; el número solo vale si no aparece.
         sd = _sounddevice(refrescar=True)
+        sr = self._conversor.sr
         nombres = params.get("salidas_nombres") or []
-        salidas = [_por_nombre(sd, nombres[i] if i < len(nombres) else None, salida=True, indice=s)
+        salidas = [_elegir(sd, _por_nombre(sd, nombres[i] if i < len(nombres) else None, salida=True, indice=s), True, sr)
                    for i, s in enumerate(salidas)]
         entrada = params.get("entrada")
         if entrada is not None:
-            entrada = _por_nombre(sd, params.get("entrada_nombre"), salida=False, indice=int(entrada))
+            entrada = _elegir(sd, _por_nombre(sd, params.get("entrada_nombre"), salida=False, indice=int(entrada)), False, sr)
         try:
-            self._sesion = Sesion(sd, self._conversor, None if entrada is None else int(entrada), archivo, salidas)
+            self._sesion = Sesion(sd, self._conversor, entrada, archivo, salidas)
             self._sesion.empezar()
         except sd.PortAudioError as e:
+            if self._sesion is not None:
+                self._parar()
             self._sesion = None
-            raise ErrorMotor("sin_audio", t("No se ha podido abrir el sonido: {error}. Comprueba que el micrófono y la salida "
-                                            "están conectados y no los tiene en exclusiva otro programa.", error=e)) from e
+            usados = ([entrada[0]] if entrada else []) + [s[0] for s in salidas]
+            nombres_usados = ", ".join(f"«{sd.query_devices(i)['name']}»" for i in usados)
+            raise ErrorMotor("sin_audio", t("No se ha podido abrir el sonido ({dispositivos}): {error}. Comprueba que el "
+                                            "micrófono y la salida están conectados y no los tiene en exclusiva otro programa.",
+                                            dispositivos=nombres_usados, error=e)) from e
         return self._sesion.estado()
 
     def op_estado(self, params, progreso):
@@ -514,20 +557,36 @@ class MotorEnDirecto:
 
 def _por_nombre(sd, nombre, salida, indice):
     """
-    El número actual del dispositivo MME con ese nombre (de entrada o de salida). Sin nombre (versiones antiguas de
-    la aplicación), el número que llegó. Si el nombre ya no está, se avisa: con un número viejo podría sonar por
-    otro dispositivo.
+    Los números actuales de los dispositivos MME con ese nombre (de entrada o de salida), el que llegó primero si sigue
+    ahí. Sin nombre (versiones antiguas de la aplicación), solo el número que llegó. Si el nombre ya no está, se avisa:
+    con un número viejo podría sonar por otro dispositivo.
     """
     if not nombre:
-        return indice
+        return [indice]
     mme = next((i for i, h in enumerate(sd.query_hostapis()) if h["name"] == "MME"), None)
     iguales = [d["index"] for d in sd.query_devices()
                if d["name"] == nombre and (d["max_output_channels"] if salida else d["max_input_channels"]) > 0
                and (mme is None or d["hostapi"] == mme)]
-    # MME corta los nombres a 31 letras y dos pueden coincidir (dos pantallas iguales): entonces manda el número.
+    # Puede haber varios con el mismo nombre: MME corta los nombres a 31 letras (dos pantallas iguales) y VB-CABLE
+    # tiene, en Windows de 64 bits, dos entradas (la normal y la de 16 canales) que Calíope renombra igual.
     if iguales:
-        return indice if indice in iguales else iguales[0]
+        return sorted(iguales, key=lambda i: i != indice)
     raise ErrorMotor("sin_audio", t("No encuentro «{nombre}». Pulsa «Buscar de nuevo» y vuelve a empezar.", nombre=nombre))
+
+
+def _elegir(sd, candidatos, salida, sr):
+    """Los candidatos, primero los que Windows dice que se pueden abrir con este formato (al abrir se prueban en orden)."""
+    def vale(i):
+        try:
+            if salida:
+                sd.check_output_settings(device=i, channels=1, dtype="float32", samplerate=sr)
+            else:
+                sd.check_input_settings(device=i, channels=1, dtype="float32", samplerate=sr)
+            return True
+        except sd.PortAudioError:
+            return False
+
+    return sorted(candidatos, key=lambda i: not vale(i))
 
 
 def _sounddevice(refrescar=False):
