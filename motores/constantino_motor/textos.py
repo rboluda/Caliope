@@ -12,6 +12,7 @@ INGLES = {
     "El modo «calidad» necesita una tarjeta gráfica NVIDIA. Usa el modo «ligero».": "“Quality” mode needs an NVIDIA graphics card. Use “light” mode.",
     "Preparando la voz en directo": "Preparing live voice",
     "Elige al menos una salida: tus auriculares o la «Salida de Calíope».": "Choose at least one output: your headphones or the “Calíope output”.",
+    "No encuentro «{nombre}». Pulsa «Buscar de nuevo» y vuelve a empezar.": "I can't find “{nombre}”. Press “Search again” and start again.",
     "No se ha podido abrir el sonido: {error}. Comprueba que el micrófono y la salida están conectados y no los tiene en exclusiva otro programa.": "Couldn't open the audio: {error}. Check that the microphone and the output are connected and not held exclusively by another program.",
     # Doblaje
     "Cargando el separador de voz": "Loading the voice separator",

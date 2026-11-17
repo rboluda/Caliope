@@ -457,8 +457,16 @@ class MotorEnDirecto:
         salidas = [int(s) for s in params.get("salidas") or []]
         if not salidas:
             raise ErrorMotor("sin_salida", t("Elige al menos una salida: tus auriculares o la «Salida de Calíope»."))
-        sd = _sounddevice()
+        # Los números de dispositivo de MME cambian cuando Windows cambia el predeterminado (el predeterminado va
+        # primero): con la lista vieja, la «Salida de Calíope» podía acabar sonando por los altavoces. Así que se
+        # vuelve a leer la lista y se busca cada dispositivo por su nombre; el número solo vale si no aparece.
+        sd = _sounddevice(refrescar=True)
+        nombres = params.get("salidas_nombres") or []
+        salidas = [_por_nombre(sd, nombres[i] if i < len(nombres) else None, salida=True, indice=s)
+                   for i, s in enumerate(salidas)]
         entrada = params.get("entrada")
+        if entrada is not None:
+            entrada = _por_nombre(sd, params.get("entrada_nombre"), salida=False, indice=int(entrada))
         try:
             self._sesion = Sesion(sd, self._conversor, None if entrada is None else int(entrada), archivo, salidas)
             self._sesion.empezar()
@@ -502,6 +510,24 @@ class MotorEnDirecto:
         if self.dispositivo != "cuda":
             return {}
         return {"vram_usada_gib": round(self._torch.cuda.memory_allocated() / GIB, 2)}
+
+
+def _por_nombre(sd, nombre, salida, indice):
+    """
+    El número actual del dispositivo MME con ese nombre (de entrada o de salida). Sin nombre (versiones antiguas de
+    la aplicación), el número que llegó. Si el nombre ya no está, se avisa: con un número viejo podría sonar por
+    otro dispositivo.
+    """
+    if not nombre:
+        return indice
+    mme = next((i for i, h in enumerate(sd.query_hostapis()) if h["name"] == "MME"), None)
+    iguales = [d["index"] for d in sd.query_devices()
+               if d["name"] == nombre and (d["max_output_channels"] if salida else d["max_input_channels"]) > 0
+               and (mme is None or d["hostapi"] == mme)]
+    # MME corta los nombres a 31 letras y dos pueden coincidir (dos pantallas iguales): entonces manda el número.
+    if iguales:
+        return indice if indice in iguales else iguales[0]
+    raise ErrorMotor("sin_audio", t("No encuentro «{nombre}». Pulsa «Buscar de nuevo» y vuelve a empezar.", nombre=nombre))
 
 
 def _sounddevice(refrescar=False):

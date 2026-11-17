@@ -195,11 +195,11 @@ public sealed partial class EnDirectoViewModel : ObservableObject
             Error = archivo is null && Microfono is null ? T("No hay ningún micrófono. Conecta uno (mejor unos auriculares con micrófono) y pulsa «Buscar de nuevo».") : null;
             return;
         }
-        var salidas = new List<int>();
+        var salidas = new List<DispositivoAudio>();
         if (ATeams && Cable is not null)
-            salidas.Add(Cable.Indice);
+            salidas.Add(Cable);
         if (Oirme && Oido is not null)
-            salidas.Add(Oido.Indice);
+            salidas.Add(Oido);
         if (salidas.Count == 0)
             return;
         Error = null;
@@ -209,7 +209,7 @@ public sealed partial class EnDirectoViewModel : ObservableObject
             Mensaje = T("Preparando la voz en directo (la primera vez, medio minuto)…");
             var progreso = new Progress<EventoMotor>(e => Mensaje = e.Mensaje + "…");
             await _directo.CargarAsync(Modo.Id, Voz.Referencia, progreso);
-            await _directo.IniciarAsync(archivo is null ? Microfono!.Indice : null, archivo, salidas);
+            await _directo.IniciarAsync(archivo is null ? Microfono : null, archivo, salidas);
             Encendido = true;
             Mensaje = archivo is null
                 ? ATeams ? T("En marcha: habla. En Teams o Zoom, elige «{0}» como micrófono.", SalidaCaliope.NombreMicrofono) : T("En marcha: habla.")

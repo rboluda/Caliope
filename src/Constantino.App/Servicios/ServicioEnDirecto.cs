@@ -29,8 +29,10 @@ public sealed class ServicioEnDirecto(ServicioInstalacion instalacion) : IAsyncD
     public Task<ResultadoCarga> CargarAsync(string modo, string voz, IProgress<EventoMotor>? progreso, CancellationToken ct = default) =>
         ConMotorAsync(m => m.CargarAsync(new ParametrosEnDirecto(modo, voz, Modelos()), progreso, ct), ct);
 
-    public Task<EstadoEnDirecto> IniciarAsync(int? entrada, string? archivo, IReadOnlyList<int> salidas, CancellationToken ct = default) =>
-        ConMotorAsync(m => m.IniciarAsync(new ParametrosIniciarEnDirecto(entrada, archivo, salidas), ct), ct);
+    public Task<EstadoEnDirecto> IniciarAsync(DispositivoAudio? entrada, string? archivo, IReadOnlyList<DispositivoAudio> salidas,
+        CancellationToken ct = default) =>
+        ConMotorAsync(m => m.IniciarAsync(new ParametrosIniciarEnDirecto(entrada?.Indice, archivo, [.. salidas.Select(s => s.Indice)],
+            entrada?.Nombre, [.. salidas.Select(s => s.Nombre)]), ct), ct);
 
     public async Task<EstadoEnDirecto> EstadoAsync(CancellationToken ct = default) =>
         _motor is { Cliente.Vivo: true } ? await ConMotorAsync(m => m.EstadoAsync(ct), ct) : new EstadoEnDirecto(false);

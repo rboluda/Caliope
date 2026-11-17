@@ -14,7 +14,11 @@ public sealed record ParametrosEnDirecto(string Modo, string Voz, IReadOnlyDicti
 /// <param name="Entrada">Índice del micrófono; null para usar <paramref name="Archivo"/>.</param>
 /// <param name="Archivo">Grabación que se convierte como si se hablara en directo (para probar sin micrófono).</param>
 /// <param name="Salidas">Índices de los dispositivos por los que sale la voz convertida (uno o dos).</param>
-public sealed record ParametrosIniciarEnDirecto(int? Entrada, string? Archivo, IReadOnlyList<int> Salidas);
+/// <param name="EntradaNombre">Nombre del micrófono: el motor lo busca por nombre, porque los números de MME cambian
+/// cuando Windows cambia el dispositivo predeterminado.</param>
+/// <param name="SalidasNombres">Nombres de las salidas, en el mismo orden que <paramref name="Salidas"/>.</param>
+public sealed record ParametrosIniciarEnDirecto(int? Entrada, string? Archivo, IReadOnlyList<int> Salidas,
+    string? EntradaNombre = null, IReadOnlyList<string>? SalidasNombres = null);
 
 /// <summary>Cómo va la voz en directo.</summary>
 /// <param name="Lentos">Bloques que tardaron más en convertirse de lo que duran (se notan como cortes).</param>
