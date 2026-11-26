@@ -1446,5 +1446,13 @@
   "Limpiar": "Clean",
   "Escuchar el original": "Listen to the original",
   "Deshacer la limpieza": "Undo the cleaning",
-  "Para listos: la distorsión se repara con FFmpeg (adeclip), la música se quita con el separador de voz (Demucs) y el ruido con FFmpeg (afftdn, reducción de 10 dB). Se limpia la grabación entera, siempre a partir del original.": "For the curious: distortion is repaired with FFmpeg (adeclip), music is removed with the voice separator (Demucs) and noise with FFmpeg (afftdn, 10 dB reduction). The whole recording is cleaned, always starting from the original."
+  "Para listos: la distorsión se repara con FFmpeg (adeclip), la música se quita con el separador de voz (Demucs) y el ruido con FFmpeg (afftdn, reducción de 10 dB). Se limpia la grabación entera, siempre a partir del original.": "For the curious: distortion is repaired with FFmpeg (adeclip), music is removed with the voice separator (Demucs) and noise with FFmpeg (afftdn, 10 dB reduction). The whole recording is cleaned, always starting from the original.",
+  "No se ha podido limpiar: {0}": "The recording couldn't be cleaned: {0}",
+  "No se ha podido transcribir: {0}": "It couldn't be transcribed: {0}",
+  "{0} tramos seleccionados: {1} en total (unidos con una pausa corta entre ellos)": "{0} sections selected: {1} in total (joined with a short pause between them)",
+  "Marca primero un tramo arrastrando sobre la onda.": "First mark a section by dragging over the waveform.",
+  "Arrastra sobre la onda para marcar el tramo que se usará (10–20 s, sin toses ni ruidos). Arrastra los bordes para ajustarlo. Si las frases buenas están separadas (música o ruidos en medio), marca una, pulsa «Añadir otro tramo» (o arrastra con Ctrl) y marca la siguiente: se unen con una pausa corta.": "Drag over the waveform to mark the section that will be used (10–20 s, without coughs or noises). Drag the edges to adjust it. If the good sentences are apart (music or noises in between), mark one, press “Add another section” (or drag with Ctrl) and mark the next: they're joined with a short pause.",
+  "Añadir otro tramo": "Add another section",
+  "Guarda el tramo marcado y te deja marcar otro (también: arrastrar con Ctrl pulsado)": "Saves the marked section and lets you mark another one (also: drag with Ctrl held down)",
+  "Quitar este tramo": "Remove this section"
 }

@@ -74,6 +74,10 @@ Cada versión sale firmada sola con el certificado personal de firma de código 
     4. Igualar el pico a −1 dBFS.
   - Medido con voz real + música + ruido rosa + recorte: saturación del 0,058 % al 0,001 %, fondo de −7 a −54 dB respecto a la voz.
   - Suave a propósito: el clon copia los defectos de un procesado agresivo.
+  - 1.7.4: el progreso y los errores de la limpieza y de «Transcribir con Whisper» salen en su propio apartado. En la 1.7.3 salían al final de la página y parecía que no pasaba nada.
+- **Varios tramos al clonar** (1.7.4, `TramosAudio` en Core):
+  - Se marca un tramo y se pulsa «Añadir otro tramo», o se arrastra con Ctrl (`VistaOnda.ComandoAnadir`). Los añadidos se dibujan sombreados y salen en una lista con ✕ para quitarlos.
+  - Todo lo que usa el tramo usa la unión: escuchar, avisos, transcribir, probar, guardar y escuchar el original. Los tramos se ordenan, se funden si se pisan y se unen con 0,3 s de silencio. La duración que se comprueba es la de la unión.
 
 - **1.7.2 · narración completa**: ffmpeg escribía el `_completo` directamente encima del anterior. Si estaba abierto en otro programa, fallaba con «Permission denied», se quedaba el viejo (hasta de otra voz) y Narrar lo seguía mostrando como si fuera el nuevo. Ahora se codifica en la carpeta temporal y se mueve encima (`Narrador.SustituirAsync`, 10 intentos cada 300 ms; si sigue abierto, un error que dice qué cerrar). Narrar no muestra un completo más antiguo que el bloque más nuevo.
 

@@ -116,6 +116,7 @@ public sealed partial class ClonarViewModel : ObservableObject
     public bool PuedeQuitarMusica => HaySeparador && Libre;
 
     [ObservableProperty] public partial bool Limpiada { get; set; }
+    [ObservableProperty] public partial bool Limpiando { get; set; }
     [ObservableProperty] public partial string? Limpieza { get; set; }
 
     /// <summary>
@@ -134,7 +135,7 @@ public sealed partial class ClonarViewModel : ObservableObject
             return;
         }
         Error = null;
-        Ocupado = true;
+        Ocupado = Limpiando = true;
         Reproductor.Detener();
         var original = _original ?? Audio;
         try
@@ -155,7 +156,7 @@ public sealed partial class ClonarViewModel : ObservableObject
             var hecho = new List<string>();
             if (RepararDistorsion)
             {
-                Mensaje = T("Reparando la distorsión…");
+                Limpieza = T("Reparando la distorsión…");
                 var reparada = await _voces.ArchivoTemporalAsync("limpieza-reparada");
                 await Ffmpeg(LimpiezaGrabacion.Reparar(actual, reparada));
                 actual = reparada;
@@ -164,7 +165,7 @@ public sealed partial class ClonarViewModel : ObservableObject
             var sinMusica = QuitarMusica && HaySeparador;
             if (sinMusica)
             {
-                Mensaje = T("Quitando la música y los ruidos (separador de voz)…");
+                Limpieza = T("Quitando la música y los ruidos (separador de voz)…");
                 var voz = await _voces.ArchivoTemporalAsync("limpieza-voz");
                 var fondo = await _voces.ArchivoTemporalAsync("limpieza-fondo");
                 await _motor.SepararAsync(actual, voz, fondo);
@@ -174,7 +175,7 @@ public sealed partial class ClonarViewModel : ObservableObject
             var final = await _voces.ArchivoTemporalAsync("limpieza-final");
             if (QuitarRuido)
             {
-                Mensaje = T("Quitando el ruido de fondo…");
+                Limpieza = T("Quitando el ruido de fondo…");
                 // Tras el separador queda poco ruido: se usa el nivel de una grabación limpia. Si no, el medido.
                 await Ffmpeg(LimpiezaGrabacion.QuitarRuido(actual, final, sinMusica ? null : AnalisisGrabacion.Analizar(original).RuidoDb));
                 hecho.Add(T("ruido reducido"));
@@ -192,16 +193,16 @@ public sealed partial class ClonarViewModel : ObservableObject
             ActualizarSeleccion();
             Limpieza = T("Limpia ({0}). Escucha el tramo y compáralo con el original: si suena peor (metálica, apagada), deshaz la limpieza o prueba con menos opciones.",
                 string.Join(", ", hecho));
-            Mensaje = null;
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
-            Error = e is InvalidOperationException or IOException ? e.Message : ServicioMotor.Explicar(e);
-            Mensaje = null;
+            // En el propio recuadro: el mensaje de error general queda al final de la página, fuera de la vista.
+            var motivo = e is InvalidOperationException or IOException ? e.Message : ServicioMotor.Explicar(e);
+            Limpieza = T("No se ha podido limpiar: {0}", motivo);
         }
         finally
         {
-            Ocupado = false;
+            Ocupado = Limpiando = false;
         }
     }
 
@@ -209,12 +210,12 @@ public sealed partial class ClonarViewModel : ObservableObject
     [RelayCommand]
     private async Task EscucharOriginalAsync()
     {
-        if (_original is null || Fin - Inicio < 0.5)
+        if (_original is null || TodosLosTramos() is not { Count: > 0 } tramos)
             return;
         if (_rutaOriginal is null || !File.Exists(_rutaOriginal))
         {
             _rutaOriginal = await _voces.ArchivoTemporalAsync("clon-tramo-original");
-            _original.Subrango(Inicio, Fin).EscribirWav(_rutaOriginal);
+            TramosAudio.Unir(_original, tramos).EscribirWav(_rutaOriginal);
         }
         if (Reproductor.Sonando == _rutaOriginal)
             Reproductor.Detener();
@@ -323,6 +324,7 @@ public sealed partial class ClonarViewModel : ObservableObject
         _rutaOriginal = null;
         Limpiada = false;
         Limpieza = null;
+        Tramos = [];
         Audio = audio;
         var informe = AnalisisGrabacion.Analizar(audio);
         // Selección inicial: la voz sin los silencios de los extremos, como mucho 25 s.
@@ -342,25 +344,65 @@ public sealed partial class ClonarViewModel : ObservableObject
         _rutaOriginal = null;
         if (Audio is null)
             return;
-        var duracion = Math.Max(0, Fin - Inicio);
-        Seleccion = T("Tramo seleccionado: {0} – {1} ({2})", Segundos(Inicio), Segundos(Fin), Segundos(duracion));
+        var tramos = TodosLosTramos();
+        DuracionSeleccion = TramosAudio.Duracion(tramos);
+        Seleccion = tramos.Count > 1
+            ? T("{0} tramos seleccionados: {1} en total (unidos con una pausa corta entre ellos)", tramos.Count, Segundos(DuracionSeleccion))
+            : T("Tramo seleccionado: {0} – {1} ({2})", Segundos(Inicio), Segundos(Fin), Segundos(Math.Max(0, Fin - Inicio)));
         Avisos.Clear();
-        if (duracion > 0.2)
+        if (tramos.Count > 0)
         {
-            foreach (var a in AnalisisGrabacion.Analizar(Audio.Subrango(Inicio, Fin)).Avisos)
+            foreach (var a in AnalisisGrabacion.Analizar(TramosAudio.Unir(Audio, tramos)).Avisos)
                 Avisos.Add(a);
         }
         ComprobarTranscripcion();
     }
 
+    // --- Varios tramos -----------------------------------------------------------------------------
+
+    /// <summary>Tramos ya añadidos (además del que se está marcando con Inicio y Fin).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HayTramos))]
+    public partial IReadOnlyList<Tramo> Tramos { get; set; } = [];
+
+    public bool HayTramos => Tramos.Count > 0;
+
+    /// <summary>Lo que dura la muestra que se usará: todos los tramos unidos, con sus pausas.</summary>
+    [ObservableProperty] public partial double DuracionSeleccion { get; set; }
+
+    /// <summary>Los añadidos y el que se está marcando, ordenados y sin solapes.</summary>
+    private IReadOnlyList<Tramo> TodosLosTramos() => TramosAudio.Normalizar(Tramos.Append(new Tramo(Inicio, Fin)));
+
+    /// <summary>El tramo marcado pasa a la lista y se puede marcar otro (también con Ctrl + arrastrar).</summary>
+    [RelayCommand]
+    private void AnadirTramo()
+    {
+        if (Fin - Inicio < TramosAudio.Minimo)
+        {
+            Error = T("Marca primero un tramo arrastrando sobre la onda.");
+            return;
+        }
+        Error = null;
+        Tramos = TramosAudio.Normalizar(Tramos.Append(new Tramo(Inicio, Fin)));
+        Inicio = Fin = 0;
+        ActualizarSeleccion();
+    }
+
+    [RelayCommand]
+    private void QuitarTramo(Tramo tramo)
+    {
+        Tramos = [.. Tramos.Where(t => t != tramo)];
+        ActualizarSeleccion();
+    }
+
     private void ComprobarTranscripcion()
     {
         AvisoTranscripcion = null;
-        if (SinTranscripcion || string.IsNullOrWhiteSpace(Transcripcion) || Fin - Inicio < 1)
+        if (SinTranscripcion || string.IsNullOrWhiteSpace(Transcripcion) || DuracionSeleccion < 1)
             return;
         try
         {
-            BibliotecaVoces.ComprobarTranscripcion(Transcripcion, Fin - Inicio);
+            BibliotecaVoces.ComprobarTranscripcion(Transcripcion, DuracionSeleccion);
         }
         catch (VozInvalidaException e)
         {
@@ -386,14 +428,16 @@ public sealed partial class ClonarViewModel : ObservableObject
         if (Audio is null)
             return;
         var informe = AnalisisGrabacion.Analizar(Audio);
+        Tramos = [];
         Inicio = informe.InicioVoz;
         Fin = Math.Min(informe.FinVoz, Inicio + AnalisisGrabacion.IdealMaxima);
     }
 
-    /// <summary>El tramo seleccionado, guardado en un WAV temporal (se reutiliza mientras no cambie).</summary>
+    /// <summary>La muestra que se usará (el tramo o los tramos unidos), en un WAV temporal que se reutiliza mientras no cambie.</summary>
     private async Task<string?> SeleccionAsync()
     {
-        if (Audio is null || Fin - Inicio < 0.5)
+        var tramos = TodosLosTramos();
+        if (Audio is null || TramosAudio.Duracion(tramos) < 0.5)
         {
             Error = T("Selecciona un tramo de la grabación arrastrando sobre la onda.");
             return null;
@@ -401,7 +445,7 @@ public sealed partial class ClonarViewModel : ObservableObject
         if (_rutaSeleccion is null || !File.Exists(_rutaSeleccion))
         {
             _rutaSeleccion = await _voces.ArchivoTemporalAsync("clon-tramo");
-            Audio.Subrango(Inicio, Fin).EscribirWav(_rutaSeleccion);
+            TramosAudio.Unir(Audio, tramos).EscribirWav(_rutaSeleccion);
         }
         return _rutaSeleccion;
     }
@@ -425,6 +469,8 @@ public sealed partial class ClonarViewModel : ObservableObject
         catch (Exception e) when (e is not OperationCanceledException)
         {
             Error = ServicioMotor.Explicar(e);
+            // También en su apartado: el mensaje de error general queda al final de la página.
+            AvisoTranscripcion = T("No se ha podido transcribir: {0}", Error);
         }
         finally
         {
@@ -452,7 +498,7 @@ public sealed partial class ClonarViewModel : ObservableObject
         try
         {
             var voz = new Voz("prueba-clon", Nombre, Idioma, OrigenVoz.Clonada, SinTranscripcion ? "" : Transcripcion.Trim(),
-                Fin - Inicio, DateTimeOffset.Now, Consentimiento);
+                DuracionSeleccion, DateTimeOffset.Now, Consentimiento);
             var salida = await _voces.ArchivoTemporalAsync("clon-prueba");
             var r = await _motor.SintetizarAsync(voz, ruta, TextoPrueba.Trim(), salida);
             Mensaje = T("Así sonaría: {0} generados en {1}.", Segundos(r.Duracion), Segundos(r.Segundos));
@@ -505,6 +551,7 @@ public sealed partial class ClonarViewModel : ObservableObject
         _rutaOriginal = null;
         Limpiada = false;
         Limpieza = null;
+        Tramos = [];
         Transcripcion = Nombre = "";
         SinTranscripcion = Consentimiento = false;
         Guardada = Mensaje = Error = null;

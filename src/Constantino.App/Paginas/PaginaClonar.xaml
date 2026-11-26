@@ -124,14 +124,16 @@
                     <TextBlock
                         Margin="0,4,0,8"
                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                        Text="{l:T 'Arrastra sobre la onda para marcar el tramo que se usará (10–20 s, sin toses ni ruidos). Arrastra los bordes para ajustarlo.'}"
+                        Text="{l:T 'Arrastra sobre la onda para marcar el tramo que se usará (10–20 s, sin toses ni ruidos). Arrastra los bordes para ajustarlo. Si las frases buenas están separadas (música o ruidos en medio), marca una, pulsa «Añadir otro tramo» (o arrastra con Ctrl) y marca la siguiente: se unen con una pausa corta.'}"
                         TextWrapping="Wrap" />
                     <TextBlock Margin="0,0,0,4" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="{Binding ViewModel.Origen}" />
                     <controles:VistaOnda
                         Height="140"
                         Audio="{Binding ViewModel.Audio}"
+                        ComandoAnadir="{Binding ViewModel.AnadirTramoCommand}"
                         Fin="{Binding ViewModel.Fin}"
-                        Inicio="{Binding ViewModel.Inicio}" />
+                        Inicio="{Binding ViewModel.Inicio}"
+                        Tramos="{Binding ViewModel.Tramos}" />
                     <Grid Margin="0,8,0,0">
                         <TextBlock VerticalAlignment="Center" Text="{Binding ViewModel.Seleccion}" />
                         <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
@@ -140,9 +142,43 @@
                                     <ui:SymbolIcon Symbol="Play24" />
                                 </ui:Button.Icon>
                             </ui:Button>
+                            <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.AnadirTramoCommand}" Content="{l:T 'Añadir otro tramo'}" ToolTip="{l:T 'Guarda el tramo marcado y te deja marcar otro (también: arrastrar con Ctrl pulsado)'}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Add24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
                             <ui:Button Margin="8,0,0,0" Command="{Binding ViewModel.SeleccionarVozCommand}" Content="{l:T 'Seleccionar la voz sola'}" ToolTip="{l:T 'Quita los silencios del principio y del final'}" />
                         </StackPanel>
                     </Grid>
+                    <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding ViewModel.Tramos}" Visibility="{Binding ViewModel.HayTramos, Converter={StaticResource BoolAVisibilidad}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,4,6,0" Padding="10,2,2,2" Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="12">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock VerticalAlignment="Center">
+                                            <Run Text="{Binding Inicio, Mode=OneWay, StringFormat={}{0:0.0}}" /><Run Text=" – " /><Run Text="{Binding Fin, Mode=OneWay, StringFormat={}{0:0.0} s}" />
+                                        </TextBlock>
+                                        <ui:Button
+                                            Margin="4,0,0,0"
+                                            Padding="4"
+                                            Appearance="Transparent"
+                                            Command="{Binding DataContext.ViewModel.QuitarTramoCommand, ElementName=Raiz}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="{l:T 'Quitar este tramo'}">
+                                            <ui:Button.Icon>
+                                                <ui:SymbolIcon FontSize="12" Symbol="Dismiss24" />
+                                            </ui:Button.Icon>
+                                        </ui:Button>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding ViewModel.Avisos}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -201,7 +237,10 @@
                                     </ui:Button.Icon>
                                 </ui:Button>
                             </WrapPanel>
-                            <TextBlock Margin="0,8,0,0" Text="{Binding ViewModel.Limpieza}" TextWrapping="Wrap" Visibility="{Binding ViewModel.Limpieza, Converter={StaticResource NoNuloAVisibilidad}}" />
+                            <StackPanel Margin="0,8,0,0" Orientation="Horizontal" Visibility="{Binding ViewModel.Limpieza, Converter={StaticResource NoNuloAVisibilidad}}">
+                                <ui:ProgressRing Width="16" Height="16" Margin="0,0,8,0" IsIndeterminate="True" Visibility="{Binding ViewModel.Limpiando, Converter={StaticResource BoolAVisibilidad}}" />
+                                <TextBlock MaxWidth="900" Text="{Binding ViewModel.Limpieza}" TextWrapping="Wrap" />
+                            </StackPanel>
                             <TextBlock
                                 Margin="0,6,0,0"
                                 FontSize="12"

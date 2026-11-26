@@ -8,6 +8,8 @@ namespace Constantino.App.Controles;
 /// <summary>
 /// Forma de onda con un tramo seleccionable: arrastrar sobre la onda marca un tramo nuevo; arrastrar cerca de un
 /// borde lo mueve. <see cref="Inicio"/> y <see cref="Fin"/> van en segundos y se enlazan en ambos sentidos.
+/// Además dibuja los tramos ya añadidos (<see cref="Tramos"/>); con Ctrl pulsado, empezar a arrastrar añade antes el
+/// tramo actual (<see cref="ComandoAnadir"/>), para usar varios trozos separados.
 /// </summary>
 public sealed class VistaOnda : FrameworkElement
 {
@@ -24,6 +26,27 @@ public sealed class VistaOnda : FrameworkElement
     public static readonly DependencyProperty FinProperty = DependencyProperty.Register(
         nameof(Fin), typeof(double), typeof(VistaOnda),
         new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    public static readonly DependencyProperty TramosProperty = DependencyProperty.Register(
+        nameof(Tramos), typeof(IReadOnlyList<Tramo>), typeof(VistaOnda),
+        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public static readonly DependencyProperty ComandoAnadirProperty = DependencyProperty.Register(
+        nameof(ComandoAnadir), typeof(ICommand), typeof(VistaOnda));
+
+    /// <summary>Tramos ya añadidos (además del que se está marcando).</summary>
+    public IReadOnlyList<Tramo>? Tramos
+    {
+        get => (IReadOnlyList<Tramo>?)GetValue(TramosProperty);
+        set => SetValue(TramosProperty, value);
+    }
+
+    /// <summary>Se ejecuta con Ctrl + arrastrar: añade el tramo actual antes de empezar otro.</summary>
+    public ICommand? ComandoAnadir
+    {
+        get => (ICommand?)GetValue(ComandoAnadirProperty);
+        set => SetValue(ComandoAnadirProperty, value);
+    }
 
     public Pcm? Audio
     {
@@ -64,6 +87,20 @@ public sealed class VistaOnda : FrameworkElement
         dc.DrawRoundedRectangle(fondo, null, new Rect(0, 0, ancho, alto), 6, 6);
         if (Audio is not { } audio || audio.Muestras.Length == 0 || ancho < 2)
             return;
+
+        // Tramos ya añadidos: sombreados y con bordes finos.
+        if (Tramos is { Count: > 0 } tramos)
+        {
+            var sombra = new SolidColorBrush(Color.FromArgb(45, acento.Color.R, acento.Color.G, acento.Color.B));
+            var fino = new Pen(new SolidColorBrush(Color.FromArgb(160, acento.Color.R, acento.Color.G, acento.Color.B)), 1);
+            foreach (var t in tramos)
+            {
+                var (a, b) = (X(t.Inicio), X(t.Fin));
+                dc.DrawRectangle(sombra, null, new Rect(a, 0, Math.Max(1, b - a), alto));
+                dc.DrawLine(fino, new Point(a, 0), new Point(a, alto));
+                dc.DrawLine(fino, new Point(b, 0), new Point(b, alto));
+            }
+        }
 
         // Tramo seleccionado.
         var x0 = X(Inicio);
@@ -126,7 +163,16 @@ public sealed class VistaOnda : FrameworkElement
         if (Audio is null)
             return;
         var x = e.GetPosition(this).X;
-        if (Fin > Inicio && Math.Abs(x - X(Inicio)) <= Asa)
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
+        {
+            // Ctrl: el tramo actual pasa a la lista y se empieza otro, aunque se pulse sobre un borde.
+            if (Fin - Inicio >= TramosAudio.Minimo && ComandoAnadir is { } anadir && anadir.CanExecute(null))
+                anadir.Execute(null);
+            _arrastre = Arrastre.Nuevo;
+            _ancla = T(x);
+            Inicio = Fin = _ancla;
+        }
+        else if (Fin > Inicio && Math.Abs(x - X(Inicio)) <= Asa)
             _arrastre = Arrastre.Inicio;
         else if (Fin > Inicio && Math.Abs(x - X(Fin)) <= Asa)
             _arrastre = Arrastre.Fin;
