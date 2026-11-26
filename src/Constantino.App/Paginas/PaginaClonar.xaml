@@ -150,6 +150,66 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+
+                    <!--  Limpiar la grabación  -->
+                    <Border
+                        Margin="0,12,0,0"
+                        Padding="14,12"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Text="{l:T 'Limpiar la grabación'}" />
+                            <TextBlock
+                                Margin="0,2,0,6"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{l:T 'Si tiene música, ruido de fondo o se distorsiona, Calíope puede limpiarla. Es suave a propósito: la voz clonada copia también los defectos de una limpieza agresiva. Compara siempre antes y después.'}"
+                                TextWrapping="Wrap" />
+                            <WrapPanel>
+                                <CheckBox Margin="0,0,16,0" Content="{l:T 'Reparar la distorsión'}" IsChecked="{Binding ViewModel.RepararDistorsion}" IsEnabled="{Binding ViewModel.Libre}" />
+                                <CheckBox Margin="0,0,16,0" Content="{l:T 'Quitar la música'}" IsChecked="{Binding ViewModel.QuitarMusica}" IsEnabled="{Binding ViewModel.PuedeQuitarMusica}" />
+                                <CheckBox Content="{l:T 'Quitar el ruido de fondo'}" IsChecked="{Binding ViewModel.QuitarRuido}" IsEnabled="{Binding ViewModel.Libre}" />
+                            </WrapPanel>
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{l:T 'Para quitar la música hace falta el separador de voz: instálalo desde Componentes.'}"
+                                TextWrapping="Wrap"
+                                Visibility="{Binding ViewModel.HaySeparador, Converter={StaticResource BoolInversoAVisibilidad}}" />
+                            <WrapPanel Margin="0,8,0,0">
+                                <ui:Button Margin="0,0,8,0" Appearance="Primary" Command="{Binding ViewModel.LimpiarCommand}" Content="{l:T 'Limpiar'}" IsEnabled="{Binding ViewModel.Libre}">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Wand24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                                <ui:Button
+                                    Margin="0,0,8,0"
+                                    Command="{Binding ViewModel.EscucharOriginalCommand}"
+                                    Content="{l:T 'Escuchar el original'}"
+                                    Visibility="{Binding ViewModel.Limpiada, Converter={StaticResource BoolAVisibilidad}}">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Play24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                                <ui:Button
+                                    Command="{Binding ViewModel.DeshacerLimpiezaCommand}"
+                                    Content="{l:T 'Deshacer la limpieza'}"
+                                    IsEnabled="{Binding ViewModel.Libre}"
+                                    Visibility="{Binding ViewModel.Limpiada, Converter={StaticResource BoolAVisibilidad}}">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="ArrowUndo24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+                            </WrapPanel>
+                            <TextBlock Margin="0,8,0,0" Text="{Binding ViewModel.Limpieza}" TextWrapping="Wrap" Visibility="{Binding ViewModel.Limpieza, Converter={StaticResource NoNuloAVisibilidad}}" />
+                            <TextBlock
+                                Margin="0,6,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                Text="{l:T 'Para listos: la distorsión se repara con FFmpeg (adeclip), la música se quita con el separador de voz (Demucs) y el ruido con FFmpeg (afftdn, reducción de 10 dB). Se limpia la grabación entera, siempre a partir del original.'}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ui:Card>
 

@@ -74,7 +74,7 @@ public sealed partial class ClonarViewModel : ObservableObject
     [ObservableProperty] public partial string TextoPrueba { get; set; } = T("Sábado por la noche. Diluvia. En la puerta de la discoteca hay una chica empapada, temblando de frío.");
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Libre))]
+    [NotifyPropertyChangedFor(nameof(Libre), nameof(PuedeQuitarMusica))]
     public partial bool Ocupado { get; set; }
 
     public bool Libre => !Ocupado;
@@ -91,7 +91,149 @@ public sealed partial class ClonarViewModel : ObservableObject
             Dispositivos.Add(d);
         SinMicrofono = Dispositivos.Count == 0;
         Dispositivo = Math.Clamp(actual, 0, Math.Max(0, Dispositivos.Count - 1));
-        WhisperInstalado = (await _instalacion.InstaladorAsync()).EstaInstalado(ServicioMotor.ModeloWhisper);
+        var instalador = await _instalacion.InstaladorAsync();
+        WhisperInstalado = instalador.EstaInstalado(ServicioMotor.ModeloWhisper);
+        HaySeparador = instalador.EstaInstalado(ServicioMotor.ComponenteSeparador);
+        if (!HaySeparador)
+            QuitarMusica = false;
+    }
+
+    // --- Limpiar la grabación ----------------------------------------------------------------------
+
+    /// <summary>La grabación tal como llegó, mientras se está usando la limpia (para comparar o deshacer).</summary>
+    private Pcm? _original;
+    private string? _rutaOriginal;
+
+    [ObservableProperty] public partial bool QuitarMusica { get; set; } = true;
+    [ObservableProperty] public partial bool QuitarRuido { get; set; } = true;
+    [ObservableProperty] public partial bool RepararDistorsion { get; set; } = true;
+
+    /// <summary>El separador de voz (Demucs) está instalado: sin él no se puede quitar la música.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PuedeQuitarMusica))]
+    public partial bool HaySeparador { get; set; }
+
+    public bool PuedeQuitarMusica => HaySeparador && Libre;
+
+    [ObservableProperty] public partial bool Limpiada { get; set; }
+    [ObservableProperty] public partial string? Limpieza { get; set; }
+
+    /// <summary>
+    /// Limpia la grabación entera (no solo el tramo, para poder moverlo después): repara la distorsión, quita la música
+    /// con el separador de voz y el ruido de fondo. Siempre parte del original, así que se puede repetir con otras
+    /// opciones.
+    /// </summary>
+    [RelayCommand]
+    private async Task LimpiarAsync()
+    {
+        if (Audio is null)
+            return;
+        if (!RepararDistorsion && !(QuitarMusica && HaySeparador) && !QuitarRuido)
+        {
+            Error = T("Marca al menos una cosa que limpiar.");
+            return;
+        }
+        Error = null;
+        Ocupado = true;
+        Reproductor.Detener();
+        var original = _original ?? Audio;
+        try
+        {
+            var rutas = (await _instalacion.InstaladorAsync()).Rutas;
+            if (!File.Exists(rutas.Ffmpeg))
+                throw new InvalidOperationException(T("Faltan las herramientas básicas: instálalas desde Componentes."));
+            var ejecutor = new EjecutorProcesos();
+            async Task Ffmpeg(string[] argumentos)
+            {
+                var r = await ejecutor.EjecutarAsync(rutas.Ffmpeg, argumentos, new Dictionary<string, string>(), _ => { }, CancellationToken.None);
+                if (r.CodigoSalida != 0)
+                    throw new InvalidOperationException(T("No se ha podido limpiar la grabación (FFmpeg ha fallado)."));
+            }
+
+            var actual = await _voces.ArchivoTemporalAsync("limpieza-original");
+            original.EscribirWav(actual);
+            var hecho = new List<string>();
+            if (RepararDistorsion)
+            {
+                Mensaje = T("Reparando la distorsión…");
+                var reparada = await _voces.ArchivoTemporalAsync("limpieza-reparada");
+                await Ffmpeg(LimpiezaGrabacion.Reparar(actual, reparada));
+                actual = reparada;
+                hecho.Add(T("distorsión reparada"));
+            }
+            var sinMusica = QuitarMusica && HaySeparador;
+            if (sinMusica)
+            {
+                Mensaje = T("Quitando la música y los ruidos (separador de voz)…");
+                var voz = await _voces.ArchivoTemporalAsync("limpieza-voz");
+                var fondo = await _voces.ArchivoTemporalAsync("limpieza-fondo");
+                await _motor.SepararAsync(actual, voz, fondo);
+                actual = voz;
+                hecho.Add(T("música quitada"));
+            }
+            var final = await _voces.ArchivoTemporalAsync("limpieza-final");
+            if (QuitarRuido)
+            {
+                Mensaje = T("Quitando el ruido de fondo…");
+                // Tras el separador queda poco ruido: se usa el nivel de una grabación limpia. Si no, el medido.
+                await Ffmpeg(LimpiezaGrabacion.QuitarRuido(actual, final, sinMusica ? null : AnalisisGrabacion.Analizar(original).RuidoDb));
+                hecho.Add(T("ruido reducido"));
+            }
+            else
+            {
+                await Ffmpeg(LimpiezaGrabacion.AMono(actual, final));
+            }
+
+            var limpia = LimpiezaGrabacion.Igualar(Pcm.LeerWav(final));
+            _original = original;
+            _rutaOriginal = null;
+            Audio = limpia;
+            Limpiada = true;
+            ActualizarSeleccion();
+            Limpieza = T("Limpia ({0}). Escucha el tramo y compáralo con el original: si suena peor (metálica, apagada), deshaz la limpieza o prueba con menos opciones.",
+                string.Join(", ", hecho));
+            Mensaje = null;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Error = e is InvalidOperationException or IOException ? e.Message : ServicioMotor.Explicar(e);
+            Mensaje = null;
+        }
+        finally
+        {
+            Ocupado = false;
+        }
+    }
+
+    /// <summary>El mismo tramo, pero de la grabación original (para comparar con la limpia).</summary>
+    [RelayCommand]
+    private async Task EscucharOriginalAsync()
+    {
+        if (_original is null || Fin - Inicio < 0.5)
+            return;
+        if (_rutaOriginal is null || !File.Exists(_rutaOriginal))
+        {
+            _rutaOriginal = await _voces.ArchivoTemporalAsync("clon-tramo-original");
+            _original.Subrango(Inicio, Fin).EscribirWav(_rutaOriginal);
+        }
+        if (Reproductor.Sonando == _rutaOriginal)
+            Reproductor.Detener();
+        else
+            Reproductor.Reproducir(_rutaOriginal);
+    }
+
+    [RelayCommand]
+    private void DeshacerLimpieza()
+    {
+        if (_original is null)
+            return;
+        Reproductor.Detener();
+        Audio = _original;
+        _original = null;
+        _rutaOriginal = null;
+        Limpiada = false;
+        Limpieza = null;
+        ActualizarSeleccion();
     }
 
     partial void OnIdiomaChanged(string oldValue, string newValue)
@@ -177,6 +319,10 @@ public sealed partial class ClonarViewModel : ObservableObject
     {
         Guardada = null;
         Mensaje = null;
+        _original = null;
+        _rutaOriginal = null;
+        Limpiada = false;
+        Limpieza = null;
         Audio = audio;
         var informe = AnalisisGrabacion.Analizar(audio);
         // Selección inicial: la voz sin los silencios de los extremos, como mucho 25 s.
@@ -193,6 +339,7 @@ public sealed partial class ClonarViewModel : ObservableObject
     private void ActualizarSeleccion()
     {
         _rutaSeleccion = null;
+        _rutaOriginal = null;
         if (Audio is null)
             return;
         var duracion = Math.Max(0, Fin - Inicio);
@@ -354,6 +501,10 @@ public sealed partial class ClonarViewModel : ObservableObject
     {
         Reproductor.Detener();
         Audio = null;
+        _original = null;
+        _rutaOriginal = null;
+        Limpiada = false;
+        Limpieza = null;
         Transcripcion = Nombre = "";
         SinTranscripcion = Consentimiento = false;
         Guardada = Mensaje = Error = null;

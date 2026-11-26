@@ -7,6 +7,12 @@ using static Constantino.Core.Idioma;
 
 namespace Constantino.App.Servicios;
 
+/// <summary>Lo que ha salido de comprobar si hay versión nueva.</summary>
+/// <param name="Nueva">La versión nueva, si la hay.</param>
+/// <param name="Fallo">Por qué no se ha podido comprobar (null si se ha podido).</param>
+/// <param name="Publicada">La última versión publicada, si se ha podido saber.</param>
+public sealed record ResultadoComprobacion(VersionPublicada? Nueva, string? Fallo, Version? Publicada = null);
+
 /// <summary>
 /// Comprueba en GitHub si hay una versión nueva de Calíope y la instala sin preguntas: descarga el instalador,
 /// lo lanza en modo silencioso y cierra la aplicación; el instalador la vuelve a abrir al terminar.
@@ -29,23 +35,60 @@ public sealed class ServicioActualizaciones(ServicioAjustes ajustes)
     public static bool PuedeActualizarseSola =>
         Directory.EnumerateFiles(AppContext.BaseDirectory, "unins*.exe").Any();
 
-    /// <summary>La versión nueva publicada, o null si no la hay (o no toca comprobar, o no hay conexión).</summary>
+    /// <summary>La versión nueva publicada, o null si no la hay (o no toca comprobar, o no se ha podido comprobar).</summary>
     public async Task<VersionPublicada?> ComprobarAsync(bool forzar, CancellationToken ct = default)
     {
         var a = ajustes.Actual;
         if (!forzar && (!a.BuscarActualizaciones || a.UltimaComprobacion is { } u && DateTimeOffset.Now - u < Intervalo))
             return null;
+        // Al arrancar, un fallo no se avisa (sin conexión no es un problema); en «Buscar ahora» sí: ver ComprobarAhoraAsync.
+        return (await ComprobarAhoraAsync(ct)).Nueva;
+    }
+
+    /// <summary>
+    /// Comprueba ya y dice qué ha pasado: hay una nueva, estás al día, o no se ha podido saber (y por qué). Antes un fallo
+    /// se mostraba como «Tienes la última versión», y con una versión antigua eso era falso.
+    /// </summary>
+    public async Task<ResultadoComprobacion> ComprobarAhoraAsync(CancellationToken ct = default)
+    {
         try
         {
-            var json = await Http.GetStringAsync(Actualizaciones.UrlUltimaVersion, ct);
+            using var respuesta = await Http.GetAsync(Actualizaciones.UrlUltimaVersion, ct);
+            if (!respuesta.IsSuccessStatusCode)
+                return new ResultadoComprobacion(null, Motivo(respuesta));
+            var json = await respuesta.Content.ReadAsStringAsync(ct);
             ajustes.Guardar(ajustes.Actual with { UltimaComprobacion = DateTimeOffset.Now });
-            return Actualizaciones.Leer(json) is { } v && Actualizaciones.EsMasNueva(v, VersionActual) ? v : null;
+            if (Actualizaciones.Leer(json) is not { } v)
+                return new ResultadoComprobacion(null, T("GitHub no ha devuelto ninguna versión publicada"));
+            return new ResultadoComprobacion(Actualizaciones.EsMasNueva(v, VersionActual) ? v : null, null, v.Version);
         }
-        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        catch (HttpRequestException e)
         {
-            // Sin conexión o sin versiones publicadas: no es un error para el usuario.
-            return null;
+            return new ResultadoComprobacion(null, T("no hay conexión con GitHub ({0})", e.InnerException?.Message ?? e.Message));
         }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return new ResultadoComprobacion(null, T("GitHub no ha respondido a tiempo"));
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return new ResultadoComprobacion(null, T("la respuesta de GitHub no se entiende"));
+        }
+    }
+
+    private static string Motivo(HttpResponseMessage r)
+    {
+        // Sin cuenta, GitHub deja 60 consultas por hora a cada red: en una oficina se gastan entre todos.
+        if ((int)r.StatusCode is 403 or 429 && r.Headers.TryGetValues("X-RateLimit-Remaining", out var quedan) && quedan.FirstOrDefault() == "0")
+        {
+            var hora = r.Headers.TryGetValues("X-RateLimit-Reset", out var reset) && long.TryParse(reset.FirstOrDefault(), out var s)
+                ? DateTimeOffset.FromUnixTimeSeconds(s).ToLocalTime().ToString("HH:mm")
+                : null;
+            return hora is null
+                ? T("GitHub ha limitado las consultas desde tu red por un rato")
+                : T("GitHub ha limitado las consultas desde tu red hasta las {0}", hora);
+        }
+        return T("GitHub ha respondido con un error ({0} {1})", (int)r.StatusCode, r.ReasonPhrase ?? "");
     }
 
     /// <summary>Descarga el instalador a una carpeta temporal y devuelve su ruta.</summary>

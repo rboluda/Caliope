@@ -101,9 +101,16 @@ public sealed partial class AjustesViewModel : ObservableObject
     {
         Buscando = true;
         EstadoActualizacion = T("Buscando…");
-        var v = await _actualizaciones.ComprobarAsync(forzar: true);
+        var r = await _actualizaciones.ComprobarAhoraAsync();
         Buscando = false;
-        if (v is null)
+        if (r.Fallo is not null)
+        {
+            // Sin saberlo, no se dice que esté al día: con una versión antigua sería mentira.
+            EstadoActualizacion = T("No he podido comprobarlo: {0}. Tienes la {1}; las versiones publicadas están en «Código y novedades».",
+                r.Fallo, Version);
+            return;
+        }
+        if (r.Nueva is not { } v)
         {
             EstadoActualizacion = T("Tienes la última versión ({0}).", Version);
             return;

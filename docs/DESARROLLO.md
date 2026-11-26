@@ -63,6 +63,18 @@ Cada versión sale firmada sola con el certificado personal de firma de código 
     - Los números de dispositivo de MME cambian cuando Windows cambia el predeterminado, porque el predeterminado va el primero. Con la lista vieja, la salida al cable acabó sonando por los altavoces y se acopló. Ahora `iniciar` recibe también los nombres (`entrada_nombre`, `salidas_nombres`), vuelve a leer la lista y busca cada dispositivo por su nombre. Si dos nombres coinciden (MME los corta a 31 letras), decide el número. Si el nombre ya no está, avisa en vez de abrir otro dispositivo.
   - 1.7.1: VB-CABLE instala dos entradas en Windows de 64 bits: «CABLE Input» y «CABLE In 16 Ch». `SalidaCaliope` renombra las dos como «Calíope (uso interno)». Si la de 16 canales salía primero en la lista de MME, no se abría y daba «Device unavailable [PaErrorCode -9985]». Ahora cada dispositivo llega como una lista de candidatos con el mismo nombre: primero van los que pasan `check_*_settings`, y al abrir se prueban en orden. Si falla una salida, las ya abiertas se cierran. El error dice qué dispositivos se intentaron.
 
+- **1.7.3 · comprobar actualizaciones**: si «Buscar ahora» no podía consultar GitHub (sin red, límite de 60 consultas por hora por red, error), decía «Tienes la última versión» aunque fuera mentira. Pasó con una 1.2.3. Ahora `ServicioActualizaciones.ComprobarAhoraAsync` devuelve el motivo y Ajustes lo muestra. Al arrancar, un fallo sigue sin avisarse.
+
+- **Limpiar la grabación al clonar** (`LimpiezaGrabacion` en Core, `ClonarViewModel.LimpiarAsync`):
+  - Se limpia la grabación entera, siempre a partir del original, y se puede deshacer o escuchar el mismo tramo del original.
+  - Pasos, en este orden:
+    1. Reparar la distorsión: FFmpeg `volume=-6dB,adeclip`, para que los picos reconstruidos quepan.
+    2. Quitar la música: el separador de voz, Demucs `op_separar`, el mismo de Doblar. Tarda 2 s con 30 s de audio en la RTX 3050.
+    3. Quitar el ruido: FFmpeg `afftdn=nr=10:nf=…:tn=1`, suave. Tras Demucs usa nf=-50; sin Demucs, el ruido medido por `AnalisisGrabacion`.
+    4. Igualar el pico a −1 dBFS.
+  - Medido con voz real + música + ruido rosa + recorte: saturación del 0,058 % al 0,001 %, fondo de −7 a −54 dB respecto a la voz.
+  - Suave a propósito: el clon copia los defectos de un procesado agresivo.
+
 - **1.7.2 · narración completa**: ffmpeg escribía el `_completo` directamente encima del anterior. Si estaba abierto en otro programa, fallaba con «Permission denied», se quedaba el viejo (hasta de otra voz) y Narrar lo seguía mostrando como si fuera el nuevo. Ahora se codifica en la carpeta temporal y se mueve encima (`Narrador.SustituirAsync`, 10 intentos cada 300 ms; si sigue abierto, un error que dice qué cerrar). Narrar no muestra un completo más antiguo que el bloque más nuevo.
 
 - **Espacio** (página `PaginaEspacio`, `Espacio` en Core, `ServicioEspacio`):
