@@ -137,6 +137,19 @@ public sealed partial class Narrador(AlmacenProyectos almacen, ISintetizador sin
 
     public static string ArchivoCompleto(Proyecto p) => $"{p.Id}_completo.{Extension(p.Ajustes)}";
 
+    /// <summary>
+    /// Si la narración completa es la de ahora: no puede ser más vieja que alguno de sus bloques (no se pudo volver a
+    /// unir, o se cambió un bloque después). Se toleran 2 s porque el completo se escribe justo después del último bloque.
+    /// Sin bloques generados vale el completo que haya.
+    /// </summary>
+    public static bool CompletoAlDia(string completo, IEnumerable<string?> bloques)
+    {
+        if (!File.Exists(completo)) return false;
+        var fecha = File.GetLastWriteTimeUtc(completo);
+        return bloques.Where(b => b is not null && File.Exists(b))
+            .All(b => fecha + TimeSpan.FromSeconds(2) >= File.GetLastWriteTimeUtc(b!));
+    }
+
     public async Task<ResultadoNarracion> NarrarAsync(Proyecto proyecto, string guion, IReadOnlySet<int>? solo, bool forzar,
         IProgress<EventoNarracion> progreso, CancellationToken ct)
     {

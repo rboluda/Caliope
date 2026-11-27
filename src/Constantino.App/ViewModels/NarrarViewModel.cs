@@ -448,11 +448,9 @@ public sealed partial class NarrarViewModel : ObservableObject
 
         await ActualizarInsertablesAsync(voz);
         var completo = Path.Combine(salida, Narrador.ArchivoCompleto(_proyecto with { Ajustes = ajustes }));
-        // Una narración completa más vieja que alguno de sus bloques no es la de ahora (no se pudo volver a unir, o se
-        // cambió un bloque después): enseñarla haría creer que es la buena, y puede ser hasta de otra voz.
-        var ultimoBloque = Bloques.Where(f => f.Archivo is not null && File.Exists(f.Archivo))
-            .Select(f => File.GetLastWriteTimeUtc(f.Archivo!)).DefaultIfEmpty(DateTime.MinValue).Max();
-        Completo = File.Exists(completo) && File.GetLastWriteTimeUtc(completo) >= ultimoBloque.AddSeconds(-2) ? completo : null;
+        // Una narración completa más vieja que alguno de sus bloques no es la de ahora: enseñarla haría creer que es la
+        // buena, y puede ser hasta de otra voz.
+        Completo = Narrador.CompletoAlDia(completo, Bloques.Select(f => f.Archivo)) ? completo : null;
         var generados = Bloques.Count(f => f.Estado == EstadoBloqueVista.Generado);
         var porActualizar = Bloques.Count(f => f.Estado == EstadoBloqueVista.Desactualizado);
         var duracion = _proyecto.Bloques.Where(e => e.Indice <= bloques.Count).Sum(e => e.Duracion);

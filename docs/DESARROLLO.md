@@ -80,6 +80,7 @@ Cada versión sale firmada sola con el certificado personal de firma de código 
   - Todo lo que usa el tramo usa la unión: escuchar, avisos, transcribir, probar, guardar y escuchar el original. Los tramos se ordenan, se funden si se pisan y se unen con 0,3 s de silencio. La duración que se comprueba es la de la unión.
 
 - **1.7.2 · narración completa**: ffmpeg escribía el `_completo` directamente encima del anterior. Si estaba abierto en otro programa, fallaba con «Permission denied», se quedaba el viejo (hasta de otra voz) y Narrar lo seguía mostrando como si fuera el nuevo. Ahora se codifica en la carpeta temporal y se mueve encima (`Narrador.SustituirAsync`, 10 intentos cada 300 ms; si sigue abierto, un error que dice qué cerrar). Narrar no muestra un completo más antiguo que el bloque más nuevo.
+- **1.7.5 · error al abrir Narrar**: la comprobación de la 1.7.2 restaba 2 s a `DateTime.MinValue` cuando un proyecto tenía la narración completa pero ningún bloque generado, y saltaba «The added or subtracted value results in an un-representable DateTime». Ahora la decide `Narrador.CompletoAlDia`, con su prueba.
 
 - **Espacio** (página `PaginaEspacio`, `Espacio` en Core, `ServicioEspacio`):
   - uv instala los paquetes en su caché y los entornos usan esos mismos archivos (enlaces duros). PyTorch, por ejemplo, es un único archivo aunque aparezca en tres entornos y en la caché. Quitar un entorno no libera nada mientras otro nombre del archivo siga existiendo.

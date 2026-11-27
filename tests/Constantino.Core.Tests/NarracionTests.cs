@@ -216,6 +216,28 @@ public sealed class NarradorTests : IDisposable
     }
 
     [Fact]
+    public void El_completo_vale_sin_bloques_y_no_si_es_mas_viejo_que_uno()
+    {
+        var carpeta = Directory.CreateTempSubdirectory("completo").FullName;
+        try
+        {
+            var completo = Path.Combine(carpeta, "c.mp3");
+            var bloque = Path.Combine(carpeta, "b.mp3");
+            Assert.False(Constantino.Core.Narracion.Narrador.CompletoAlDia(completo, []));
+            File.WriteAllText(completo, "x");
+            // Sin bloques generados (o con bloques que no existen) no hay con qué compararlo: antes esto rompía la página.
+            Assert.True(Constantino.Core.Narracion.Narrador.CompletoAlDia(completo, []));
+            Assert.True(Constantino.Core.Narracion.Narrador.CompletoAlDia(completo, [null, Path.Combine(carpeta, "no-esta.mp3")]));
+            File.WriteAllText(bloque, "x");
+            File.SetLastWriteTimeUtc(bloque, File.GetLastWriteTimeUtc(completo) + TimeSpan.FromSeconds(1));
+            Assert.True(Constantino.Core.Narracion.Narrador.CompletoAlDia(completo, [bloque]));
+            File.SetLastWriteTimeUtc(bloque, File.GetLastWriteTimeUtc(completo) + TimeSpan.FromMinutes(1));
+            Assert.False(Constantino.Core.Narracion.Narrador.CompletoAlDia(completo, [bloque]));
+        }
+        finally { Directory.Delete(carpeta, true); }
+    }
+
+    [Fact]
     public async Task Solo_regenera_lo_que_cambia()
     {
         var p = _almacen.Crear("p", Ajustes, GuionTres);
