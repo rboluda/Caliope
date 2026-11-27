@@ -1,6 +1,7 @@
 using System.IO;
 using Constantino.Core;
 using Constantino.Core.Catalogo;
+using Constantino.Core.Instalaciones;
 using Constantino.Core.Motores;
 using Constantino.Core.Voces;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -388,6 +389,10 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
                 ComponenteConversion => T("Preparando la conversión de voz (unos segundos)…"),
                 _ => T("Preparando la voz (unos segundos la primera vez)…"),
             };
+            // Enlaces simbólicos de la caché de modelos → enlaces duros: con la protección «Redirection Trust» de
+            // Windows (que el motor hereda de Calíope) los simbólicos no se pueden seguir y el modelo «no existe».
+            var modelos = (await instalacion.InstaladorAsync()).Rutas.Modelos;
+            await Task.Run(() => EnlacesModelos.ConvertirSimbolicos(modelos), ct);
             var paso = instalacion.Catalogo[modelo].Instalacion!.Pasos.OfType<PasoModelo>().First();
             await _motor.CargarAsync(paso.Repositorio, paso.Revision, null, ct, modelo == ModeloWhisper ? "asr" : "tts");
             _modeloCargado = modelo;

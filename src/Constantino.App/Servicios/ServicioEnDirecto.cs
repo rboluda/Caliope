@@ -1,6 +1,7 @@
 using System.IO;
 using Constantino.Core;
 using Constantino.Core.Catalogo;
+using Constantino.Core.Instalaciones;
 using Constantino.Core.Motores;
 
 namespace Constantino.App.Servicios;
@@ -81,6 +82,8 @@ public sealed class ServicioEnDirecto(ServicioInstalacion instalacion) : IAsyncD
         if (!instalador.EstaInstalado(Componente))
             throw new MotorNoDisponibleException(Idioma.T("Falta la voz en directo: instálala desde Componentes."));
         var rutas = instalador.Rutas;
+        // Ver ServicioMotor: con «Redirection Trust» los enlaces simbólicos de los modelos no se pueden seguir.
+        await Task.Run(() => EnlacesModelos.ConvertirSimbolicos(rutas.Modelos), ct);
         var entorno = new Dictionary<string, string>(rutas.EntornoProcesos)
         {
             ["HF_HUB_OFFLINE"] = "1",
