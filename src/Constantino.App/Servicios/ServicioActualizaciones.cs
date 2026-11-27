@@ -19,8 +19,11 @@ public sealed record ResultadoComprobacion(VersionPublicada? Nueva, string? Fall
 /// </summary>
 public sealed class ServicioActualizaciones(ServicioAjustes ajustes)
 {
-    /// <summary>Como mucho una comprobación automática al día.</summary>
-    private static readonly TimeSpan Intervalo = TimeSpan.FromHours(20);
+    /// <summary>
+    /// Con Calíope abierta, se vuelve a mirar cada 3 horas. Al abrirla se mira siempre: antes solo si habían pasado
+    /// 20 horas, y una versión publicada por la mañana no se veía hasta el día siguiente.
+    /// </summary>
+    public static readonly TimeSpan Intervalo = TimeSpan.FromHours(3);
 
     // Antes que Http: los campos estáticos se inicializan en orden y CrearHttp necesita la versión.
     public static Version VersionActual { get; } =
@@ -35,11 +38,10 @@ public sealed class ServicioActualizaciones(ServicioAjustes ajustes)
     public static bool PuedeActualizarseSola =>
         Directory.EnumerateFiles(AppContext.BaseDirectory, "unins*.exe").Any();
 
-    /// <summary>La versión nueva publicada, o null si no la hay (o no toca comprobar, o no se ha podido comprobar).</summary>
+    /// <summary>La versión nueva publicada, o null si no la hay (o están desactivadas, o no se ha podido comprobar).</summary>
     public async Task<VersionPublicada?> ComprobarAsync(bool forzar, CancellationToken ct = default)
     {
-        var a = ajustes.Actual;
-        if (!forzar && (!a.BuscarActualizaciones || a.UltimaComprobacion is { } u && DateTimeOffset.Now - u < Intervalo))
+        if (!forzar && !ajustes.Actual.BuscarActualizaciones)
             return null;
         // Al arrancar, un fallo no se avisa (sin conexión no es un problema); en «Buscar ahora» sí: ver ComprobarAhoraAsync.
         return (await ComprobarAhoraAsync(ct)).Nueva;

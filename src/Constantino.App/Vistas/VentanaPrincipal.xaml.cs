@@ -42,6 +42,8 @@ public partial class VentanaPrincipal : FluentWindow
                     await Task.Delay(TimeSpan.FromSeconds(3));
                     await Dispatcher.InvokeAsync(() => avisos.ComprobarAsync()).Task.Unwrap();
                 });
+                // Y mientras siga abierta, de vez en cuando (en el hilo de la ventana: toca el aviso).
+                _ = avisos.RevisarDeVezEnCuandoAsync();
             }
 
             if (captura is not null)

@@ -28,7 +28,10 @@ public sealed partial class AvisosViewModel(
     [ObservableProperty] public partial bool Ocupado { get; set; }
     [ObservableProperty] public partial double Progreso { get; set; }
 
-    /// <summary>Al arrancar: primero la aplicación (si toca comprobar hoy); si está al día, los componentes.</summary>
+    /// <summary>La versión cuyo aviso cerró el usuario: no se le vuelve a enseñar hasta que haya otra más nueva.</summary>
+    private Version? _cerrada;
+
+    /// <summary>Al arrancar: primero la aplicación; si está al día, los componentes.</summary>
     public async Task ComprobarAsync(bool forzar = false)
     {
         if (await actualizaciones.ComprobarAsync(forzar) is { } v)
@@ -37,6 +40,22 @@ public sealed partial class AvisosViewModel(
             return;
         }
         await ComprobarComponentesAsync();
+    }
+
+    /// <summary>
+    /// Con Calíope abierta, cada <see cref="ServicioActualizaciones.Intervalo"/>: solo la versión de la aplicación,
+    /// sin tapar otro aviso ni repetir uno cerrado.
+    /// </summary>
+    public async Task RevisarDeVezEnCuandoAsync(CancellationToken ct = default)
+    {
+        using var reloj = new PeriodicTimer(ServicioActualizaciones.Intervalo);
+        while (await reloj.WaitForNextTickAsync(ct))
+        {
+            if (Visible || Ocupado)
+                continue;
+            if (await actualizaciones.ComprobarAsync(false, ct) is { } v && (_cerrada is null || v.Version > _cerrada))
+                MostrarVersion(v);
+        }
     }
 
     public void MostrarVersion(VersionPublicada v)
@@ -115,7 +134,12 @@ public sealed partial class AvisosViewModel(
     }
 
     [RelayCommand]
-    private void Cerrar() => Visible = false;
+    private void Cerrar()
+    {
+        if (_version is { } v)
+            _cerrada = v.Version;
+        Visible = false;
+    }
 
     private static void Abrir(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 }
