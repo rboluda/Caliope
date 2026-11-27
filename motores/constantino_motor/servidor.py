@@ -85,6 +85,25 @@ def clasificar(error):
     return "desconocido"
 
 
+def _anotar(motor, peticion, traza):
+    """Guarda el fallo entero (petición y traza) en el registro de motores, si la aplicación dice dónde: en pantalla
+    solo cabe un resumen, y así se puede averiguar qué pasó aunque no se reproduzca."""
+    carpeta = os.environ.get("CONSTANTINO_REGISTRO")
+    if not carpeta:
+        return
+    try:
+        import datetime
+        import platform
+
+        ahora = datetime.datetime.now()
+        os.makedirs(carpeta, exist_ok=True)
+        with open(os.path.join(carpeta, f"motores-{ahora:%Y%m%d}.log"), "a", encoding="utf-8") as f:
+            f.write(f"=== {ahora:%Y-%m-%d %H:%M:%S} · motor {getattr(motor, 'nombre', '?')} {VERSION} · pid {os.getpid()} · "
+                    f"Python {platform.python_version()}\n{peticion[:2000]}\n{traza}\n")
+    except OSError:
+        pass
+
+
 def main():
     if hasattr(sys.stdin, "reconfigure"):
         sys.stdin.reconfigure(encoding="utf-8")
@@ -119,5 +138,6 @@ def main():
             canal.enviar(id=id_peticion, tipo="error", codigo=e.codigo, mensaje=str(e), detalle=None)
         except Exception as e:  # noqa: BLE001 — cualquier fallo se devuelve a la aplicación, el motor sigue vivo
             traceback.print_exc()
+            _anotar(motor, linea, traceback.format_exc())
             canal.enviar(id=id_peticion, tipo="error", codigo=clasificar(e), mensaje=f"{type(e).__name__}: {e}",
                          detalle=traceback.format_exc())

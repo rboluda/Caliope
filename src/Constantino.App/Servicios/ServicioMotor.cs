@@ -359,6 +359,8 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             var entorno = new Dictionary<string, string>(rutas.EntornoProcesos) { ["HF_HUB_OFFLINE"] = "1" };
             // Los mensajes de error y de progreso del motor, en el idioma de la interfaz.
             entorno["CONSTANTINO_IDIOMA"] = Idioma.Actual;
+            // Cada fallo, con su traza entera, en Registros (Ayuda › Abrir los registros).
+            entorno["CONSTANTINO_REGISTRO"] = rutas.Registros;
             if (motorId != MotoresDeVoz.Qwen)
             {
                 entorno["CONSTANTINO_MOTOR"] = motorId;
@@ -413,6 +415,18 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
     {
         Estado = EstadoMotor.Error;
         Descripcion = Explicar(e);
+        // Si el motor se cae, Python no llega a anotarlo: lo anota Calíope, con los últimos mensajes del proceso.
+        if (e is MotorCaidoException && UltimoDetalle is { } detalle)
+        {
+            try
+            {
+                var rutas = (await instalacion.InstaladorAsync()).Rutas;
+                Directory.CreateDirectory(rutas.Registros);
+                await File.AppendAllTextAsync(Path.Combine(rutas.Registros, $"motores-{DateTime.Now:yyyyMMdd}.log"),
+                    $"=== {detalle}\n\n");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
         // Si el proceso murió, se cierra del todo: la próxima petición lo arranca de nuevo.
         if (_motor is { Cliente.Vivo: false })
             await CerrarAsync();

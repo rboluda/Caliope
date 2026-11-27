@@ -87,6 +87,7 @@ public sealed class ServicioEnDirecto(ServicioInstalacion instalacion) : IAsyncD
             ["CONSTANTINO_IDIOMA"] = Idioma.Actual,
             ["CONSTANTINO_MOTOR"] = "endirecto",
             ["TQDM_DISABLE"] = "1",
+            ["CONSTANTINO_REGISTRO"] = rutas.Registros,
         };
         var cliente = await ClienteMotor.ArrancarAsync(Path.Combine(rutas.Entornos, "endirecto", "Scripts", "python.exe"),
             Path.Combine(AppContext.BaseDirectory, "motores"), entorno, TimeSpan.FromMinutes(2), ct);

@@ -1406,7 +1406,7 @@
   "Lo que se quedó a medio descargar al cancelar o fallar una instalación. Si vuelves a instalar, se descarga de nuevo.": "What was left half-downloaded when an installation was cancelled or failed. If you install again, it's downloaded again.",
   "Archivos temporales": "Temporary files",
   "Pruebas de voz y audios intermedios que ya no hacen falta (de más de una hora).": "Voice tests and intermediate audio that are no longer needed (older than an hour).",
-  "Registros de instalación": "Installation logs",
+  "Registros de instalación y de fallos": "Installation and error logs",
   "El detalle de lo que pasó en cada instalación. Solo sirven para buscar el motivo de un fallo.": "The details of what happened in each installation. They're only useful to find out why something failed.",
   "Espacio": "Space",
   "Lo que ocupa Calíope en tu disco y cómo liberarlo. Puedes instalar un componente, probarlo y quitarlo cuando ya no lo necesites.": "What Calíope takes up on your disk and how to free it. You can install a component, try it and remove it when you no longer need it.",

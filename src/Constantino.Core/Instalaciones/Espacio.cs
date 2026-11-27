@@ -115,7 +115,7 @@ public sealed class Espacio(Instalador instalador, CatalogoComponentes catalogo)
             new("temporales", T("Archivos temporales"),
                 T("Pruebas de voz y audios intermedios que ya no hacen falta (de más de una hora)."),
                 [R.Temporales], temporales, temporales),
-            new("registros", T("Registros de instalación"),
+            new("registros", T("Registros de instalación y de fallos"),
                 T("El detalle de lo que pasó en cada instalación. Solo sirven para buscar el motivo de un fallo."),
                 [R.Registros], registros, registros),
         };
