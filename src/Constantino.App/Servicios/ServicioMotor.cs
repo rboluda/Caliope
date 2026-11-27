@@ -418,8 +418,43 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
             await CerrarAsync();
     }
 
+    /// <summary>
+    /// El último fallo del motor, entero (mensaje, traza de Python y últimos mensajes), para «Copiar el detalle
+    /// técnico» de los avisos: en pantalla solo cabe un resumen.
+    /// </summary>
+    public static string? UltimoDetalle { get; private set; }
+
+    private const int MaximoEnPantalla = 300;
+
     /// <summary>Texto para el usuario a partir de un fallo del motor.</summary>
-    public static string Explicar(Exception e) => e switch
+    public static string Explicar(Exception e)
+    {
+        if (e is MotorException or MotorCaidoException)
+        {
+            UltimoDetalle = string.Join("\n\n", new[]
+            {
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} · Calíope {ServicioActualizaciones.VersionActual}",
+                e.Message,
+                (e as MotorException)?.Detalle,
+                (e as MotorCaidoException)?.Diagnostico,
+            }.Where(t => !string.IsNullOrWhiteSpace(t)));
+        }
+        return ExplicarSinGuardar(e);
+    }
+
+    /// <summary>
+    /// Un error de Python puede traer listas de cientos de nombres: en pantalla va el principio.
+    /// </summary>
+    public static string Resumir(string mensaje)
+    {
+        var limpio = mensaje.Trim();
+        return limpio.Length <= MaximoEnPantalla
+            ? limpio
+            : limpio[..MaximoEnPantalla].TrimEnd() + "… " +
+              T("(clic derecho en el aviso › «Copiar el detalle técnico» para verlo entero)");
+    }
+
+    private static string ExplicarSinGuardar(Exception e) => e switch
     {
         MotorNoDisponibleException => e.Message,
         MotorException { Codigo: "sin_memoria" } =>
@@ -428,7 +463,7 @@ public sealed partial class ServicioMotor(ServicioInstalacion instalacion) : Obs
         MotorException { Codigo: "sin_descripcion" } => T("Describe la voz que quieres crear."),
         MotorException { Codigo: "idioma_no_soportado" or "no_soportado" or "instalacion_incompleta" } m => m.Message,
         MotorException { Codigo: "archivo_no_encontrado" } => T("No se encuentra la grabación de referencia de la voz."),
-        MotorException m => T("El motor ha fallado: {0}", m.Message),
+        MotorException m => T("El motor ha fallado: {0}", Resumir(m.Message)),
         MotorCaidoException c => T("El motor de voz se ha cerrado inesperadamente.") +
                                  (string.IsNullOrWhiteSpace(c.Diagnostico) ? "" : " " + T("Últimos mensajes:\n{0}", UltimasLineas(c.Diagnostico, 6))),
         _ => e.Message,

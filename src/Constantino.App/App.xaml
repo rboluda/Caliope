@@ -17,6 +17,10 @@
             <controles:NoNuloAVisibilidad x:Key="NoNuloAVisibilidad" />
             <controles:NegarBool x:Key="NegarBool" />
             <controles:NumeroAVisibilidad x:Key="NumeroAVisibilidad" />
+            <!-- Todos los avisos: clic derecho para copiar el mensaje y el detalle técnico. -->
+            <Style TargetType="ui:InfoBar" BasedOn="{StaticResource {x:Type ui:InfoBar}}">
+                <Setter Property="controles:CopiarAviso.Activo" Value="True" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
