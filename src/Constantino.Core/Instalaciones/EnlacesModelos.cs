@@ -34,19 +34,12 @@ public static class EnlacesModelos
     /// <summary>Si <paramref name="archivo"/> es un enlace simbólico, lo cambia por un enlace duro a su destino.</summary>
     public static bool Convertir(string archivo)
     {
-        var info = new FileInfo(archivo);
-        if (info.LinkTarget is null)
+        // El destino se calcula con el texto del enlace, sin seguirlo: Calíope también puede tener la protección, y
+        // entonces seguir el enlace (ResolveLinkTarget) falla. Así le pasó a la 1.7.9: no cambió ninguno.
+        if (new FileInfo(archivo).LinkTarget is not { } texto)
             return false;
-        string destino;
-        try
-        {
-            destino = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? "";
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-        if (!File.Exists(destino))
+        var destino = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(archivo)!, texto));
+        if (!File.Exists(destino) || new FileInfo(destino).LinkTarget is not null)
             return false;
 
         // Primero el enlace nuevo con otro nombre y después el cambio: si algo falla, el simbólico sigue ahí.
